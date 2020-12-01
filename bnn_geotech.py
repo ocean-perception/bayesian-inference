@@ -33,8 +33,7 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     # The number of 'features' are defined by those columns labeled as 'relative_path'xxx, where xx is 0-based index for the h-latent space vector
     # Example: (8 dimensions: h0, h1, ... , h7)
     # relative_path northing [m] easting [m] ... latitude [deg] longitude [deg] recon_loss h0 h1 h2 h3 h4 h5 h6 h7
-    df_latent = df.filter(regex=latent_name_prefix)
-    n_latents = len(df_latent.columns)
+    n_latents = len(df.filter(regex=latent_name_prefix).columns)
     Console.info ("Latent dimensions: ", n_latents)
 
     # 3) Key matching
@@ -44,7 +43,7 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     # df['filename_base'] = df[matching_key].str.extract(r'(\/.*_)')
     df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
     df['filename_base'] = df['filename_base'].str.rstrip('_')
-    # print (df['filename_base'])
+    # print (df['filename_base'].head())
 
     tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
     tdf = tdf.dropna()
@@ -52,12 +51,21 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
     tdf['filename_base'] = tdf['filename_base'].str.rstrip('_')
     Console.info("Target entries: ", len(tdf))
-    # print (tdf['filename_base'])
+    # print (tdf.head())
     
+    merged_df = pd.merge(df, tdf, how='right', on='filename_base')
+    merged_df = merged_df.dropna()
+
+    # print (merged_df.shape)
+    # print (merged_df.head)
+
+    df_latent = merged_df.filter(regex=latent_name_prefix)
+    Console.info ("Latent size: ", df_latent.shape)
+    np_latent = df_latent.to_numpy(dtype='float')
+    np_target = merged_df[target_key].to_numpy(dtype='float')
+
     # input-output datasets are linked using the key provided by matching_key
-    return 1, n_latents
-    # return dataset, num_latents
-    # read dataset as pandas dataframe
+    return np_latent, np_target
 
 
 
@@ -101,14 +109,9 @@ def main(args=None):
     target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
-    Xd, yd = load_dataset(dataset_filename, target_filename, matching_key='relative_path')    # relative_path is the common key in both tables
+    X, y = load_dataset(dataset_filename, target_filename, matching_key='relative_path')    # relative_path is the common key in both tables
 
-    sys.exit(0)
-
-    X, y = load_boston(return_X_y=True)
-
-    print ("X.len:", X.shape)
-    print ("y.len:", y.shape)
+    # sys.exit(0)
 
     X = StandardScaler().fit_transform(X)
     y = StandardScaler().fit_transform(np.expand_dims(y, -1))
@@ -120,9 +123,13 @@ def main(args=None):
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
     X_test, y_test = torch.tensor(X_test).float(), torch.tensor(y_test).float()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    regressor = BayesianRegressor(13, 1).to(device)
+    regressor = BayesianRegressor(8, 1).to(device)
     optimizer = optim.Adam(regressor.parameters(), lr=0.01)
     criterion = torch.nn.MSELoss()
+
+    print("Model's state_dict:")
+    for param_tensor in regressor.state_dict():
+        print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
     dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
@@ -151,9 +158,11 @@ def main(args=None):
                                                                             samples=25,
                                                                             std_multiplier=3)
                 
+                Console.info("Epoch [" + str(epoch) + "] Loss: {:.4f}".format(loss) )
                 print("CI acc: {:.2f}, CI upper acc: {:.2f}, CI lower acc: {:.2f}".format(ic_acc, under_ci_upper, over_ci_lower))
-                print("Loss: {:.4f}".format(loss))
+                # print("Loss: {:.4f}".format(loss))
 
+    torch.save(regressor.state_dict(), "bnn_model.pth")
 
 if __name__ == '__main__':
     main()
