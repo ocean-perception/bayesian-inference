@@ -18,7 +18,8 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import matplotlib
 from tools.console import Console
-
+import statistics
+import math
 
 def load_dataset (input_filename, target_filename, matching_key='relative_path', latent_name_prefix= 'latent_'):
     Console.info("load_dataset called for: ", input_filename)
@@ -88,19 +89,31 @@ class BayesianRegressor(nn.Module):
 def evaluate_regression(regressor,
                         X,
                         y,
-                        samples = 100,
-                        std_multiplier = 2):
-    preds = [regressor(X) for i in range(samples)]
-    preds = torch.stack(preds)
-    means = preds.mean(axis=0)
-    stds = preds.std(axis=0)
-    ci_upper = means + (std_multiplier * stds)
-    ci_lower = means - (std_multiplier * stds)
-    ic_acc = (ci_lower <= y) * (ci_upper >= y)
-    ic_acc = ic_acc.float().mean()
-    return ic_acc, (ci_upper >= y).float().mean(), (ci_lower <= y).float().mean()
+                        samples = 100):
 
+    # we need to draw k-samples for each x-input entry. Posterior sampling is done to obtain the E[y] over a Gaussian distribution
+    # The maximum likelihood estimates: meand & stdev of the sample vector (large enough for a good approximation)
+    # If sample vector is large enough biased and unbiased estimators will converge (samples >> 1)
+    errors = [] # list containing the error as e = y - E[f(x)] for all the x in X. y_pred = f(x)
+                # E[f(x)] is the expected value, computed as the mean(x) as the MLE for a Gaussian distribution (expected)
+    uncert = []
+    y_list = y.tolist()
+    for i in range(len(X)): # for each input x[i] (that should be the latent enconding of the image)
+        y_samples = []
+        for k in range(samples): # draw k-samples.
+            y_tensor = regressor(X[i])
+            y_samples.append(y_tensor[0].tolist()) # Each call to regressor(x = X[i]) will return a different value
+        # print ("y_samples.len", len(y_samples))
+        # print ("y_samples", y_samples)
+        e_y = statistics.mean(y_samples)        # mean(y_samples) as MLE for E[f(x)]
+        u_y = statistics.stdev(y_samples)        # mean(y_samples) as MLE for E[f(x)]
+        error = e_y - y_list[i][0]                      # error = (expected - target)^2
+        errors.append(error*error)
+        uncert.append(u_y)
 
+    errors_mean = math.sqrt(statistics.mean(errors)) # single axis list, eq: (axis = 0)
+    uncert_mean = statistics.mean(uncert)
+    return errors_mean, uncert_mean
 
 def main(args=None):
     # // TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
@@ -111,25 +124,28 @@ def main(args=None):
 
     X, y = load_dataset(dataset_filename, target_filename, matching_key='relative_path')    # relative_path is the common key in both tables
 
+    n_sample = X.shape[0]
+    n_latents = X.shape[1]
+
     # sys.exit(0)
 
     X = StandardScaler().fit_transform(X)
     y = StandardScaler().fit_transform(np.expand_dims(y, -1))
     X_train, X_test, y_train, y_test = train_test_split(X,
                                                         y,
-                                                        test_size=.25,
-                                                        random_state=42)
+                                                        test_size=.20, # 3:1 ratio
+                                                        random_state=42) # 42 just because it's The Answer
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
     X_test, y_test = torch.tensor(X_test).float(), torch.tensor(y_test).float()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    regressor = BayesianRegressor(8, 1).to(device)
+    regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     optimizer = optim.Adam(regressor.parameters(), lr=0.01)
     criterion = torch.nn.MSELoss()
 
-    print("Model's state_dict:")
-    for param_tensor in regressor.state_dict():
-        print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
+    # print("Model's state_dict:")
+    # for param_tensor in regressor.state_dict():
+    #     print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
     dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
@@ -138,7 +154,8 @@ def main(args=None):
     dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
 
     iteration = 0
-    for epoch in range(100):
+    num_epochs = 100
+    for epoch in range(num_epochs):
         for i, (datapoints, labels) in enumerate(dataloader_train):
             optimizer.zero_grad()
             
@@ -150,19 +167,25 @@ def main(args=None):
             loss.backward()
             optimizer.step()
             
-            iteration += 1
-            if iteration%100==0:
-                ic_acc, under_ci_upper, over_ci_lower = evaluate_regression(regressor,
-                                                                            X_test.to(device),
-                                                                            y_test.to(device),
-                                                                            samples=25,
-                                                                            std_multiplier=3)
-                
-                Console.info("Epoch [" + str(epoch) + "] Loss: {:.4f}".format(loss) )
-                print("CI acc: {:.2f}, CI upper acc: {:.2f}, CI lower acc: {:.2f}".format(ic_acc, under_ci_upper, over_ci_lower))
-                # print("Loss: {:.4f}".format(loss))
+        test_loss = []
+        for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
+            sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
+                                labels=test_labels.to(device),
+                                criterion=criterion,
+                                sample_nbr=20,
+                                complexity_cost_weight=1/X_test.shape[0])
+            test_loss.append(sample_loss.item())
+        mean_test_loss = statistics.mean(test_loss)
+        Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(loss) + " Validation loss: {:.4f}".format(mean_test_loss) )
+        Console.progress(epoch, num_epochs)
 
-    torch.save(regressor.state_dict(), "bnn_model.pth")
+    torch.save(regressor.state_dict(), "bnn_model_n1000.pth")
 
 if __name__ == '__main__':
     main()
+
+
+# TODO: verify x-validatio
+# 1- change error metrics (MSE on prediction + population based samples) > use sample_elbo to combine KL-div with complexity_cost
+# 2- add infer/predict test to export as additional column once trained (or s part of "predict" mode)
+# 3- Log training progression as df, export as CSV, and generate plot
