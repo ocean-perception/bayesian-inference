@@ -41,7 +41,6 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
     # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
     # let's use regex 
-    # df['filename_base'] = df[matching_key].str.extract(r'(\/.*_)')
     df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
     df['filename_base'] = df['filename_base'].str.rstrip('_')
     # print (df['filename_base'].head())
@@ -52,19 +51,14 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
     tdf['filename_base'] = tdf['filename_base'].str.rstrip('_')
     Console.info("Target entries: ", len(tdf))
-    # print (tdf.head())
-    
+    # print (tdf.head())    
     merged_df = pd.merge(df, tdf, how='right', on='filename_base')
     merged_df = merged_df.dropna()
-
-    # print (merged_df.shape)
-    # print (merged_df.head)
 
     df_latent = merged_df.filter(regex=latent_name_prefix)
     Console.info ("Latent size: ", df_latent.shape)
     np_latent = df_latent.to_numpy(dtype='float')
     np_target = merged_df[target_key].to_numpy(dtype='float')
-
     # input-output datasets are linked using the key provided by matching_key
     return np_latent, np_target
 
@@ -78,11 +72,13 @@ class BayesianRegressor(nn.Module):
         #self.linear = nn.Linear(input_dim, output_dim)
         self.blinear1 = BayesianLinear(input_dim, 128)
         self.sigmoid1 = nn.Sigmoid()
+        self.elu1     = nn.ELU()
         self.blinear2 = BayesianLinear(128, output_dim)
         
     def forward(self, x):
         x_ = self.blinear1(x)
-        x_ = self.sigmoid1(x_)
+        x_ = self.elu1 (x_)
+        # x_ = self.sigmoid1(x_)    # WARNING: linear only model
         return self.blinear2(x_)
 
 
@@ -123,21 +119,22 @@ def main(args=None):
     Console.info("Loading dataset: " + dataset_filename)
 
     X, y = load_dataset(dataset_filename, target_filename, matching_key='relative_path')    # relative_path is the common key in both tables
-
+    y = y/10    #some rescale    WARNING
     n_sample = X.shape[0]
     n_latents = X.shape[1]
-
-    # sys.exit(0)
-
-    X = StandardScaler().fit_transform(X)
-    y = StandardScaler().fit_transform(np.expand_dims(y, -1))
+    # X = StandardScaler().fit_transform(X)
+    # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
     X_train, X_test, y_train, y_test = train_test_split(X,
                                                         y,
-                                                        test_size=.20, # 3:1 ratio
-                                                        random_state=42) # 42 just because it's The Answer
+                                                        test_size=.15, # 4:1 ratio
+                                                        shuffle = True) 
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
     X_test, y_test = torch.tensor(X_test).float(), torch.tensor(y_test).float()
+
+    y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
+    y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
+    # sys.exit(1)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     optimizer = optim.Adam(regressor.parameters(), lr=0.01)
@@ -154,38 +151,132 @@ def main(args=None):
     dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
 
     iteration = 0
-    num_epochs = 100
+    num_epochs = 30
+    # Training time
+    test_hist = []
+    uncert_hist = []
+    train_hist = []
+    fit_hist = []
+    ufit_hist = []
+
     for epoch in range(num_epochs):
+        train_loss = []
         for i, (datapoints, labels) in enumerate(dataloader_train):
             optimizer.zero_grad()
             
             loss = regressor.sample_elbo(inputs=datapoints.to(device),
                             labels=labels.to(device),
-                            criterion=criterion,
-                            sample_nbr=3,
-                            complexity_cost_weight=1/X_train.shape[0])
-            loss.backward()
+                            criterion=criterion,    # MSELoss
+                            sample_nbr=10,
+                            complexity_cost_weight=1/X_train.shape[0])  # normalize the complexity cost by the number of input points
+            loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
             optimizer.step()
+            train_loss.append(loss.item())
             
         test_loss = []
+        fit_loss = []
+
         for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
             sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
                                 criterion=criterion,
-                                sample_nbr=20,
-                                complexity_cost_weight=1/X_test.shape[0])
+                                sample_nbr=10,
+                                complexity_cost_weight=0.2/X_test.shape[0])
+
+            fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
+                                labels=test_labels.to(device),
+                                criterion=criterion,
+                                sample_nbr=10,
+                                complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
+
             test_loss.append(sample_loss.item())
+            fit_loss.append(fit_loss_sample.item())
+
         mean_test_loss = statistics.mean(test_loss)
-        Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(loss) + " Validation loss: {:.4f}".format(mean_test_loss) )
+        stdv_test_loss = statistics.stdev(test_loss)
+        mean_train_loss = statistics.mean(train_loss)
+
+        mean_fit_loss = statistics.mean(fit_loss)
+        stdv_fit_loss = statistics.stdev(fit_loss)
+
+        Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Validation loss: {:.4f}".format(mean_test_loss) )
         Console.progress(epoch, num_epochs)
 
-    torch.save(regressor.state_dict(), "bnn_model_n1000.pth")
+        test_hist.append(mean_test_loss)
+        uncert_hist.append(stdv_test_loss)
+        train_hist.append(mean_train_loss)
+
+        fit_hist.append(mean_fit_loss)
+        ufit_hist.append(stdv_fit_loss)
+
+        # train_hist.append(statistics.mean(train_loss))
+
+        if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
+            temp_name = "bnn_model_" + str(epoch) + ".pth"
+            torch.save(regressor.state_dict(), temp_name)
+
+    Console.info("Training completed!")
+    torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
+
+    export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
+    export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
+
+    print ("head", export_df.head())
+    export_df.to_csv("bnn_train_report.csv")
+    # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
+
+    # Once trained, we start inferring
+    expected = []
+    uncertainty = []
+    predicted = [] # == y
+
+    Console.info("testing predictions...")
+    n_samples = 20
+    idx = 0 
+    for x in X_test:
+        predictions = []
+        for n in range(n_samples):
+            p = regressor(x.to(device)).item()
+            # print ("p.type", type(p)) ----> float
+            # print ("p.len", len(p))
+            predictions.append(p) #1D output, retieve single item
+
+        # print ("pred.type", type(predictions))
+        # print ("pred.len", len(predictions))    ---> 10 (n_samples)
+
+        p_mean = statistics.mean(predictions)
+        p_stdv = statistics.stdev(predictions)
+        idx = idx + 1
+
+        # print ("p_mean", type(p_mean))  --> float
+
+        predicted.append(p_mean)
+        uncertainty.append(p_stdv)
+
+
+        Console.progress(idx, len(X_test))
+
+    # print ("predicted:" , predicted)
+    # print ("predicted.type", type(predicted))
+    # print ("predicted.len", len(predicted))
+    # print ("X.len:" , len(X_test))
+    y_list = y_test.squeeze().tolist()
+
+    # y_list = [element.item() for element in y_test.flatten()]
+
+    # print ("y_list.len", len(y_list))
+    # predicted.len = X.len (as desired)
+    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty]).transpose()
+    pred_df.columns = ['y', 'predicted', 'uncertainty']
+    pred_df.to_csv("bnn_predictions_N" + str(num_epochs) + "_S" + str(n_samples) + ".csv")
+    print (pred_df.head())
 
 if __name__ == '__main__':
     main()
 
 
-# TODO: verify x-validatio
-# 1- change error metrics (MSE on prediction + population based samples) > use sample_elbo to combine KL-div with complexity_cost
+# TODO: verify x-validation
+#####1- change error metrics (MSE on prediction + population based samples) > use sample_elbo to combine KL-div with complexity_cost
 # 2- add infer/predict test to export as additional column once trained (or s part of "predict" mode)
-# 3- Log training progression as df, export as CSV, and generate plot
+#####3- Log training progression as df, export as CSV, and generate plot
+# 4 - 
