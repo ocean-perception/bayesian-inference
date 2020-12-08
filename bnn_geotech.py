@@ -21,7 +21,7 @@ from tools.console import Console
 import statistics
 import math
 
-def load_dataset (input_filename, target_filename, matching_key='relative_path', latent_name_prefix= 'latent_'):
+def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
     Console.info("load_dataset called for: ", input_filename)
 
     df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
@@ -47,39 +47,57 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
 
     tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
     tdf = tdf.dropna()
-    target_key='mean_slope'
+    # target_key='mean_rugosity'
     tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-    tdf['filename_base'] = tdf['filename_base'].str.rstrip('_')
-    Console.info("Target entries: ", len(tdf))
+    tdf['filename_base'] = tdf['filename_base'].str.rstrip('_r002')
+
     # print (tdf.head())    
+    Console.info("Target entries: ", len(tdf))
     merged_df = pd.merge(df, tdf, how='right', on='filename_base')
     merged_df = merged_df.dropna()
 
-    df_latent = merged_df.filter(regex=latent_name_prefix)
-    Console.info ("Latent size: ", df_latent.shape)
-    np_latent = df_latent.to_numpy(dtype='float')
-    np_target = merged_df[target_key].to_numpy(dtype='float')
+    latent_df = merged_df.filter(regex=latent_name_prefix)
+    Console.info ("Latent size: ", latent_df.shape)
+    target_df = merged_df[target_key]
+
+    np_latent = latent_df.to_numpy(dtype='float')
+    np_target = target_df.to_numpy(dtype='float')
     # input-output datasets are linked using the key provided by matching_key
-    return np_latent, np_target
-
-
-
+    return np_latent, np_target, merged_df['filename_base']
 @variational_estimator
 class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         # simple 2-layer fully connected linear regressor
         #self.linear = nn.Linear(input_dim, output_dim)
+        self.linear1  = nn.Linear(input_dim, 128)
+        self.linear2  = nn.Linear(128, 128)
+        self.linear3  = nn.Linear(128, output_dim)
+        
         self.blinear1 = BayesianLinear(input_dim, 128)
-        self.sigmoid1 = nn.Sigmoid()
         self.elu1     = nn.ELU()
+        self.elu2     = nn.ELU()
+        self.elu3     = nn.ELU()
+        self.blinear3 = BayesianLinear(128, 128)
+        self.blinear4 = BayesianLinear(128, 128)
+        self.sigmoid1 = nn.Sigmoid()
         self.blinear2 = BayesianLinear(128, output_dim)
         
     def forward(self, x):
         x_ = self.blinear1(x)
-        x_ = self.elu1 (x_)
-        # x_ = self.sigmoid1(x_)    # WARNING: linear only model
-        return self.blinear2(x_)
+        x_ = self.sigmoid1 (x_)
+        # x_ = self.blinear3(x_)
+        # x_ = self.elu1 (x_)
+        # x_ = self.blinear4(x_)
+        # x_ = self.elu2 (x_)
+        x_ = self.blinear2(x_)
+        return x_
+        # x_ = self.blinear1(x)
+        # x_ = self.blinear3(x_)
+        # # x_ = self.sigmoid1(x_)
+        # # x_ = self.blinear4(x_)
+        # # x_ = self.elu2 (x_)
+        # return self.blinear2(x_)
 
 
 def evaluate_regression(regressor,
@@ -118,15 +136,17 @@ def main(args=None):
     target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
-    X, y = load_dataset(dataset_filename, target_filename, matching_key='relative_path')    # relative_path is the common key in both tables
+    X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = 'mean_slope')    # relative_path is the common key in both tables
+    Console.info("Data loaded...")
     y = y/10    #some rescale    WARNING
+ 
     n_sample = X.shape[0]
     n_latents = X.shape[1]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
     X_train, X_test, y_train, y_test = train_test_split(X,
                                                         y,
-                                                        test_size=.15, # 4:1 ratio
+                                                        test_size=.25, # 4:1 ratio
                                                         shuffle = True) 
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
@@ -151,7 +171,7 @@ def main(args=None):
     dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
 
     iteration = 0
-    num_epochs = 30
+    num_epochs = 2
     # Training time
     test_hist = []
     uncert_hist = []
@@ -167,8 +187,8 @@ def main(args=None):
             loss = regressor.sample_elbo(inputs=datapoints.to(device),
                             labels=labels.to(device),
                             criterion=criterion,    # MSELoss
-                            sample_nbr=10,
-                            complexity_cost_weight=1/X_train.shape[0])  # normalize the complexity cost by the number of input points
+                            sample_nbr=20,
+                            complexity_cost_weight=0.2/X_train.shape[0])  # normalize the complexity cost by the number of input points
             loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
             optimizer.step()
             train_loss.append(loss.item())
@@ -180,13 +200,13 @@ def main(args=None):
             sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
                                 criterion=criterion,
-                                sample_nbr=10,
+                                sample_nbr=20,
                                 complexity_cost_weight=0.2/X_test.shape[0])
 
             fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
                                 criterion=criterion,
-                                sample_nbr=10,
+                                sample_nbr=20,
                                 complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
 
             test_loss.append(sample_loss.item())
@@ -231,9 +251,12 @@ def main(args=None):
     predicted = [] # == y
 
     Console.info("testing predictions...")
-    n_samples = 20
+    n_samples = 25
     idx = 0 
-    for x in X_test:
+    # for x in X_test:
+    Xp_ = torch.tensor(X).float()
+
+    for x in Xp_:
         predictions = []
         for n in range(n_samples):
             p = regressor(x.to(device)).item()
@@ -254,29 +277,24 @@ def main(args=None):
         uncertainty.append(p_stdv)
 
 
-        Console.progress(idx, len(X_test))
+        Console.progress(idx, len(X_train))
 
     # print ("predicted:" , predicted)
     # print ("predicted.type", type(predicted))
     # print ("predicted.len", len(predicted))
     # print ("X.len:" , len(X_test))
-    y_list = y_test.squeeze().tolist()
+    y_list = y_train.squeeze().tolist()
+    y_list = y.squeeze().tolist()
+    # y_list = y_test.squeeze().tolist()
 
     # y_list = [element.item() for element in y_test.flatten()]
 
     # print ("y_list.len", len(y_list))
     # predicted.len = X.len (as desired)
-    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty]).transpose()
-    pred_df.columns = ['y', 'predicted', 'uncertainty']
+    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
+    pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
     pred_df.to_csv("bnn_predictions_N" + str(num_epochs) + "_S" + str(n_samples) + ".csv")
     print (pred_df.head())
 
 if __name__ == '__main__':
     main()
-
-
-# TODO: verify x-validation
-#####1- change error metrics (MSE on prediction + population based samples) > use sample_elbo to combine KL-div with complexity_cost
-# 2- add infer/predict test to export as additional column once trained (or s part of "predict" mode)
-#####3- Log training progression as df, export as CSV, and generate plot
-# 4 - 
