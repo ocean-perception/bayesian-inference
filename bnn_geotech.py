@@ -85,11 +85,11 @@ class BayesianRegressor(nn.Module):
         
     def forward(self, x):
         x_ = self.blinear1(x)
-        x_ = self.sigmoid1 (x_)
+        # x_ = self.sigmoid1 (x_)
         # x_ = self.blinear3(x_)
         # x_ = self.elu1 (x_)
         # x_ = self.blinear4(x_)
-        # x_ = self.elu2 (x_)
+        x_ = self.elu2 (x_)
         x_ = self.blinear2(x_)
         return x_
         # x_ = self.blinear1(x)
@@ -132,7 +132,7 @@ def evaluate_regression(regressor,
 def main(args=None):
     # // TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
     Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
-    dataset_filename = "data/koyo-20181121-model-21-output.xls"     # dataset containing the predictive input
+    dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
     target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
@@ -171,7 +171,7 @@ def main(args=None):
     dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
 
     iteration = 0
-    num_epochs = 2
+    num_epochs = 30
     # Training time
     test_hist = []
     uncert_hist = []
@@ -242,7 +242,8 @@ def main(args=None):
     export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
 
     print ("head", export_df.head())
-    export_df.to_csv("bnn_train_report.csv")
+    export_df.to_csv("train_report_N" + str(num_epochs) + "_H" + str(n_latents) + ".csv")
+    # export_df.to_csv("bnn_train_report.csv")
     # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
 
     # Once trained, we start inferring
@@ -277,7 +278,7 @@ def main(args=None):
         uncertainty.append(p_stdv)
 
 
-        Console.progress(idx, len(X_train))
+        Console.progress(idx, len(Xp_))
 
     # print ("predicted:" , predicted)
     # print ("predicted.type", type(predicted))
@@ -293,7 +294,7 @@ def main(args=None):
     # predicted.len = X.len (as desired)
     pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
-    pred_df.to_csv("bnn_predictions_N" + str(num_epochs) + "_S" + str(n_samples) + ".csv")
+    pred_df.to_csv("bnn_predictions_N" + str(num_epochs) + "_S" + str(n_samples) + "_H" + str(n_latents) + ".csv")
     print (pred_df.head())
 
 if __name__ == '__main__':
