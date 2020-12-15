@@ -1,12 +1,14 @@
 # Importe general libraries
 import re
 import sys
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import pandas as pd
+import argparse
 # Import blitz (BNN) modules
 from blitz.modules import BayesianLinear
 from blitz.utils import variational_estimator
@@ -20,6 +22,33 @@ import matplotlib
 from tools.console import Console
 import statistics
 import math
+
+def add_arguments(obj):
+    obj.add_argument(
+        "-t", "--target",
+        type=str,
+        default='target_values.csv',
+        help="Path to CSV file containing a list of images ('relative_path') and the measured ground truth value we wan to predict (e.g. 'mean_slope)"
+    )
+    obj.add_argument(
+        "-l", "--latent",
+        type=str,
+        default='image_latents.csv',
+        help="Path to CSV containing the latent representation for each image. The 'relative_path' will be used to match against the targe_values.csv"
+    )
+    obj.add_argument(
+        "-o", "--output",
+        default='inferred.csv',
+        type=str,
+        help="File containing the expected and inferred value for each input image (validation + training datasets can be configured)"
+    )
+    obj.add_argument(
+        "-n", "--network",
+        default='bnn_trained.pth',
+        type=str,
+        help="Output path to write the trained Bayesian Neural Network, PyTorch compatible format."
+    )
+
 
 def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
     Console.info("load_dataset called for: ", input_filename)
@@ -130,10 +159,45 @@ def evaluate_regression(regressor,
     return errors_mean, uncert_mean
 
 def main(args=None):
+    parser = argparse.ArgumentParser()
+    add_arguments(parser)
+
+    if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
+        # Show help if no args provided
+        parser.print_help(sys.stderr)
+        sys.exit(2)
+    args = parser.parse_args(args)  # retrieve parsed arguments
+
+    Console.info("Bayesian Neural Network for hi-res inference from low res acoustic priors (LGA-Bathymetry)")
+    # let's check if input files exist
+    if os.path.isfile(args.target):
+        Console.info("Target input file: ", args.target)
+    else:
+        Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
+
+    if os.path.isfile(args.latent):
+        Console.info("Latent input file: ", args.latent)
+    else:
+        Console.error("Latent input file [" + args.latent + "] not found. Please check the provided input path (-l, --latent)")
+    # check for pre-trained network
+    # if output file exists, warn user
+    if os.path.isfile(args.network):
+        Console.warn("Destination trained network file [", args.network, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Destination trained network: ", args.network)
+
+    if os.path.isfile(args.output):
+        Console.warn("Output file [", args.output, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Output file: ", args.output)
+    # it can be "none"
+
     # // TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
     Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
-    dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
-    target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
+    dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
+    target_filename = args.target  # output variable to be predicted, e.g. mean_slope
+    # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
+    # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
     X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = 'mean_slope')    # relative_path is the common key in both tables
@@ -236,7 +300,8 @@ def main(args=None):
             torch.save(regressor.state_dict(), temp_name)
 
     Console.info("Training completed!")
-    torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
+    # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
+    torch.save(regressor.state_dict(), args.network)
 
     export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
     export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
