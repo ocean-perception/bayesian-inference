@@ -48,6 +48,24 @@ def add_arguments(obj):
         type=str,
         help="Output path to write the trained Bayesian Neural Network, PyTorch compatible format."
     )
+    obj.add_argument(
+        "-e", "--epochs",
+        default='50',
+        type=int,
+        help="Define the number of training epochs."
+    )
+    obj.add_argument(
+        "-k", "--key",
+        default='mean_slope',
+        type=str,
+        help="Define the keyword that defines the field to be predicted. It must match the column name in the target file"
+    )
+    obj.add_argument(
+        "-s", "--samples",
+        default='20',
+        type=int,
+        help="Define the number of samples for sample_elbo based posterior estimation"
+    )
 
 
 def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
@@ -99,26 +117,28 @@ class BayesianRegressor(nn.Module):
         super().__init__()
         # simple 2-layer fully connected linear regressor
         #self.linear = nn.Linear(input_dim, output_dim)
-        self.linear1  = nn.Linear(input_dim, 128)
-        self.linear2  = nn.Linear(128, 128)
-        self.linear3  = nn.Linear(128, output_dim)
+        # self.linear1  = nn.Linear(input_dim, 128)
+        # self.linear2  = nn.Linear(128, 128)
+        # self.linear3  = nn.Linear(128, output_dim)
         
-        self.blinear1 = BayesianLinear(input_dim, 128)
+        self.blinear1 = BayesianLinear(input_dim, 256)
         self.elu1     = nn.ELU()
         self.elu2     = nn.ELU()
         self.elu3     = nn.ELU()
-        self.blinear3 = BayesianLinear(128, 128)
+        self.blinear3 = BayesianLinear(256, 256)
         self.blinear4 = BayesianLinear(128, 128)
         self.sigmoid1 = nn.Sigmoid()
-        self.blinear2 = BayesianLinear(128, output_dim)
+        self.sigmoid2 = nn.Sigmoid()
+        self.sigmoid3 = nn.Sigmoid()
+        self.blinear2 = BayesianLinear(256, output_dim)
         
     def forward(self, x):
         x_ = self.blinear1(x)
-        # x_ = self.sigmoid1 (x_)
-        # x_ = self.blinear3(x_)
+        x_ = self.sigmoid1 (x_)
+        x_ = self.blinear3(x_)
         # x_ = self.elu1 (x_)
         # x_ = self.blinear4(x_)
-        x_ = self.elu2 (x_)
+        x_ = self.sigmoid2 (x_)
         x_ = self.blinear2(x_)
         return x_
         # x_ = self.blinear1(x)
@@ -192,6 +212,21 @@ def main(args=None):
         Console.info("Output file: ", args.output)
     # it can be "none"
 
+    if (args.epochs):
+        num_epochs = args.epochs
+    else:
+        num_epochs = 150
+
+    if (args.samples):
+        n_samples = args.samples
+    else:
+        num_epochs = 20
+
+    if (args.key):
+        col_key = args.key
+    else:
+        col_key = 'mean_slope'
+
     # // TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
     Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
     dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
@@ -200,11 +235,12 @@ def main(args=None):
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
-    X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = 'mean_slope')    # relative_path is the common key in both tables
+    
+    X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
     Console.info("Data loaded...")
-    y = y/10    #some rescale    WARNING
+    # y = y/10    #some rescale    WARNING
  
-    n_sample = X.shape[0]
+    # n_sample = X.shape[0]
     n_latents = X.shape[1]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
@@ -235,7 +271,6 @@ def main(args=None):
     dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
 
     iteration = 0
-    num_epochs = 30
     # Training time
     test_hist = []
     uncert_hist = []
@@ -251,7 +286,7 @@ def main(args=None):
             loss = regressor.sample_elbo(inputs=datapoints.to(device),
                             labels=labels.to(device),
                             criterion=criterion,    # MSELoss
-                            sample_nbr=20,
+                            sample_nbr=n_samples,
                             complexity_cost_weight=0.2/X_train.shape[0])  # normalize the complexity cost by the number of input points
             loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
             optimizer.step()
@@ -264,13 +299,13 @@ def main(args=None):
             sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
                                 criterion=criterion,
-                                sample_nbr=20,
+                                sample_nbr=n_samples,
                                 complexity_cost_weight=0.2/X_test.shape[0])
 
             fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
                                 criterion=criterion,
-                                sample_nbr=20,
+                                sample_nbr=n_samples,
                                 complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
 
             test_loss.append(sample_loss.item())
@@ -307,7 +342,8 @@ def main(args=None):
     export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
 
     print ("head", export_df.head())
-    export_df.to_csv("train_report_N" + str(num_epochs) + "_H" + str(n_latents) + ".csv")
+    output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    export_df.to_csv(output_name)
     # export_df.to_csv("bnn_train_report.csv")
     # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
 
@@ -317,7 +353,6 @@ def main(args=None):
     predicted = [] # == y
 
     Console.info("testing predictions...")
-    n_samples = 25
     idx = 0 
     # for x in X_test:
     Xp_ = torch.tensor(X).float()
@@ -349,7 +384,7 @@ def main(args=None):
     # print ("predicted.type", type(predicted))
     # print ("predicted.len", len(predicted))
     # print ("X.len:" , len(X_test))
-    y_list = y_train.squeeze().tolist()
+    # y_list = y_train.squeeze().tolist()
     y_list = y.squeeze().tolist()
     # y_list = y_test.squeeze().tolist()
 
@@ -359,8 +394,11 @@ def main(args=None):
     # predicted.len = X.len (as desired)
     pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
-    pred_df.to_csv("bnn_predictions_N" + str(num_epochs) + "_S" + str(n_samples) + "_H" + str(n_latents) + ".csv")
-    print (pred_df.head())
+
+    output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    # output_name = args.output
+    pred_df.to_csv(output_name)
+    # print (pred_df.head())
 
 if __name__ == '__main__':
     main()
