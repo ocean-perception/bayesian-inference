@@ -15,6 +15,7 @@ from blitz.utils import variational_estimator
 # Import sklearn dataset parsers and samples
 from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 # Helper lirbaries (viz)
 import matplotlib.pyplot as plt
@@ -124,8 +125,8 @@ class BayesianRegressor(nn.Module):
         self.blinear1 = BayesianLinear(input_dim, 64)
         self.elu1     = nn.ELU()
         self.elu2     = nn.ELU()
-        self.elu3     = nn.ELU()
-        self.blinear3 = BayesianLinear(256, 256)
+        # self.elu3     = nn.ELU()
+        self.blinear3 = BayesianLinear(64, 64)
         self.blinear4 = BayesianLinear(64, 64)
         self.sigmoid1 = nn.Sigmoid()
         self.sigmoid2 = nn.Sigmoid()
@@ -134,11 +135,11 @@ class BayesianRegressor(nn.Module):
         
     def forward(self, x):
         x_ = self.blinear1(x)
-        x_ = self.sigmoid1 (x_)
-        # x_ = self.blinear3(x_)
-        # x_ = self.elu1 (x_)
-        x_ = self.blinear4(x_)
-        x_ = self.sigmoid2 (x_)
+        x_ = self.elu2 (x_)
+        x_ = self.blinear3(x_)
+        # x_ = self.sigmoid3 (x_)
+        # x_ = self.blinear4(x_)
+        x_ = self.elu1 (x_)
         x_ = self.blinear2(x_)
         return x_
         # x_ = self.blinear1(x)
@@ -240,25 +241,41 @@ def main(args=None):
     Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
 
-    X = X/10.0
+    #X = X/10.0
     # n_sample = X.shape[0]
     n_latents = X.shape[1]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
-    X_train, X_test, y_train, y_test = train_test_split(X,
-                                                        y,
-                                                        test_size=.25, # 4:1 ratio
+
+    # norm = MinMaxScaler().fit(y)
+    # y_norm = norm.transform(y)      # min max normalization of our input data
+    y_norm = (y - 10.0)/20.0
+
+    norm = MinMaxScaler().fit(X)
+    X_norm = norm.transform(X)      # min max normalization of our input data
+
+    print ("X [min,max]", torch.min(X),"/", torch.max(X))
+    print ("X_norm [min,max]", torch.min(X_norm),"/", torch.max(X_norm))
+    print ("Y [min,max]", torch.min(y),"/", torch.max(y))
+    // print min, max , mean before and after normalization
+
+    X_train, X_test, y_train, y_test = train_test_split(X_norm,
+                                                        y_norm,
+                                                        test_size=.25, # 3:1 ratio
                                                         shuffle = True) 
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
     X_test, y_test = torch.tensor(X_test).float(), torch.tensor(y_test).float()
+
+
 
     y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
     y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
     # sys.exit(1)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-    optimizer = optim.Adam(regressor.parameters(), lr=0.01)
+    # regressor.init
+    optimizer = optim.Adam(regressor.parameters(), lr=0.001) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
@@ -356,7 +373,7 @@ def main(args=None):
     Console.info("testing predictions...")
     idx = 0 
     # for x in X_test:
-    Xp_ = torch.tensor(X).float()
+    Xp_ = torch.tensor(X_norm).float()
 
     for x in Xp_:
         predictions = []
@@ -386,7 +403,7 @@ def main(args=None):
     # print ("predicted.len", len(predicted))
     # print ("X.len:" , len(X_test))
     # y_list = y_train.squeeze().tolist()
-    y_list = y.squeeze().tolist()
+    y_list = y_norm.squeeze().tolist()
     # y_list = y_test.squeeze().tolist()
 
     # y_list = [element.item() for element in y_test.flatten()]
