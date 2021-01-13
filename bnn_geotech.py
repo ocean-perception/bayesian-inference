@@ -121,23 +121,23 @@ class BayesianRegressor(nn.Module):
         # self.linear2  = nn.Linear(128, 128)
         # self.linear3  = nn.Linear(128, output_dim)
         
-        self.blinear1 = BayesianLinear(input_dim, 256)
+        self.blinear1 = BayesianLinear(input_dim, 64)
         self.elu1     = nn.ELU()
         self.elu2     = nn.ELU()
         self.elu3     = nn.ELU()
         self.blinear3 = BayesianLinear(256, 256)
-        self.blinear4 = BayesianLinear(128, 128)
+        self.blinear4 = BayesianLinear(64, 64)
         self.sigmoid1 = nn.Sigmoid()
         self.sigmoid2 = nn.Sigmoid()
         self.sigmoid3 = nn.Sigmoid()
-        self.blinear2 = BayesianLinear(256, output_dim)
+        self.blinear2 = BayesianLinear(64, output_dim)
         
     def forward(self, x):
         x_ = self.blinear1(x)
         x_ = self.sigmoid1 (x_)
-        x_ = self.blinear3(x_)
+        # x_ = self.blinear3(x_)
         # x_ = self.elu1 (x_)
-        # x_ = self.blinear4(x_)
+        x_ = self.blinear4(x_)
         x_ = self.sigmoid2 (x_)
         x_ = self.blinear2(x_)
         return x_
@@ -239,7 +239,8 @@ def main(args=None):
     X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
     Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
- 
+
+    X = X/10.0
     # n_sample = X.shape[0]
     n_latents = X.shape[1]
     # X = StandardScaler().fit_transform(X)
