@@ -131,16 +131,22 @@ class BayesianRegressor(nn.Module):
         self.sigmoid1 = nn.Sigmoid()
         self.sigmoid2 = nn.Sigmoid()
         self.sigmoid3 = nn.Sigmoid()
-        self.blinear2 = BayesianLinear(64, output_dim)
-        
+        self.log = nn.LogSigmoid()
+        self.silu = nn.SiLU()
+        self.blinear2 = BayesianLinear(64, 64, bias=True)
+        self.linear1 = nn.Linear(64, output_dim, bias=True)
+
+
     def forward(self, x):
         x_ = self.blinear1(x)
         x_ = self.elu2 (x_)
         x_ = self.blinear3(x_)
-        # x_ = self.sigmoid3 (x_)
-        # x_ = self.blinear4(x_)
         x_ = self.elu1 (x_)
+        x_ = self.blinear4(x_)
+        x_ = self.silu (x_)
         x_ = self.blinear2(x_)
+        x_ = self.sigmoid2(x_)
+        x_ = self.linear1(x_)
         return x_
         # x_ = self.blinear1(x)
         # x_ = self.blinear3(x_)
@@ -249,15 +255,14 @@ def main(args=None):
 
     # norm = MinMaxScaler().fit(y)
     # y_norm = norm.transform(y)      # min max normalization of our input data
-    y_norm = (y - 10.0)/20.0
+    y_norm = (y - 5.0)/30.0
 
     norm = MinMaxScaler().fit(X)
     X_norm = norm.transform(X)      # min max normalization of our input data
 
-    print ("X [min,max]", torch.min(X),"/", torch.max(X))
-    print ("X_norm [min,max]", torch.min(X_norm),"/", torch.max(X_norm))
-    print ("Y [min,max]", torch.min(y),"/", torch.max(y))
-    // print min, max , mean before and after normalization
+    # print ("X [min,max]", np.amin(X),"/", np.amax(X))
+    # print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
+    # print ("Y [min,max]", np.amin(y),"/", np.amax(y))
 
     X_train, X_test, y_train, y_test = train_test_split(X_norm,
                                                         y_norm,
@@ -275,7 +280,7 @@ def main(args=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.001) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.01) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
@@ -296,6 +301,10 @@ def main(args=None):
     fit_hist = []
     ufit_hist = []
 
+    elbo_kld = 1.0
+
+    print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
+
     for epoch in range(num_epochs):
         train_loss = []
         for i, (datapoints, labels) in enumerate(dataloader_train):
@@ -305,7 +314,7 @@ def main(args=None):
                             labels=labels.to(device),
                             criterion=criterion,    # MSELoss
                             sample_nbr=n_samples,
-                            complexity_cost_weight=0.2/X_train.shape[0])  # normalize the complexity cost by the number of input points
+                            complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
             loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
             optimizer.step()
             train_loss.append(loss.item())
@@ -318,7 +327,7 @@ def main(args=None):
                                 labels=test_labels.to(device),
                                 criterion=criterion,
                                 sample_nbr=n_samples,
-                                complexity_cost_weight=0.2/X_test.shape[0])
+                                complexity_cost_weight=elbo_kld/X_test.shape[0])
 
             fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
@@ -336,7 +345,7 @@ def main(args=None):
         mean_fit_loss = statistics.mean(fit_loss)
         stdv_fit_loss = statistics.stdev(fit_loss)
 
-        Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Validation loss: {:.4f}".format(mean_test_loss) )
+        Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Valid. loss: {:.4f}".format(mean_test_loss) + " Fit loss: {:.4f}  ***".format(mean_fit_loss) )
         Console.progress(epoch, num_epochs)
 
         test_hist.append(mean_test_loss)
@@ -360,7 +369,7 @@ def main(args=None):
     export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
 
     print ("head", export_df.head())
-    output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    output_name = "bnn_training_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
     export_df.to_csv(output_name)
     # export_df.to_csv("bnn_train_report.csv")
     # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
