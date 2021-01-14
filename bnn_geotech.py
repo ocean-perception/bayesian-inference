@@ -87,33 +87,36 @@ class BayesianRegressor(nn.Module):
         # self.linear2  = nn.Linear(128, 128)
         # self.linear3  = nn.Linear(128, output_dim)
         
-        self.blinear1 = BayesianLinear(input_dim, 64)
-        self.blinear2 = BayesianLinear(64, 64)
-        self.blinear3 = BayesianLinear(64, output_dim)
+        self.blinear1 = BayesianLinear(input_dim, 1024)
+        self.blinear2 = BayesianLinear(1024, 1024)
+        self.blinear3 = BayesianLinear(1024, output_dim)
         # self.elu1     = nn.ELU()
         # self.elu2     = nn.ELU()
         # # self.elu3     = nn.ELU()
         # self.blinear3 = BayesianLinear(64, 64)
         # self.blinear4 = BayesianLinear(64, 64)
-        # self.sigmoid1 = nn.Sigmoid()
+        self.sigmoid1 = nn.Sigmoid()
         # self.sigmoid2 = nn.Sigmoid()
         # self.sigmoid3 = nn.Sigmoid()
         # self.log = nn.LogSigmoid()
         # self.silu = nn.SiLU()
         # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear1 = nn.Linear(input_dim, 64, bias=True)
-        self.linear2 = nn.Linear(64, 64, bias=True)
-        self.linear3 = nn.Linear(64, output_dim, bias=True)
+        self.linear1 = nn.Linear(input_dim, 1024, bias=True)
+        self.linear2 = nn.Linear(1024, 1024, bias=True)
+        self.linear3 = nn.Linear(1024, output_dim, bias=True)
+        self.lsig1   = nn.Sigmoid()
 
 
     def forward(self, x):
         # x_ = self.linear1(x)
+        # x_ = self.lsig1(x_)
         # x_ = self.linear2(x_)
         # x_ = self.linear3(x_)
         x_ = self.blinear1(x)
+        x_ = self.sigmoid1(x_)
         x_ = self.blinear2(x_)
-        x_ = self.blinear3(x_)
-        # x_ = self.blinear2(x_)
+        x_ = self.linear3(x_)
+        # x_ = self.linear1(x_)
         return x_
         # x_ = self.blinear1(x)
         # x_ = self.blinear3(x_)
@@ -240,7 +243,7 @@ def main(args=None):
 
     X_train, X_test, y_train, y_test = train_test_split(X_norm,
                                                         y_norm,
-                                                        test_size=.5, # 3:1 ratio
+                                                        test_size=.25, # 3:1 ratio
                                                         shuffle = True) 
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
@@ -312,6 +315,7 @@ def main(args=None):
 
         mean_test_loss = statistics.mean(test_loss)
         stdv_test_loss = statistics.stdev(test_loss)
+
         mean_train_loss = statistics.mean(train_loss)
 
         mean_fit_loss = statistics.mean(fit_loss)
@@ -393,9 +397,11 @@ def main(args=None):
 
     # print ("y_list.len", len(y_list))
     # predicted.len = X.len (as desired)
-    pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
+    # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
+    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
-    pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
+    # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
+    pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
     output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
     # output_name = args.output
