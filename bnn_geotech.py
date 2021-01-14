@@ -76,51 +76,6 @@ def add_arguments(obj):
     )
 
 
-def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
-    Console.info("load_dataset called for: ", input_filename)
-
-    df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
-    # 1) Data validation, remove invalid entries (e.g. NaN)
-    print (df.head())
-    df = df.dropna()
-    Console.info("Total valid entries: ", len(df))
-    # df.reset)index(drop = True) # not sure if we prefer to reset index, as column index was externallly defined
-
-    # 2) Let's determine number of latent-space dimensions
-    # The number of 'features' are defined by those columns labeled as 'relative_path'xxx, where xx is 0-based index for the h-latent space vector
-    # Example: (8 dimensions: h0, h1, ... , h7)
-    # relative_path northing [m] easting [m] ... latitude [deg] longitude [deg] recon_loss h0 h1 h2 h3 h4 h5 h6 h7
-    n_latents = len(df.filter(regex=latent_name_prefix).columns)
-    Console.info ("Latent dimensions: ", n_latents)
-
-    # 3) Key matching
-    # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
-    # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
-    # let's use regex 
-    df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-    df['filename_base'] = df['filename_base'].str.rstrip('_')
-
-
-    tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
-    tdf = tdf.dropna()
-    # target_key='mean_rugosity'
-    tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-    tdf['filename_base'] = tdf['filename_base'].str.rstrip('_r002')
-
-    # print (tdf.head())    
-    Console.info("Target entries: ", len(tdf))
-    merged_df = pd.merge(df, tdf, how='right', on='filename_base')
-    merged_df = merged_df.dropna()
-
-    latent_df = merged_df.filter(regex=latent_name_prefix)
-    Console.info ("Latent size: ", latent_df.shape)
-    target_df = merged_df[target_key]
-
-    np_latent = latent_df.to_numpy(dtype='float')
-    np_target = target_df.to_numpy(dtype='float')
-    # input-output datasets are linked using the key provided by matching_key
-    return np_latent, np_target, merged_df['filename_base']
-
 
 @variational_estimator
 class BayesianRegressor(nn.Module):
@@ -133,6 +88,8 @@ class BayesianRegressor(nn.Module):
         # self.linear3  = nn.Linear(128, output_dim)
         
         self.blinear1 = BayesianLinear(input_dim, 64)
+        self.blinear2 = BayesianLinear(64, 64)
+        self.blinear3 = BayesianLinear(64, output_dim)
         # self.elu1     = nn.ELU()
         # self.elu2     = nn.ELU()
         # # self.elu3     = nn.ELU()
@@ -143,12 +100,19 @@ class BayesianRegressor(nn.Module):
         # self.sigmoid3 = nn.Sigmoid()
         # self.log = nn.LogSigmoid()
         # self.silu = nn.SiLU()
-        self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear1 = nn.Linear(input_dim, output_dim, bias=True)
+        # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
+        self.linear1 = nn.Linear(input_dim, 64, bias=True)
+        self.linear2 = nn.Linear(64, 64, bias=True)
+        self.linear3 = nn.Linear(64, output_dim, bias=True)
 
 
     def forward(self, x):
-        x_ = self.linear1(x)
+        # x_ = self.linear1(x)
+        # x_ = self.linear2(x_)
+        # x_ = self.linear3(x_)
+        x_ = self.blinear1(x)
+        x_ = self.blinear2(x_)
+        x_ = self.blinear3(x_)
         # x_ = self.blinear2(x_)
         return x_
         # x_ = self.blinear1(x)
@@ -250,10 +214,8 @@ def main(args=None):
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
-    # WARNING matching_key modified (relative_path as default)    
-#    X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
-
-    X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
+    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
+    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
 
     Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
@@ -278,7 +240,7 @@ def main(args=None):
 
     X_train, X_test, y_train, y_test = train_test_split(X_norm,
                                                         y_norm,
-                                                        test_size=.25, # 3:1 ratio
+                                                        test_size=.5, # 3:1 ratio
                                                         shuffle = True) 
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
