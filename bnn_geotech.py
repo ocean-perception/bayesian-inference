@@ -21,6 +21,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import matplotlib
 from tools.console import Console
+from tools.dataloader import CustomDataloader
 import statistics
 import math
 
@@ -56,6 +57,12 @@ def add_arguments(obj):
         help="Define the number of training epochs."
     )
     obj.add_argument(
+        "-x", "--xinput",
+        default='x_',
+        type=str,
+        help="Define the input vector keyword"
+    )
+    obj.add_argument(
         "-k", "--key",
         default='mean_slope',
         type=str,
@@ -72,8 +79,9 @@ def add_arguments(obj):
 def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
     Console.info("load_dataset called for: ", input_filename)
 
-    df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
+    df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
     # 1) Data validation, remove invalid entries (e.g. NaN)
+    print (df.head())
     df = df.dropna()
     Console.info("Total valid entries: ", len(df))
     # df.reset)index(drop = True) # not sure if we prefer to reset index, as column index was externallly defined
@@ -91,7 +99,7 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     # let's use regex 
     df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
     df['filename_base'] = df['filename_base'].str.rstrip('_')
-    # print (df['filename_base'].head())
+
 
     tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
     tdf = tdf.dropna()
@@ -112,6 +120,8 @@ def load_dataset (input_filename, target_filename, matching_key='relative_path',
     np_target = target_df.to_numpy(dtype='float')
     # input-output datasets are linked using the key provided by matching_key
     return np_latent, np_target, merged_df['filename_base']
+
+
 @variational_estimator
 class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -123,30 +133,23 @@ class BayesianRegressor(nn.Module):
         # self.linear3  = nn.Linear(128, output_dim)
         
         self.blinear1 = BayesianLinear(input_dim, 64)
-        self.elu1     = nn.ELU()
-        self.elu2     = nn.ELU()
-        # self.elu3     = nn.ELU()
-        self.blinear3 = BayesianLinear(64, 64)
-        self.blinear4 = BayesianLinear(64, 64)
-        self.sigmoid1 = nn.Sigmoid()
-        self.sigmoid2 = nn.Sigmoid()
-        self.sigmoid3 = nn.Sigmoid()
-        self.log = nn.LogSigmoid()
-        self.silu = nn.SiLU()
-        self.blinear2 = BayesianLinear(64, 64, bias=True)
-        self.linear1 = nn.Linear(64, output_dim, bias=True)
+        # self.elu1     = nn.ELU()
+        # self.elu2     = nn.ELU()
+        # # self.elu3     = nn.ELU()
+        # self.blinear3 = BayesianLinear(64, 64)
+        # self.blinear4 = BayesianLinear(64, 64)
+        # self.sigmoid1 = nn.Sigmoid()
+        # self.sigmoid2 = nn.Sigmoid()
+        # self.sigmoid3 = nn.Sigmoid()
+        # self.log = nn.LogSigmoid()
+        # self.silu = nn.SiLU()
+        self.blinear2 = BayesianLinear(64, output_dim, bias=True)
+        self.linear1 = nn.Linear(input_dim, output_dim, bias=True)
 
 
     def forward(self, x):
-        x_ = self.blinear1(x)
-        x_ = self.elu2 (x_)
-        x_ = self.blinear3(x_)
-        x_ = self.elu1 (x_)
-        x_ = self.blinear4(x_)
-        x_ = self.silu (x_)
-        x_ = self.blinear2(x_)
-        x_ = self.sigmoid2(x_)
-        x_ = self.linear1(x_)
+        x_ = self.linear1(x)
+        # x_ = self.blinear2(x_)
         return x_
         # x_ = self.blinear1(x)
         # x_ = self.blinear3(x_)
@@ -234,6 +237,11 @@ def main(args=None):
     else:
         col_key = 'mean_slope'
 
+    if (args.xinput):
+        input_key = args.key
+    else:
+        input_key = 'latent_'
+
     # // TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
     Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
     dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
@@ -242,8 +250,11 @@ def main(args=None):
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
-    
-    X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
+    # WARNING matching_key modified (relative_path as default)    
+#    X, y, index_df = load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
+
+    X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
+
     Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
 
@@ -255,14 +266,15 @@ def main(args=None):
 
     # norm = MinMaxScaler().fit(y)
     # y_norm = norm.transform(y)      # min max normalization of our input data
-    y_norm = (y - 5.0)/30.0
+    # y_norm = (y - 5.0)/30.0
+    y_norm = y
 
     norm = MinMaxScaler().fit(X)
     X_norm = norm.transform(X)      # min max normalization of our input data
 
-    # print ("X [min,max]", np.amin(X),"/", np.amax(X))
-    # print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
-    # print ("Y [min,max]", np.amin(y),"/", np.amax(y))
+    print ("X [min,max]", np.amin(X),"/", np.amax(X))
+    print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
+    print ("Y [min,max]", np.amin(y),"/", np.amax(y))
 
     X_train, X_test, y_train, y_test = train_test_split(X_norm,
                                                         y_norm,
@@ -272,15 +284,13 @@ def main(args=None):
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
     X_test, y_test = torch.tensor(X_test).float(), torch.tensor(y_test).float()
 
-
-
     y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
     y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
     # sys.exit(1)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.01) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.002) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
@@ -357,9 +367,9 @@ def main(args=None):
 
         # train_hist.append(statistics.mean(train_loss))
 
-        if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
-            temp_name = "bnn_model_" + str(epoch) + ".pth"
-            torch.save(regressor.state_dict(), temp_name)
+        # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
+        #     temp_name = "bnn_model_" + str(epoch) + ".pth"
+        #     torch.save(regressor.state_dict(), temp_name)
 
     Console.info("Training completed!")
     # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
@@ -417,10 +427,13 @@ def main(args=None):
 
     # y_list = [element.item() for element in y_test.flatten()]
 
+    xl = np.squeeze(X_norm).tolist()
+
     # print ("y_list.len", len(y_list))
     # predicted.len = X.len (as desired)
-    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
-    pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
+    pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
+    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
+    pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
 
     output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
     # output_name = args.output
