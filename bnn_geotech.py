@@ -87,9 +87,9 @@ class BayesianRegressor(nn.Module):
         # self.linear2  = nn.Linear(128, 128)
         # self.linear3  = nn.Linear(128, output_dim)
         
-        self.blinear1 = BayesianLinear(input_dim, 1024)
-        self.blinear2 = BayesianLinear(1024, 1024)
-        self.blinear3 = BayesianLinear(1024, output_dim)
+        self.blinear1 = BayesianLinear(input_dim, 64)
+        self.blinear2 = BayesianLinear(256, 256)
+        self.blinear3 = BayesianLinear(256, output_dim)
         # self.elu1     = nn.ELU()
         # self.elu2     = nn.ELU()
         # # self.elu3     = nn.ELU()
@@ -101,9 +101,9 @@ class BayesianRegressor(nn.Module):
         # self.log = nn.LogSigmoid()
         # self.silu = nn.SiLU()
         # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear1 = nn.Linear(input_dim, 1024, bias=True)
-        self.linear2 = nn.Linear(1024, 1024, bias=True)
-        self.linear3 = nn.Linear(1024, output_dim, bias=True)
+        self.linear1 = nn.Linear(input_dim, 256, bias=True)
+        self.linear2 = nn.Linear(256, 256, bias=True)
+        self.linear3 = nn.Linear(256, output_dim, bias=True)
         self.lsig1   = nn.Sigmoid()
 
 
@@ -113,8 +113,8 @@ class BayesianRegressor(nn.Module):
         # x_ = self.linear2(x_)
         # x_ = self.linear3(x_)
         x_ = self.blinear1(x)
+        x_ = self.linear2(x_)
         x_ = self.sigmoid1(x_)
-        x_ = self.blinear2(x_)
         x_ = self.linear3(x_)
         # x_ = self.linear1(x_)
         return x_
@@ -197,7 +197,7 @@ def main(args=None):
     if (args.samples):
         n_samples = args.samples
     else:
-        num_epochs = 20
+        n_samples = 20
 
     if (args.key):
         col_key = args.key
@@ -234,8 +234,9 @@ def main(args=None):
     # y_norm = (y - 5.0)/30.0
     y_norm = y
 
-    norm = MinMaxScaler().fit(X)
-    X_norm = norm.transform(X)      # min max normalization of our input data
+    # norm = MinMaxScaler().fit(X)
+    # X_norm = norm.transform(X)      # min max normalization of our input data
+    X_norm = X
 
     print ("X [min,max]", np.amin(X),"/", np.amax(X))
     print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
