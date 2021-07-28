@@ -87,7 +87,7 @@ class BayesianRegressor(nn.Module):
         # self.linear2  = nn.Linear(128, 128)
         # self.linear3  = nn.Linear(128, output_dim)
         
-        self.blinear1 = BayesianLinear(input_dim, 64)
+        self.blinear1 = BayesianLinear(input_dim, 256)
         self.blinear2 = BayesianLinear(256, 256)
         self.blinear3 = BayesianLinear(256, output_dim)
         # self.elu1     = nn.ELU()
