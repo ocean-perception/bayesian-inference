@@ -37,15 +37,17 @@ class CustomDataloader:
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
         # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
         # let's use regex 
-        df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-        df['filename_base'] = df['filename_base'].str.rstrip('_')
+        df['filename_base'] = df[matching_key]# I think it is possible to do it in a single regex
+        # df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
+        # df['filename_base'] = df['filename_base'].str.rstrip('_')
 
 
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
         tdf = tdf.dropna()
         # target_key='mean_rugosity'
-        tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-        tdf['filename_base'] = tdf['filename_base'].str.rstrip('_r002')
+        tdf['filename_base'] = tdf[matching_key]   # I think it is possible to do it in a single regex
+        # tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
+        # tdf['filename_base'] = tdf['filename_base'].str.rstrip('_r002')
 
         # print (tdf.head())    
         Console.info("Target entries: ", len(tdf))
