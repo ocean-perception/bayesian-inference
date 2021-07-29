@@ -82,40 +82,51 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         # simple 2-layer fully connected linear regressor
-        #self.linear = nn.Linear(input_dim, output_dim)
+        # self.linear = nn.Linear(input_dim, output_dim)
         # self.linear1  = nn.Linear(input_dim, 128)
         # self.linear2  = nn.Linear(128, 128)
         # self.linear3  = nn.Linear(128, output_dim)
         
-        self.blinear1 = BayesianLinear(input_dim, 256)
+        self.blinear1 = BayesianLinear(256, 256, bias=True)
+
         self.blinear2 = BayesianLinear(256, 256)
         self.blinear3 = BayesianLinear(256, output_dim)
-        # self.elu1     = nn.ELU()
-        # self.elu2     = nn.ELU()
+
+        self.elu1     = nn.ELU()
+        self.elu2     = nn.ELU()
         # # self.elu3     = nn.ELU()
         # self.blinear3 = BayesianLinear(64, 64)
         # self.blinear4 = BayesianLinear(64, 64)
         self.sigmoid1 = nn.Sigmoid()
-        # self.sigmoid2 = nn.Sigmoid()
+        self.sigmoid2 = nn.Sigmoid()
         # self.sigmoid3 = nn.Sigmoid()
         # self.log = nn.LogSigmoid()
-        # self.silu = nn.SiLU()
+        self.silu = nn.SiLU()
         # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear1 = nn.Linear(input_dim, 256, bias=True)
-        self.linear2 = nn.Linear(256, 256, bias=True)
-        self.linear3 = nn.Linear(256, output_dim, bias=True)
+        self.linear_input  = nn.Linear(input_dim, 256, bias=True)
+        self.linear1       = nn.Linear(256, 256, bias=True)
+        self.linear2       = nn.Linear(256, 128, bias=True)
+        self.linear3       = nn.Linear(128, 128, bias=True)
+        self.linear4       = nn.Linear(128, 64, bias=True)
+        self.linear_output = nn.Linear(64, output_dim, bias=True)
         self.lsig1   = nn.Sigmoid()
 
 
     def forward(self, x):
-        # x_ = self.linear1(x)
-        # x_ = self.lsig1(x_)
-        # x_ = self.linear2(x_)
-        # x_ = self.linear3(x_)
-        x_ = self.blinear1(x)
+        x_ = self.linear_input(x)
+        x_ = self.silu(x_)
+        x_ = self.blinear1(x_)
+        # x_ = self.elu1(x_)
         x_ = self.linear2(x_)
-        x_ = self.sigmoid1(x_)
-        x_ = self.linear3(x_)
+        x_ = self.sigmoid2(x_)
+        x_ = self.linear4(x_)
+        x_ = self.linear_output(x_)
+
+        # x_ = self.lsig1(x_)
+        # x_ = self.blinear1(x)
+        # x_ = self.linear2(x_)
+        # x_ = self.sigmoid1(x_)
+        # x_ = self.linear3(x_)
         # x_ = self.linear1(x_)
         return x_
         # x_ = self.blinear1(x)
@@ -212,7 +223,7 @@ def main(args=None):
     # // TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
     Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
     dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
-    target_filename = args.target  # output variable to be predicted, e.g. mean_slope
+    target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
     # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
@@ -223,15 +234,15 @@ def main(args=None):
     Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
 
-    #X = X/10.0
+    X = X/10.0  # for large latents
     # n_sample = X.shape[0]
     n_latents = X.shape[1]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
 
     # norm = MinMaxScaler().fit(y)
-    # y_norm = norm.transform(y)      # min max normalization of our input data
-    # y_norm = (y - 5.0)/30.0
+    # y_norm = norm.transform(y)      # min max normalization of our output data
+    # y_norm = (y - 5.0)/30.0          # for slope maps
     y_norm = y
 
     # norm = MinMaxScaler().fit(X)
@@ -245,10 +256,10 @@ def main(args=None):
     X_train, X_test, y_train, y_test = train_test_split(X_norm,
                                                         y_norm,
                                                         test_size=.25, # 3:1 ratio
-                                                        shuffle = True) 
+                                                        shuffle = False) 
 
     X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
-    X_test, y_test = torch.tensor(X_test).float(), torch.tensor(y_test).float()
+    X_test, y_test   = torch.tensor(X_test).float(),  torch.tensor(y_test).float()
 
     y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
     y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
