@@ -53,7 +53,7 @@ def add_arguments(obj):
     )
     obj.add_argument(
         "-k", "--key",
-        default='mean_slope',
+        default='measurability',
         type=str,
         help="Define the keyword that defines the field to be predicted. It must match the column name in the target file"
     )
@@ -204,7 +204,7 @@ def main(args=None):
     else:
         input_key = 'latent_'   # default expected from LGA based pipeline 
 
-    Console.info("Loading altent input [", args.latent ,"]")
+    Console.info("Loading latent input [", args.latent ,"]")
     np_latent, n_latents, df = PredictiveEngine.loadData(args.latent, latent_name_prefix= 'latent_')
 
     Console.info("Loading pretrained network [", args.network ,"]")
@@ -213,10 +213,23 @@ def main(args=None):
     regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
     regressor.eval()    # switch to inference mode (set dropout layers)
    
-    print("Model's state_dict:")
-    for param_tensor in regressor.state_dict():
-        print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
-    return -1
+    # print("Model's state_dict:")
+    # for param_tensor in regressor.state_dict():
+    #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
+
+    # Apply any pre-existing scaling factor to the input
+    X_norm = np_latent/10.0  # for large latents, input to the network
+    print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
+
+    # Then, check the dataframe which should contain the same ordered rows from the latent space (see final step of training/validation)
+    # Console.info("testing predictions...")
+    idx = 0 
+    Xp_ = torch.tensor(X_norm).float()  # convert normalized intput vector into tensor
+
+########################################################################
+########################################################################
+########################################################################
+########################################################################
 
     # iteration = 0
     # # Training time
@@ -226,140 +239,60 @@ def main(args=None):
     # fit_hist = []
     # ufit_hist = []
     # elbo_kld = 1.0
-    # print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
-
-    # check the dimension of the input layer of the pretrained network
-    # it must match the input latent space (from args.latent)
-
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-    # TODO: Match any preexisting normalization for the input, for consistent results
-    # TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
-    # Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
-    # dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
-    # target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
-    # # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
-    # # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
-    # Console.info("Loading dataset: " + dataset_filename)
-
-    # X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
-    # # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
-
-    # Console.info("Data loaded...")
-    # # y = y/10    #some rescale    WARNING
-
-    # X = X/10.0  # for large latents
-    # # n_sample = X.shape[0]
-    # n_latents = X.shape[1]
-    # # X = StandardScaler().fit_transform(X)
-    # # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
-    # # norm = MinMaxScaler().fit(y)
-    # # y_norm = norm.transform(y)      # min max normalization of our output data
-    # # y_norm = (y - 5.0)/30.0          # for slope maps
-    # y_norm = y
-    # # norm = MinMaxScaler().fit(X)
-    # # X_norm = norm.transform(X)      # min max normalization of our input data
-    # X_norm = X
-
-    # print ("X [min,max]", np.amin(X),"/", np.amax(X))
-    # print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
-    # print ("Y [min,max]", np.amin(y),"/", np.amax(y))
-
-    # X_train, X_test, y_train, y_test = train_test_split(X_norm,
-    #                                                     y_norm,
-    #                                                     test_size=.25, # 3:1 ratio
-    #                                                     shuffle = False) 
-
-    # X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
-    # X_test, y_test   = torch.tensor(X_test).float(),  torch.tensor(y_test).float()
-
-    # y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
-    # y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
-    # # sys.exit(1)
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-    # # regressor.init
-    # optimizer = optim.Adam(regressor.parameters(), lr=0.002) # learning rate
-    # criterion = torch.nn.MSELoss()
-
-    # # print("Model's state_dict:")
-    # # for param_tensor in regressor.state_dict():
-    # #     print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
-
-    # ds_train = torch.utils.data.TensorDataset(X_train, y_train)
-    # dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
-
-    # ds_test = torch.utils.data.TensorDataset(X_test, y_test)
-    # dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
-
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-    # Then, check the dataframe which should contain the same ordered rows from the latent space (see final step of training/validation)
-    # Console.info("testing predictions...")
-    # idx = 0 
-    # # for x in X_test:
-    # Xp_ = torch.tensor(X_norm).float()
 
     # # Once trained, we start inferring
-    # expected = []
-    # uncertainty = []
-    # predicted = [] # == y
+    expected = []
+    uncertainty = []
+    predicted = [] # == y
 
-    # for x in Xp_:
-    #     predictions = []
-    #     for n in range(n_samples):
-    #         p = regressor(x.to(device)).item()
-    #         # print ("p.type", type(p)) ----> float
-    #         # print ("p.len", len(p))
-    #         predictions.append(p) #1D output, retieve single item
+    for x in Xp_:
+        predictions = []
+        for n in range(n_samples):
+            p = regressor(x.to(device)).item()
+            # print ("p.type", type(p)) ----> float
+            # print ("p.len", len(p))
+            predictions.append(p) #1D output, retieve single item
 
-    #     # print ("pred.type", type(predictions))
-    #     # print ("pred.len", len(predictions))    ---> 10 (n_samples)
+        # print ("pred.type", type(predictions))
+        # print ("pred.len", len(predictions))    ---> 10 (n_samples)
 
-    #     p_mean = statistics.mean(predictions)
-    #     p_stdv = statistics.stdev(predictions)
-    #     idx = idx + 1
+        p_mean = statistics.mean(predictions)
+        p_stdv = statistics.stdev(predictions)
+        idx = idx + 1
+        # print ("p_mean", type(p_mean))  --> float
 
-    #     # print ("p_mean", type(p_mean))  --> float
+        predicted.append(p_mean)
+        uncertainty.append(p_stdv)
+        Console.progress(idx, len(Xp_))
 
-    #     predicted.append(p_mean)
-    #     uncertainty.append(p_stdv)
 
-    #     Console.progress(idx, len(Xp_))
 ########################################################################
 ########################################################################
 ########################################################################
 ########################################################################
-    # # print ("predicted:" , predicted)
-    # # print ("predicted.type", type(predicted))
-    # # print ("predicted.len", len(predicted))
-    # # print ("X.len:" , len(X_test))
-    # # y_list = y_train.squeeze().tolist()
-    # y_list = y_norm.squeeze().tolist()
-    # # y_list = y_test.squeeze().tolist()
+    print ("Total predicted rows: ", len(predicted))
 
     # # y_list = [element.item() for element in y_test.flatten()]
-
     # xl = np.squeeze(X_norm).tolist()
 
-    # # print ("y_list.len", len(y_list))
     # # predicted.len = X.len (as desired)
     # # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
-    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
-    # # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
-    # # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
+    pred_df  = df.copy()    # make a copy, then we append the results
+    pred_df[args.key] = predicted    
+    pred_df["uncertainty"] = uncertainty    
+    new_cols = pred_df.columns.values
+    new_cols[0]="ID"
+    # pred_df.columns = new_cols   # we rename the name of the column [0], which has empty
+    # pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     # pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
     # output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    # # output_name = args.output
-    # pred_df.to_csv(output_name)
-    # print (pred_df.head())
-
-    Console.warn("End of prediction")
+    print (pred_df.head())
+    output_name = args.output
+    Console.info("Exporting predictions to:", output_name)
+    pred_df.to_csv(output_name)
+    Console.warn("End of tasks")
+    return 0
 
 ########################################################################
 ########################################################################

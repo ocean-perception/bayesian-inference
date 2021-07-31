@@ -21,7 +21,7 @@ class PredictiveEngine:
 
         df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
         # 1) Data validation, remove invalid entries (e.g. NaN)
-        print (df.head())
+        # print (df.head())
         df = df.dropna()
         Console.info("Total valid entries: ", len(df))
         # 2) Let's determine number of latent-space dimensions
