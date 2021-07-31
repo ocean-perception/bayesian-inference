@@ -16,7 +16,7 @@ class PredictiveEngine:
         self.name = " '"  + name + "'" if name else ''
 
 
-    def predict (input_filename, pretrained_network, target_key ='mean_slope', latent_name_prefix= 'latent_'):
+    def loadData (input_filename, latent_name_prefix= 'latent_'):
         Console.info("PredictiveEngine.predict called for: ", input_filename)
 
         df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
@@ -31,25 +31,11 @@ class PredictiveEngine:
         n_latents = len(df.filter(regex=latent_name_prefix).columns)
         Console.info ("Latent dimensions: ", n_latents)
 
-        # 3) Key matching
-        # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
-        # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
-        # let's use regex 
-        # df['filename_base'] = df[matching_key]# I think it is possible to do it in a single regex
-        # df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-        # df['filename_base'] = df['filename_base'].str.rstrip('_')
-
         latent_df = df.filter(regex=latent_name_prefix)
         Console.info ("Latent size: ", latent_df.shape)
 
         np_latent = latent_df.to_numpy(dtype='float')
-        # np_target = target_df.to_numpy(dtype='float')
-        # np_uuid   = df[matching_key].to_numpy()
-        # input-output datasets are linked using the key provided by matching_key
-        # return np_latent, np_target, np_uuid
-        # input-output datasets are linked using the key provided by matching_key
         return np_latent, n_latents, df
-
 
 
     def __enter__(self):

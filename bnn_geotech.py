@@ -321,6 +321,7 @@ def main(args=None):
     elbo_kld = 1.0
 
     print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
+    regressor.train()   # set to training mode, just in case
 
     for epoch in range(num_epochs):
         train_loss = []
@@ -402,6 +403,8 @@ def main(args=None):
     # for x in X_test:
     Xp_ = torch.tensor(X_norm).float()
 
+    regressor.eval() # we need to set eval mode before running inference
+                     # this will set dropout and batch normalization to evaluation mode
     for x in Xp_:
         predictions = []
         for n in range(n_samples):

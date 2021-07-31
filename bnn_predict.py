@@ -27,20 +27,6 @@ import statistics
 import math
 
 def add_arguments(obj):
-
-
-    obj.add_argument(
-        "-p", "--predict",
-        type=str,
-        help="Enables predicting mode by defining a pretrained network. The input latent CSV list will be used for inference"
-    )
-
-    obj.add_argument(
-        "-t", "--target",
-        type=str,
-        default='target_values.csv',
-        help="Path to CSV file containing a list of images ('relative_path') and the measured ground truth value we wan to predict (e.g. 'mean_slope)"
-    )
     obj.add_argument(
         "-l", "--latent",
         type=str,
@@ -60,12 +46,6 @@ def add_arguments(obj):
         help="Output path to write the trained Bayesian Neural Network, PyTorch compatible format."
     )
     obj.add_argument(
-        "-e", "--epochs",
-        default='50',
-        type=int,
-        help="Define the number of training epochs."
-    )
-    obj.add_argument(
         "-x", "--xinput",
         default='x_',
         type=str,
@@ -83,7 +63,6 @@ def add_arguments(obj):
         type=int,
         help="Define the number of samples for sample_elbo based posterior estimation"
     )
-
 
 
 @variational_estimator
@@ -187,49 +166,33 @@ def main(args=None):
     args = parser.parse_args(args)  # retrieve parsed arguments
     Console.info("Bayesian Neural Network for hi-res inference from low res acoustic priors (LGA-Bathymetry)")
 
-    pretrained_network = ""
-    # Let's check if inference mode (predict) has been enabled
-    if (args.predict):
-        input_predictor = args.predict
-        Console.info("Prediction mode enabled.")
+    # we are in training mode
+    Console.info("Prediction mode enabled. Looking for pretained network and input latent vectors")
+    # Looking for CSV with latent vectors (input)
+    if os.path.isfile(args.latent):
+        Console.info("Latent input file: ", args.latent)
     else:
-        # we are in training mode
-        Console.info("Training mode enabled. Looking for input and targe datasets")
-        # let's check if input files exist
-        if os.path.isfile(args.target):
-            Console.info("Target input file: ", args.target)
-        else:
-            Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
+        Console.error("Latent input file [" + args.latent + "] not found. Please check the provided input path (-l, --latent)")
 
-        if os.path.isfile(args.latent):
-            Console.info("Latent input file: ", args.latent)
-        else:
-            Console.error("Latent input file [" + args.latent + "] not found. Please check the provided input path (-l, --latent)")
-        # check for pre-trained network
-        # if output file exists, warn user
+    # check for pre-trained network
+    # if output file exists, warn user
 
     if os.path.isfile(args.network):
-        Console.warn("Destination trained network file [", args.network, "] already exists. It will be overwritten (default action)")
+        Console.info("Pre-trained network file [", args.network, "] found")
     else:
-        Console.info("Destination trained network: ", args.network)
+        Console.error("No pre-trained network found at: ", args.network)
+        Console.info ("Terminating...")
+        return -1
 
     if os.path.isfile(args.output):
         Console.warn("Output file [", args.output, "] already exists. It will be overwritten (default action)")
     else:
         Console.info("Output file: ", args.output)
-    # it can be "none"
-
-    # these parameters are only used in training mode
-    if (args.epochs):
-        num_epochs = args.epochs
-    else:
-        num_epochs = 150
-
+    # ELBO k-sampling for posterior estimation. The larger the better the MLE, but slower. Good range: 5~25
     if (args.samples):
         n_samples = args.samples
     else:
         n_samples = 20
-
     # this is the key that is used to identity the target output (single) or the column name for the predictions
     if (args.key):
         col_key = args.key
@@ -239,216 +202,245 @@ def main(args=None):
     if (args.xinput):
         input_key = args.key
     else:
-        input_key = 'latent_'
+        input_key = 'latent_'   # default expected from LGA based pipeline 
 
+    Console.info("Loading altent input [", args.latent ,"]")
+    np_latent, n_latents, df = PredictiveEngine.loadData(args.latent, latent_name_prefix= 'latent_')
 
-    if (args.predict):
-        print ("Args.predict[",args.predict,"]")
-        np_latent, n_latents, df = PredictiveEngine.predict(input_predictor, args.network, target_key ='measurability', latent_name_prefix= 'latent_')
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-        Console.info("Loading pretrained network [", args.network ,"]")
-        regressor.load_state_dict(torch.load(args.network))
-        Console.warn("End of prediction")
-        return 1
-
-    # TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
-    Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
-    dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
-    target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
-    # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
-    # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
-    Console.info("Loading dataset: " + dataset_filename)
-
-    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
-    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
-
-    Console.info("Data loaded...")
-    # y = y/10    #some rescale    WARNING
-
-    X = X/10.0  # for large latents
-    # n_sample = X.shape[0]
-    n_latents = X.shape[1]
-    # X = StandardScaler().fit_transform(X)
-    # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
-    # norm = MinMaxScaler().fit(y)
-    # y_norm = norm.transform(y)      # min max normalization of our output data
-    # y_norm = (y - 5.0)/30.0          # for slope maps
-    y_norm = y
-    # norm = MinMaxScaler().fit(X)
-    # X_norm = norm.transform(X)      # min max normalization of our input data
-    X_norm = X
-
-    print ("X [min,max]", np.amin(X),"/", np.amax(X))
-    print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
-    print ("Y [min,max]", np.amin(y),"/", np.amax(y))
-
-    X_train, X_test, y_train, y_test = train_test_split(X_norm,
-                                                        y_norm,
-                                                        test_size=.25, # 3:1 ratio
-                                                        shuffle = False) 
-
-    X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
-    X_test, y_test   = torch.tensor(X_test).float(),  torch.tensor(y_test).float()
-
-    y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
-    y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
-    # sys.exit(1)
+    Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-    # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.002) # learning rate
-    criterion = torch.nn.MSELoss()
+    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+    regressor.eval()    # switch to inference mode (set dropout layers)
+   
+    print("Model's state_dict:")
+    for param_tensor in regressor.state_dict():
+        print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
+    return -1
 
-    # print("Model's state_dict:")
-    # for param_tensor in regressor.state_dict():
-    #     print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
+    # iteration = 0
+    # # Training time
+    # test_hist = []
+    # uncert_hist = []
+    # train_hist = []
+    # fit_hist = []
+    # ufit_hist = []
+    # elbo_kld = 1.0
+    # print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
 
-    ds_train = torch.utils.data.TensorDataset(X_train, y_train)
-    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
+    # check the dimension of the input layer of the pretrained network
+    # it must match the input latent space (from args.latent)
 
-    ds_test = torch.utils.data.TensorDataset(X_test, y_test)
-    dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
+########################################################################
+########################################################################
+########################################################################
+########################################################################
+    # TODO: Match any preexisting normalization for the input, for consistent results
+    # TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
+    # Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
+    # dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
+    # target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
+    # # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
+    # # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
+    # Console.info("Loading dataset: " + dataset_filename)
 
-    iteration = 0
-    # Training time
-    test_hist = []
-    uncert_hist = []
-    train_hist = []
-    fit_hist = []
-    ufit_hist = []
+    # X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
+    # # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
 
-    elbo_kld = 1.0
+    # Console.info("Data loaded...")
+    # # y = y/10    #some rescale    WARNING
 
-    print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
+    # X = X/10.0  # for large latents
+    # # n_sample = X.shape[0]
+    # n_latents = X.shape[1]
+    # # X = StandardScaler().fit_transform(X)
+    # # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
+    # # norm = MinMaxScaler().fit(y)
+    # # y_norm = norm.transform(y)      # min max normalization of our output data
+    # # y_norm = (y - 5.0)/30.0          # for slope maps
+    # y_norm = y
+    # # norm = MinMaxScaler().fit(X)
+    # # X_norm = norm.transform(X)      # min max normalization of our input data
+    # X_norm = X
 
-    for epoch in range(num_epochs):
-        train_loss = []
-        for i, (datapoints, labels) in enumerate(dataloader_train):
-            optimizer.zero_grad()
-            
-            loss = regressor.sample_elbo(inputs=datapoints.to(device),
-                            labels=labels.to(device),
-                            criterion=criterion,    # MSELoss
-                            sample_nbr=n_samples,
-                            complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
-            loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
-            optimizer.step()
-            train_loss.append(loss.item())
-            
-        test_loss = []
-        fit_loss = []
+    # print ("X [min,max]", np.amin(X),"/", np.amax(X))
+    # print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
+    # print ("Y [min,max]", np.amin(y),"/", np.amax(y))
 
-        for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
-            sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
-                                labels=test_labels.to(device),
-                                criterion=criterion,
-                                sample_nbr=n_samples,
-                                complexity_cost_weight=elbo_kld/X_test.shape[0])
+    # X_train, X_test, y_train, y_test = train_test_split(X_norm,
+    #                                                     y_norm,
+    #                                                     test_size=.25, # 3:1 ratio
+    #                                                     shuffle = False) 
 
-            fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
-                                labels=test_labels.to(device),
-                                criterion=criterion,
-                                sample_nbr=n_samples,
-                                complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
+    # X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
+    # X_test, y_test   = torch.tensor(X_test).float(),  torch.tensor(y_test).float()
 
-            test_loss.append(sample_loss.item())
-            fit_loss.append(fit_loss_sample.item())
+    # y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
+    # y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
+    # # sys.exit(1)
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
+    # # regressor.init
+    # optimizer = optim.Adam(regressor.parameters(), lr=0.002) # learning rate
+    # criterion = torch.nn.MSELoss()
 
-        mean_test_loss = statistics.mean(test_loss)
-        stdv_test_loss = statistics.stdev(test_loss)
+    # # print("Model's state_dict:")
+    # # for param_tensor in regressor.state_dict():
+    # #     print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
 
-        mean_train_loss = statistics.mean(train_loss)
+    # ds_train = torch.utils.data.TensorDataset(X_train, y_train)
+    # dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
 
-        mean_fit_loss = statistics.mean(fit_loss)
-        stdv_fit_loss = statistics.stdev(fit_loss)
+    # ds_test = torch.utils.data.TensorDataset(X_test, y_test)
+    # dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
 
-        Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Valid. loss: {:.4f}".format(mean_test_loss) + " Fit loss: {:.4f}  ***".format(mean_fit_loss) )
-        Console.progress(epoch, num_epochs)
+########################################################################
+########################################################################
+########################################################################
+########################################################################
+    # Then, check the dataframe which should contain the same ordered rows from the latent space (see final step of training/validation)
+    # Console.info("testing predictions...")
+    # idx = 0 
+    # # for x in X_test:
+    # Xp_ = torch.tensor(X_norm).float()
 
-        test_hist.append(mean_test_loss)
-        uncert_hist.append(stdv_test_loss)
-        train_hist.append(mean_train_loss)
+    # # Once trained, we start inferring
+    # expected = []
+    # uncertainty = []
+    # predicted = [] # == y
 
-        fit_hist.append(mean_fit_loss)
-        ufit_hist.append(stdv_fit_loss)
+    # for x in Xp_:
+    #     predictions = []
+    #     for n in range(n_samples):
+    #         p = regressor(x.to(device)).item()
+    #         # print ("p.type", type(p)) ----> float
+    #         # print ("p.len", len(p))
+    #         predictions.append(p) #1D output, retieve single item
 
-        # train_hist.append(statistics.mean(train_loss))
+    #     # print ("pred.type", type(predictions))
+    #     # print ("pred.len", len(predictions))    ---> 10 (n_samples)
 
-        # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
-        #     temp_name = "bnn_model_" + str(epoch) + ".pth"
-        #     torch.save(regressor.state_dict(), temp_name)
+    #     p_mean = statistics.mean(predictions)
+    #     p_stdv = statistics.stdev(predictions)
+    #     idx = idx + 1
 
-    Console.info("Training completed!")
-    # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
-    torch.save(regressor.state_dict(), args.network)
+    #     # print ("p_mean", type(p_mean))  --> float
 
-    export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
-    export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
+    #     predicted.append(p_mean)
+    #     uncertainty.append(p_stdv)
 
-    print ("head", export_df.head())
-    output_name = "bnn_training_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    export_df.to_csv(output_name)
-    # export_df.to_csv("bnn_train_report.csv")
-    # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
+    #     Console.progress(idx, len(Xp_))
+########################################################################
+########################################################################
+########################################################################
+########################################################################
+    # # print ("predicted:" , predicted)
+    # # print ("predicted.type", type(predicted))
+    # # print ("predicted.len", len(predicted))
+    # # print ("X.len:" , len(X_test))
+    # # y_list = y_train.squeeze().tolist()
+    # y_list = y_norm.squeeze().tolist()
+    # # y_list = y_test.squeeze().tolist()
 
-    # Once trained, we start inferring
-    expected = []
-    uncertainty = []
-    predicted = [] # == y
+    # # y_list = [element.item() for element in y_test.flatten()]
 
-    Console.info("testing predictions...")
-    idx = 0 
-    # for x in X_test:
-    Xp_ = torch.tensor(X_norm).float()
+    # xl = np.squeeze(X_norm).tolist()
 
-    for x in Xp_:
-        predictions = []
-        for n in range(n_samples):
-            p = regressor(x.to(device)).item()
-            # print ("p.type", type(p)) ----> float
-            # print ("p.len", len(p))
-            predictions.append(p) #1D output, retieve single item
+    # # print ("y_list.len", len(y_list))
+    # # predicted.len = X.len (as desired)
+    # # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
+    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
+    # # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
+    # # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
+    # pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
-        # print ("pred.type", type(predictions))
-        # print ("pred.len", len(predictions))    ---> 10 (n_samples)
-
-        p_mean = statistics.mean(predictions)
-        p_stdv = statistics.stdev(predictions)
-        idx = idx + 1
-
-        # print ("p_mean", type(p_mean))  --> float
-
-        predicted.append(p_mean)
-        uncertainty.append(p_stdv)
-
-
-        Console.progress(idx, len(Xp_))
-
-    # print ("predicted:" , predicted)
-    # print ("predicted.type", type(predicted))
-    # print ("predicted.len", len(predicted))
-    # print ("X.len:" , len(X_test))
-    # y_list = y_train.squeeze().tolist()
-    y_list = y_norm.squeeze().tolist()
-    # y_list = y_test.squeeze().tolist()
-
-    # y_list = [element.item() for element in y_test.flatten()]
-
-    xl = np.squeeze(X_norm).tolist()
-
-    # print ("y_list.len", len(y_list))
-    # predicted.len = X.len (as desired)
-    # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
-    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
-    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
-    # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
-    pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
-
-    output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    # output_name = args.output
-    pred_df.to_csv(output_name)
+    # output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    # # output_name = args.output
+    # pred_df.to_csv(output_name)
     # print (pred_df.head())
+
+    Console.warn("End of prediction")
+
+########################################################################
+########################################################################
+#####
+# Older training step
+########################################################################
+########################################################################
+########################################################################
+########################################################################
+########################################################################
+
+    # for epoch in range(num_epochs):
+    #     train_loss = []
+    #     for i, (datapoints, labels) in enumerate(dataloader_train):
+    #         optimizer.zero_grad()
+            
+    #         loss = regressor.sample_elbo(inputs=datapoints.to(device),
+    #                         labels=labels.to(device),
+    #                         criterion=criterion,    # MSELoss
+    #                         sample_nbr=n_samples,
+    #                         complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
+    #         loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
+    #         optimizer.step()
+    #         train_loss.append(loss.item())
+            
+    #     test_loss = []
+    #     fit_loss = []
+
+    #     for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
+    #         sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
+    #                             labels=test_labels.to(device),
+    #                             criterion=criterion,
+    #                             sample_nbr=n_samples,
+    #                             complexity_cost_weight=elbo_kld/X_test.shape[0])
+
+    #         fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
+    #                             labels=test_labels.to(device),
+    #                             criterion=criterion,
+    #                             sample_nbr=n_samples,
+    #                             complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
+
+    #         test_loss.append(sample_loss.item())
+    #         fit_loss.append(fit_loss_sample.item())
+
+    #     mean_test_loss = statistics.mean(test_loss)
+    #     stdv_test_loss = statistics.stdev(test_loss)
+
+    #     mean_train_loss = statistics.mean(train_loss)
+
+    #     mean_fit_loss = statistics.mean(fit_loss)
+    #     stdv_fit_loss = statistics.stdev(fit_loss)
+
+    #     Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Valid. loss: {:.4f}".format(mean_test_loss) + " Fit loss: {:.4f}  ***".format(mean_fit_loss) )
+    #     Console.progress(epoch, num_epochs)
+
+    #     test_hist.append(mean_test_loss)
+    #     uncert_hist.append(stdv_test_loss)
+    #     train_hist.append(mean_train_loss)
+
+    #     fit_hist.append(mean_fit_loss)
+    #     ufit_hist.append(stdv_fit_loss)
+
+    #     # train_hist.append(statistics.mean(train_loss))
+
+    #     # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
+    #     #     temp_name = "bnn_model_" + str(epoch) + ".pth"
+    #     #     torch.save(regressor.state_dict(), temp_name)
+
+    # Console.info("Training completed!")
+    # # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
+    # torch.save(regressor.state_dict(), args.network)
+
+    # export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
+    # export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
+
+    # print ("head", export_df.head())
+    # output_name = "bnn_training_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    # export_df.to_csv(output_name)
+    # # export_df.to_csv("bnn_train_report.csv")
+    # # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
+
 
 if __name__ == '__main__':
     main()
