@@ -27,61 +27,97 @@ import statistics
 import math
 
 def add_arguments(obj):
+    # input #########################
+    obj.add_argument(
+        "-i", "--input",
+        type=str,
+        # default='input_latents.csv',
+        help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries"
+    )
+    # latent
+    obj.add_argument(
+        "-l", "--latent",
+        type=str,
+        default='latent_',
+        help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'"
+    )
+    # target #########################
+    obj.add_argument(
+        "-t", "--target",
+        type=str,
+        # default='target_file.csv',
+        help="Path to CSV containing the target entries to be used for training/validation. The 'UUID' is used to match against the input file entries"
+    )
+    # key #########################
+    obj.add_argument(
+        "-k", "--key",
+        default='measurability',
+        type=str,
+        help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"
+    )
+    # output #########################
+    obj.add_argument(
+        "-o", "--output",
+        # default='inferred.csv',
+        type=str,
+        help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction"
+    )
+    # uuid #########################
+    obj.add_argument(
+        "-u", "--uuid",
+        default='UUID',
+        type=str,
+        help="Unique identifier string used as key for input/target example matching. The UUID string must match for both the input (latent) file and the target file column identifier"
+    )
+    # network #########################
+    obj.add_argument(
+        "-n", "--network",
+        default='bnn_trained.pth',
+        type=str,
+        help="Output path to write the trained Bayesian Neural Network in PyTorch compatible format."
+    )
+    # logfile #########################
+    obj.add_argument(
+        "-g", "--logfile",
+        default='training_log.csv',
+        type=str,
+        help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance"
+    )
 
+    # config #########################
+    obj.add_argument(
+        "-c", "--config",
+#        default='configuration.yaml',
+        type=str,
+        help="Path to YAML configuration file (optional)"
+    )
+    # epochs #########################
+    obj.add_argument(
+        "-e", "--epochs",
+        default='100',
+        type=int,
+        help="Define the number of training epochs"
+    )
+    # samples #########################
+    obj.add_argument(
+        "-s", "--samples",
+        default='10',
+        type=int,
+        help="Define the number of samples for sample_elbo based posterior estimation"
+    )
+    # xvalitaion #########################
+
+    obj.add_argument(
+        "-x", "--xratio",
+        default='0.8',
+        type=float,
+        help="Define the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0"
+    )
 
     obj.add_argument(
         "-p", "--predict",
         type=str,
         help="Enables predicting mode by defining a pretrained network. The input latent CSV list will be used for inference"
-    )
-
-    obj.add_argument(
-        "-t", "--target",
-        type=str,
-        default='target_values.csv',
-        help="Path to CSV file containing a list of images ('relative_path') and the measured ground truth value we wan to predict (e.g. 'mean_slope)"
-    )
-    obj.add_argument(
-        "-l", "--latent",
-        type=str,
-        default='image_latents.csv',
-        help="Path to CSV containing the latent representation for each image. The 'relative_path' will be used to match against the targe_values.csv"
-    )
-    obj.add_argument(
-        "-o", "--output",
-        default='inferred.csv',
-        type=str,
-        help="File containing the expected and inferred value for each input image (validation + training datasets can be configured)"
-    )
-    obj.add_argument(
-        "-n", "--network",
-        default='bnn_trained.pth',
-        type=str,
-        help="Output path to write the trained Bayesian Neural Network, PyTorch compatible format."
-    )
-    obj.add_argument(
-        "-e", "--epochs",
-        default='50',
-        type=int,
-        help="Define the number of training epochs."
-    )
-    obj.add_argument(
-        "-x", "--xinput",
-        default='x_',
-        type=str,
-        help="Define the input vector keyword"
-    )
-    obj.add_argument(
-        "-k", "--key",
-        default='mean_slope',
-        type=str,
-        help="Define the keyword that defines the field to be predicted. It must match the column name in the target file"
-    )
-    obj.add_argument(
-        "-s", "--samples",
-        default='20',
-        type=int,
-        help="Define the number of samples for sample_elbo based posterior estimation"
     )
 
 
@@ -177,7 +213,10 @@ def evaluate_regression(regressor,
     return errors_mean, uncert_mean
 
 def main(args=None):
-    parser = argparse.ArgumentParser()
+    description_str = "Bayesian Neural Network training module"
+    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
+    parser = argparse.ArgumentParser(description=description_str, formatter_class=formatter)
+    # argparse.HelpFormatter(parser,'width=120')
     add_arguments(parser)
 
     if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
@@ -201,10 +240,10 @@ def main(args=None):
         else:
             Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
 
-        if os.path.isfile(args.latent):
-            Console.info("Latent input file: ", args.latent)
+        if os.path.isfile(args.input):
+            Console.info("Latent input file: ", args.input)
         else:
-            Console.error("Latent input file [" + args.latent + "] not found. Please check the provided input path (-l, --latent)")
+            Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-l, --latent)")
         # check for pre-trained network
         # if output file exists, warn user
 
@@ -236,25 +275,15 @@ def main(args=None):
     else:
         col_key = 'measurability'
     # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.xinput):
+    if (args.key):
         input_key = args.key
     else:
         input_key = 'latent_'
 
 
-    if (args.predict):
-        print ("Args.predict[",args.predict,"]")
-        np_latent, n_latents, df = PredictiveEngine.predict(input_predictor, args.network, target_key ='measurability', latent_name_prefix= 'latent_')
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-        Console.info("Loading pretrained network [", args.network ,"]")
-        regressor.load_state_dict(torch.load(args.network))
-        Console.warn("End of prediction")
-        return 1
-
     # TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
     Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
-    dataset_filename = args.latent # dataset containing the predictive input. e.g. the latent vector
+    dataset_filename = args.input # dataset containing the predictive input. e.g. the latent vector
     target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
     # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
