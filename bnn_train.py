@@ -23,103 +23,9 @@ import matplotlib
 from tools.console import Console
 from tools.dataloader import CustomDataloader
 from tools.predictor import PredictiveEngine
+import tools.parser as par
 import statistics
 import math
-
-def add_arguments(obj):
-    # input #########################
-    obj.add_argument(
-        "-i", "--input",
-        type=str,
-        # default='input_latents.csv',
-        help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries"
-    )
-    # latent
-    obj.add_argument(
-        "-l", "--latent",
-        type=str,
-        default='latent_',
-        help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'"
-    )
-    # target #########################
-    obj.add_argument(
-        "-t", "--target",
-        type=str,
-        # default='target_file.csv',
-        help="Path to CSV containing the target entries to be used for training/validation. The 'UUID' is used to match against the input file entries"
-    )
-    # key #########################
-    obj.add_argument(
-        "-k", "--key",
-        default='measurability',
-        type=str,
-        help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"
-    )
-    # output #########################
-    obj.add_argument(
-        "-o", "--output",
-        # default='inferred.csv',
-        type=str,
-        help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction"
-    )
-    # uuid #########################
-    obj.add_argument(
-        "-u", "--uuid",
-        default='UUID',
-        type=str,
-        help="Unique identifier string used as key for input/target example matching. The UUID string must match for both the input (latent) file and the target file column identifier"
-    )
-    # network #########################
-    obj.add_argument(
-        "-n", "--network",
-        default='bnn_trained.pth',
-        type=str,
-        help="Output path to write the trained Bayesian Neural Network in PyTorch compatible format."
-    )
-    # logfile #########################
-    obj.add_argument(
-        "-g", "--logfile",
-        default='training_log.csv',
-        type=str,
-        help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance"
-    )
-
-    # config #########################
-    obj.add_argument(
-        "-c", "--config",
-#        default='configuration.yaml',
-        type=str,
-        help="Path to YAML configuration file (optional)"
-    )
-    # epochs #########################
-    obj.add_argument(
-        "-e", "--epochs",
-        default='100',
-        type=int,
-        help="Define the number of training epochs"
-    )
-    # samples #########################
-    obj.add_argument(
-        "-s", "--samples",
-        default='10',
-        type=int,
-        help="Define the number of samples for sample_elbo based posterior estimation"
-    )
-    # xvalitaion #########################
-
-    obj.add_argument(
-        "-x", "--xratio",
-        default='0.8',
-        type=float,
-        help="Define the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0"
-    )
-
-    obj.add_argument(
-        "-p", "--predict",
-        type=str,
-        help="Enables predicting mode by defining a pretrained network. The input latent CSV list will be used for inference"
-    )
-
 
 
 @variational_estimator
@@ -217,7 +123,7 @@ def main(args=None):
     formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
     parser = argparse.ArgumentParser(description=description_str, formatter_class=formatter)
     # argparse.HelpFormatter(parser,'width=120')
-    add_arguments(parser)
+    par.add_arguments(parser)
 
     if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
         # Show help if no args provided
@@ -227,63 +133,64 @@ def main(args=None):
     Console.info("Bayesian Neural Network for hi-res inference from low res acoustic priors (LGA-Bathymetry)")
 
     # Start verifying mandatory arguments
+    # we are in training mode
+    Console.info("Training mode enabled. Looking for input and targe datasets")
+    # let's check if input files exist
+    if os.path.isfile(args.target):
+        Console.info("Target input file:\t", args.target)
+    else:
+        Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
+
+    if os.path.isfile(args.input):
+        Console.info("Latent input file:\t", args.input)
+    else:
+        Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-i, --input)")
+
+    # check for pre-trained network
+    # if output file exists, warn user
+    if os.path.isfile(args.network):
+        Console.warn("Trained output [", args.network, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Trained output:   \t", args.network)
+
+    if (args.config):
+        Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
+
 
     # Check optional output filenames, if missing generate the default output names based on the training/data parameters
-
-    
-
-
     pretrained_network = ""
-    # Let's check if inference mode (predict) has been enabled
-    if (args.predict):
-        input_predictor = args.predict
-        Console.info("Prediction mode enabled.")
-    else:
-        # we are in training mode
-        Console.info("Training mode enabled. Looking for input and targe datasets")
-        # let's check if input files exist
-        if os.path.isfile(args.target):
-            Console.info("Target input file: ", args.target)
-        else:
-            Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
-
-        if os.path.isfile(args.input):
-            Console.info("Latent input file: ", args.input)
-        else:
-            Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-l, --latent)")
-        # check for pre-trained network
-        # if output file exists, warn user
-
-    if os.path.isfile(args.network):
-        Console.warn("Destination trained network file [", args.network, "] already exists. It will be overwritten (default action)")
-    else:
-        Console.info("Destination trained network: ", args.network)
 
     if os.path.isfile(args.output):
         Console.warn("Output file [", args.output, "] already exists. It will be overwritten (default action)")
     else:
-        Console.info("Output file: ", args.output)
-    # it can be "none"
+        Console.info("Output file:      \t", args.output)
+
+    if os.path.isfile(args.logfile):
+        Console.warn("Log file [", args.logfile, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Log file:      \t", args.logfile)
+
 
     # these parameters are only used in training mode
     if (args.epochs):
         num_epochs = args.epochs
     else:
-        num_epochs = 150
+        num_epochs = 100    # default
 
     if (args.samples):
         n_samples = args.samples
     else:
-        n_samples = 20
+        n_samples = 10      # default
 
     # this is the key that is used to identity the target output (single) or the column name for the predictions
     if (args.key):
-        col_key = args.key
+        output_key = args.key
     else:
-        col_key = 'measurability'
+        output_key = 'measurability'
+
     # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.key):
-        input_key = args.key
+    if (args.latent):
+        input_key = args.latent
     else:
         input_key = 'latent_'
 
@@ -296,8 +203,8 @@ def main(args=None):
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
 
-    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = col_key)    # relative_path is the common key in both tables
-    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = col_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
+    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = output_key)    # relative_path is the common key in both tables
+    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = output_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
 
     Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
