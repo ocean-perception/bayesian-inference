@@ -125,6 +125,65 @@ class BayesianRegressor(nn.Module):
         # # x_ = self.elu2 (x_)
         # return self.blinear2(x_)
 
+# class BayesianRegressor(nn.Module):
+#     def __init__(self, input_dim, output_dim):
+#         super().__init__()
+#         # simple 2-layer fully connected linear regressor
+#         # self.linear = nn.Linear(input_dim, output_dim)
+#         # self.linear1  = nn.Linear(input_dim, 128)
+#         # self.linear2  = nn.Linear(128, 128)
+#         # self.linear3  = nn.Linear(128, output_dim)
+        
+#         self.blinear1 = BayesianLinear(256, 512, bias=True)
+
+#         self.blinear2 = BayesianLinear(256, 256)
+#         self.blinear3 = BayesianLinear(256, output_dim)
+
+#         self.elu1     = nn.ELU()
+#         self.elu2     = nn.ELU()
+#         # # self.elu3     = nn.ELU()
+#         # self.blinear3 = BayesianLinear(64, 64)
+#         # self.blinear4 = BayesianLinear(64, 64)
+#         self.sigmoid1 = nn.Sigmoid()
+#         self.sigmoid2 = nn.Sigmoid()
+#         # self.sigmoid3 = nn.Sigmoid()
+#         # self.log = nn.LogSigmoid()
+#         self.silu1 = nn.SiLU()
+#         self.silu2 = nn.SiLU()
+#         # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
+#         self.linear_input  = nn.Linear(input_dim, 256, bias=True)
+#         self.linear1       = nn.Linear(256, 512, bias=True)
+#         self.linear2       = nn.Linear(512, 128, bias=True)
+#         self.linear3       = nn.Linear(128, 128, bias=True)
+#         self.linear4       = nn.Linear(128, 64, bias=True)
+#         self.linear_output = nn.Linear(64, output_dim, bias=True)
+#         self.lsig1   = nn.Sigmoid()
+
+
+#     def forward(self, x):
+#         x_ = self.linear_input(x)
+#         x_ = self.silu1(x_)
+#         x_ = self.blinear1(x_)
+#         # x_ = self.elu1(x_)
+#         x_ = self.linear2(x_)
+#         x_ = self.silu2(x_)
+#         x_ = self.linear4(x_)
+#         x_ = self.linear_output(x_)
+
+#         # x_ = self.lsig1(x_)
+#         # x_ = self.blinear1(x)
+#         # x_ = self.linear2(x_)
+#         # x_ = self.sigmoid1(x_)
+#         # x_ = self.linear3(x_)
+#         # x_ = self.linear1(x_)
+#         return x_
+#         # x_ = self.blinear1(x)
+#         # x_ = self.blinear3(x_)
+#         # # x_ = self.sigmoid1(x_)
+#         # # x_ = self.blinear4(x_)
+#         # # x_ = self.elu2 (x_)
+#         # return self.blinear2(x_)
+
 
 def evaluate_regression(regressor,
                         X,
