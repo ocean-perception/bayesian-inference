@@ -31,7 +31,7 @@ def main(args=None):
     # argparse.HelpFormatter(parser,'width=120')
     par.add_arguments(parser)
 
-    if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
+    if len(sys.argv) == 1 and args is None: # no argument passed? error, some parameters were expected
         # Show help if no args provided
         parser.print_help(sys.stderr)
         sys.exit(2)
@@ -39,25 +39,90 @@ def main(args=None):
     Console.info("Bayesian Neural Network for hi-res inference from low res acoustic priors (LGA-Bathymetry)")
 
     # Start verifying mandatory arguments
-    # we are in training mode
-    Console.info("Training mode enabled. Looking for input and targe datasets")
     # let's check if input files exist
+    # [mandatory] input file (latents)
+    if os.path.isfile(args.input):
+        Console.info("Latent input file:\t", args.input)
+    else:
+        Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-i, --input)")
+    # [mandatory] target file
     if os.path.isfile(args.target):
         Console.info("Target input file:\t", args.target)
     else:
         Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
 
-    if os.path.isfile(args.input):
-        Console.info("Latent input file:\t", args.input)
+    # this is the key that is used to identity the target output (single) or the column name for the predictions
+    if (args.key):
+        output_key = args.key
+        Console.info("Using user-defined target key:\t[", output_key, "]")
     else:
-        Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-i, --input)")
+        output_key = 'measurability'
+        Console.warn("Using default target key:     \t[", output_key, "]")
+    # user defined keyword (prefix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
+    if (args.latent):
+        input_key = args.latent
+        Console.info("Using user-defined latent key:\t[", input_key, "]")
+    else:
+        input_key = 'latent_'
+        Console.info("Using default latent key:     \t[", input_key, "]")
+    # user defined keyword (prefix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
+    if (args.uuid):
+        UUID = args.uuid
+        Console.info("Using user-defined UUID:\t[", UUID, "]")
+    else:
+        UUID = 'relative_path'
+        Console.info("Using default UUID:     \t[", UUID, "]")
+    # these parameters are only used in training mode
+    if (args.epochs):
+        num_epochs = args.epochs
+    else:
+        num_epochs = 100    # default
+    # number of random samples used by sample_elbo to estimate the mean/std for each inference epoch
+    if (args.samples):
+        n_samples = args.samples
+    else:
+        n_samples = 10      # default
 
-    # check for pre-trained network
-    # if output file exists, warn user
-    if os.path.isfile(args.network):
-        Console.warn("Trained output [", args.network, "] already exists. It will be overwritten (default action)")
+    Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
+    dataset_filename = args.input # dataset containing the predictive input. e.g. the latent vector
+    target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
+    # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
+    # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
+    Console.info("Loading dataset: " + dataset_filename)
+    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = output_key)    # relative_path is the common key in both tables
+    n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
+    Console.info("Data loaded...")
+
+    # for each output file, we check if user defined name is provided. If not, use default naming convention
+    filename_suffix = "H" + str(n_latents) + "_E" + str(num_epochs) + "_S" + str(n_samples)
+    # Console.warn("Suffix:", filename_suffix)
+
+    if (args.output is None):
+        predictions_name = "bnn_predictions_" + filename_suffix +  ".csv"
     else:
-        Console.info("Trained output:   \t", args.network)
+        predictions_name = args.output
+    if os.path.isfile(predictions_name):
+        Console.warn("Output file [", predictions_name, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Output file:   \t", predictions_name)
+
+    if (args.logfile is None):
+        logfile_name = "bnn_logfile_" + filename_suffix +  ".csv"
+    else:
+        logfile_name = args.logfile
+    if os.path.isfile(logfile_name):
+        Console.warn("Log file [", logfile_name, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Log file:      \t", logfile_name)
+
+    if (args.network is None):
+        network_name = "bnn_" + filename_suffix +  ".pth"   # PyTorch compatible netwrok definition file
+    else:
+        network_name = args.network
+    if os.path.isfile(network_name):
+        Console.warn("Trained output [", network_name, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Trained output:\t", network_name)
 
     if (args.config):
         Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
@@ -66,58 +131,12 @@ def main(args=None):
     # Check optional output filenames, if missing generate the default output names based on the training/data parameters
     pretrained_network = ""
 
-    if os.path.isfile(args.output):
-        Console.warn("Output file [", args.output, "] already exists. It will be overwritten (default action)")
-    else:
-        Console.info("Output file:      \t", args.output)
-
-    if os.path.isfile(args.logfile):
-        Console.warn("Log file [", args.logfile, "] already exists. It will be overwritten (default action)")
-    else:
-        Console.info("Log file:      \t", args.logfile)
-
-
-    # these parameters are only used in training mode
-    if (args.epochs):
-        num_epochs = args.epochs
-    else:
-        num_epochs = 100    # default
-
-    if (args.samples):
-        n_samples = args.samples
-    else:
-        n_samples = 10      # default
-
-    # this is the key that is used to identity the target output (single) or the column name for the predictions
-    if (args.key):
-        output_key = args.key
-    else:
-        output_key = 'measurability'
-
-    # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.latent):
-        input_key = args.latent
-    else:
-        input_key = 'latent_'
-
-
-    # TODO : add arg parser, admit input file (dataset), config file, validation dataset file, mode (train, validate, predict)
-    Console.info("Geotech landability/measurability predictor from low-res acoustics. Uses Bayesian Neural Networks as predictive engine")
-    dataset_filename = args.input # dataset containing the predictive input. e.g. the latent vector
-    target_filename  = args.target  # output variable to be predicted, e.g. mean_slope
-    # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
-    # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
-    Console.info("Loading dataset: " + dataset_filename)
-
-    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = output_key)    # relative_path is the common key in both tables
     # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = output_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
 
-    Console.info("Data loaded...")
     # y = y/10    #some rescale    WARNING
 
     X = X/10.0  # for large latents
     # n_sample = X.shape[0]
-    n_latents = X.shape[1]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
     # norm = MinMaxScaler().fit(y)
@@ -224,21 +243,19 @@ def main(args=None):
         ufit_hist.append(stdv_fit_loss)
 
         # train_hist.append(statistics.mean(train_loss))
-
         # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
         #     temp_name = "bnn_model_" + str(epoch) + ".pth"
         #     torch.save(regressor.state_dict(), temp_name)
 
     Console.info("Training completed!")
     # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
-    torch.save(regressor.state_dict(), args.network)
+    torch.save(regressor.state_dict(), network_name)
 
     export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
     export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
 
-    print ("head", export_df.head())
-    output_name = "bnn_training_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    export_df.to_csv(output_name)
+    # print ("head", export_df.head())
+    export_df.to_csv(logfile_name)
     # export_df.to_csv("bnn_train_report.csv")
     # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
 
@@ -247,7 +264,7 @@ def main(args=None):
     uncertainty = []
     predicted = [] # == y
 
-    Console.info("testing predictions...")
+    Console.info("Testing predictions...")
     idx = 0 
     # for x in X_test:
     Xp_ = torch.tensor(X_norm).float()
@@ -274,7 +291,6 @@ def main(args=None):
         predicted.append(p_mean)
         uncertainty.append(p_stdv)
 
-
         Console.progress(idx, len(Xp_))
 
     # print ("predicted:" , predicted)
@@ -284,7 +300,6 @@ def main(args=None):
     # y_list = y_train.squeeze().tolist()
     y_list = y_norm.squeeze().tolist()
     # y_list = y_test.squeeze().tolist()
-
     # y_list = [element.item() for element in y_test.flatten()]
 
     xl = np.squeeze(X_norm).tolist()
@@ -297,9 +312,7 @@ def main(args=None):
     # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
-    output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    # output_name = args.output
-    pred_df.to_csv(output_name)
+    pred_df.to_csv(predictions_name)
     # print (pred_df.head())
 
 if __name__ == '__main__':
