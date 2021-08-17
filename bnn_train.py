@@ -3,120 +3,26 @@ import re
 import sys
 import os
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import pandas as pd
 import argparse
-# Import blitz (BNN) modules
-from blitz.modules import BayesianLinear
-from blitz.utils import variational_estimator
 # Import sklearn dataset parsers and samples
 from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-# Helper lirbaries (viz)
+# Helper libaries (viz)
 import matplotlib.pyplot as plt
 import matplotlib
 from tools.console import Console
 from tools.dataloader import CustomDataloader
 from tools.predictor import PredictiveEngine
+from tools.bnn_model import BayesianRegressor
 import tools.parser as par
 import statistics
 import math
 
-
-@variational_estimator
-class BayesianRegressor(nn.Module):
-    def __init__(self, input_dim, output_dim):
-        super().__init__()
-        # simple 2-layer fully connected linear regressor
-        # self.linear = nn.Linear(input_dim, output_dim)
-        # self.linear1  = nn.Linear(input_dim, 128)
-        # self.linear2  = nn.Linear(128, 128)
-        # self.linear3  = nn.Linear(128, output_dim)
-        
-        self.blinear1 = BayesianLinear(256, 512, bias=True)
-
-        self.blinear2 = BayesianLinear(256, 256)
-        self.blinear3 = BayesianLinear(256, output_dim)
-
-        self.elu1     = nn.ELU()
-        self.elu2     = nn.ELU()
-        # # self.elu3     = nn.ELU()
-        # self.blinear3 = BayesianLinear(64, 64)
-        # self.blinear4 = BayesianLinear(64, 64)
-        self.sigmoid1 = nn.Sigmoid()
-        self.sigmoid2 = nn.Sigmoid()
-        # self.sigmoid3 = nn.Sigmoid()
-        # self.log = nn.LogSigmoid()
-        self.silu1 = nn.SiLU()
-        self.silu2 = nn.SiLU()
-        # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear_input  = nn.Linear(input_dim, 256, bias=True)
-        self.linear1       = nn.Linear(256, 512, bias=True)
-        self.linear2       = nn.Linear(512, 128, bias=True)
-        self.linear3       = nn.Linear(128, 128, bias=True)
-        self.linear4       = nn.Linear(128, 64, bias=True)
-        self.linear_output = nn.Linear(64, output_dim, bias=True)
-        self.lsig1   = nn.Sigmoid()
-
-
-    def forward(self, x):
-        x_ = self.linear_input(x)
-        x_ = self.silu1(x_)
-        x_ = self.blinear1(x_)
-        # x_ = self.elu1(x_)
-        x_ = self.linear2(x_)
-        x_ = self.silu2(x_)
-        x_ = self.linear4(x_)
-        x_ = self.linear_output(x_)
-
-        # x_ = self.lsig1(x_)
-        # x_ = self.blinear1(x)
-        # x_ = self.linear2(x_)
-        # x_ = self.sigmoid1(x_)
-        # x_ = self.linear3(x_)
-        # x_ = self.linear1(x_)
-        return x_
-        # x_ = self.blinear1(x)
-        # x_ = self.blinear3(x_)
-        # # x_ = self.sigmoid1(x_)
-        # # x_ = self.blinear4(x_)
-        # # x_ = self.elu2 (x_)
-        # return self.blinear2(x_)
-
-
-def evaluate_regression(regressor,
-                        X,
-                        y,
-                        samples = 100):
-
-    # we need to draw k-samples for each x-input entry. Posterior sampling is done to obtain the E[y] over a Gaussian distribution
-    # The maximum likelihood estimates: meand & stdev of the sample vector (large enough for a good approximation)
-    # If sample vector is large enough biased and unbiased estimators will converge (samples >> 1)
-    errors = [] # list containing the error as e = y - E[f(x)] for all the x in X. y_pred = f(x)
-                # E[f(x)] is the expected value, computed as the mean(x) as the MLE for a Gaussian distribution (expected)
-    uncert = []
-    y_list = y.tolist()
-    for i in range(len(X)): # for each input x[i] (that should be the latent enconding of the image)
-        y_samples = []
-        for k in range(samples): # draw k-samples.
-            y_tensor = regressor(X[i])
-            y_samples.append(y_tensor[0].tolist()) # Each call to regressor(x = X[i]) will return a different value
-        # print ("y_samples.len", len(y_samples))
-        # print ("y_samples", y_samples)
-        e_y = statistics.mean(y_samples)        # mean(y_samples) as MLE for E[f(x)]
-        u_y = statistics.stdev(y_samples)        # mean(y_samples) as MLE for E[f(x)]
-        error = e_y - y_list[i][0]                      # error = (expected - target)^2
-        errors.append(error*error)
-        uncert.append(u_y)
-
-    errors_mean = math.sqrt(statistics.mean(errors)) # single axis list, eq: (axis = 0)
-    uncert_mean = statistics.mean(uncert)
-    return errors_mean, uncert_mean
 
 def main(args=None):
     description_str = "Bayesian Neural Network training module"
@@ -240,7 +146,7 @@ def main(args=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.002) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.0001) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
