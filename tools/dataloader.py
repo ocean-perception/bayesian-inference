@@ -50,12 +50,12 @@ class CustomDataloader:
         # tdf['filename_base'] = tdf['filename_base'].str.rstrip('_r002')
 
         # print (tdf.head())    
-        Console.info("Target entries:    ", len(tdf))
+        Console.info("Target entries: ", len(tdf))
         merged_df = pd.merge(df, tdf, how='right', on='filename_base')
         merged_df = merged_df.dropna()
 
         latent_df = merged_df.filter(regex=latent_name_prefix)
-        Console.info ("Latent size:       ", latent_df.shape)
+        Console.info ("Latent size: ", latent_df.shape)
         target_df = merged_df[target_key]
 
         np_latent = latent_df.to_numpy(dtype='float')

@@ -10,7 +10,7 @@ def add_arguments(obj):
     obj.add_argument(
         "-l", "--latent",
         type=str,
-        # default='latent_',
+        default='latent_',
         help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'"
     )
     # target #########################
@@ -23,7 +23,7 @@ def add_arguments(obj):
     # key #########################
     obj.add_argument(
         "-k", "--key",
-        # default='measurability',
+        default='measurability',
         type=str,
         help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"
     )
@@ -37,21 +37,21 @@ def add_arguments(obj):
     # uuid #########################
     obj.add_argument(
         "-u", "--uuid",
-        # default='UUID',
+        default='UUID',
         type=str,
         help="Unique identifier string used as key for input/target example matching. The UUID string must match for both the input (latent) file and the target file column identifier"
     )
     # network #########################
     obj.add_argument(
         "-n", "--network",
-        # default='bnn_trained.pth',
+        default='bnn_trained.pth',
         type=str,
         help="Output path to write the trained Bayesian Neural Network in PyTorch compatible format."
     )
     # logfile #########################
     obj.add_argument(
         "-g", "--logfile",
-        # default='training_log.csv',
+        default='training_log.csv',
         type=str,
         help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance"
     )

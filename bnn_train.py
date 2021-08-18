@@ -89,7 +89,7 @@ def main(args=None):
     # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
-    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key='relative_path', target_key = output_key)    # relative_path is the common key in both tables
+    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key=UUID, target_key = output_key)    # relative_path is the common key in both tables
     n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
     Console.info("Data loaded...")
 
@@ -135,7 +135,7 @@ def main(args=None):
 
     # y = y/10    #some rescale    WARNING
 
-    X = X/10.0  # for large latents
+    # X = X/10.0  # for large latents
     # n_sample = X.shape[0]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
@@ -165,7 +165,7 @@ def main(args=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.0001) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.005) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
