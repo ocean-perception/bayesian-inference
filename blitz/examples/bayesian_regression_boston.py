@@ -73,7 +73,7 @@ dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=Tr
 
 
 iteration = 0
-for epoch in range(1000):
+for epoch in range(300):
     for i, (datapoints, labels) in enumerate(dataloader_train):
         optimizer.zero_grad()
         
@@ -86,7 +86,7 @@ for epoch in range(1000):
         optimizer.step()
         
         iteration += 1
-        if iteration%100==0:
+        if iteration%10==0:
             ic_acc, under_ci_upper, over_ci_lower = evaluate_regression(regressor,
                                                                         X_test.to(device),
                                                                         y_test.to(device),
@@ -94,4 +94,4 @@ for epoch in range(1000):
                                                                         std_multiplier=3)
             
             print("CI acc: {:.2f}, CI upper acc: {:.2f}, CI lower acc: {:.2f}".format(ic_acc, under_ci_upper, over_ci_lower))
-            print("Loss: {:.4f}".format(loss))
+            print("Epoch: {:d} Loss: {:.4f}".format(epoch, loss))

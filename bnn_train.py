@@ -60,11 +60,11 @@ def main(args=None):
         Console.warn("Using default target key:     \t[", output_key, "]")
     # user defined keyword (prefix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
     if (args.latent):
-        input_key = args.latent
-        Console.info("Using user-defined latent key:\t[", input_key, "]")
+        latent_key = args.latent
+        Console.info("Using user-defined latent key:\t[", latent_key, "]")
     else:
-        input_key = 'latent_'
-        Console.info("Using default latent key:     \t[", input_key, "]")
+        latent_key = 'latent_'
+        Console.info("Using default latent key:     \t[", latent_key, "]")
     # user defined keyword (prefix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
     if (args.uuid):
         UUID = args.uuid
@@ -89,7 +89,7 @@ def main(args=None):
     # dataset_filename = "data/output-201811-merged-h14.xls"     # dataset containing the predictive input
     # target_filename = "data/target/koyo20181121-stat-r002-slo.csv"  # output variable to be predicted
     Console.info("Loading dataset: " + dataset_filename)
-    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key=UUID, target_key = output_key)    # relative_path is the common key in both tables
+    X, y, index_df = CustomDataloader.load_dataset(dataset_filename, target_filename, matching_key=UUID, target_key = output_key, latent_name_prefix=latent_key)    # relative_path is the common key in both tables
     n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
     Console.info("Data loaded...")
 
@@ -131,7 +131,7 @@ def main(args=None):
     # Check optional output filenames, if missing generate the default output names based on the training/data parameters
     pretrained_network = ""
 
-    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = output_key, input_prefix= input_key, matching_key='uuid')    # relative_path is the common key in both tables
+    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = output_key, input_prefix= latent_key, matching_key='uuid')    # relative_path is the common key in both tables
 
     # y = y/10    #some rescale    WARNING
 
@@ -203,10 +203,10 @@ def main(args=None):
                             complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
             loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
             optimizer.step()
-            train_loss.append(loss.item())
+            train_loss.append(loss.item())  # keep track of training loss
             
-        test_loss = []
-        fit_loss = []
+        test_loss = []  # complete loss for test dataset
+        fit_loss = []   # regression (fitting) only loss for test dataset
 
         for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
             sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
@@ -215,14 +215,14 @@ def main(args=None):
                                 sample_nbr=n_samples,
                                 complexity_cost_weight=elbo_kld/X_test.shape[0])
 
-            fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
+            fit_sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                 labels=test_labels.to(device),
                                 criterion=criterion,
                                 sample_nbr=n_samples,
                                 complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
 
             test_loss.append(sample_loss.item())
-            fit_loss.append(fit_loss_sample.item())
+            fit_loss.append(fit_sample_loss.item())
 
         mean_test_loss = statistics.mean(test_loss)
         stdv_test_loss = statistics.stdev(test_loss)
@@ -311,7 +311,7 @@ def main(args=None):
     # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
     # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
-
+    Console.warn("Exported predictions to: ", predictions_name)
     pred_df.to_csv(predictions_name)
     # print (pred_df.head())
 

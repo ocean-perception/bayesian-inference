@@ -19,10 +19,12 @@ class CustomDataloader:
     def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
         Console.info("load_dataset called for: ", input_filename)
 
-        df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
+        df = pd.read_csv(input_filename) # remove index_col=0 when using toy dataset (otherwise it's used as df index and won't be available for query)
+        # df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
+
         # 1) Data validation, remove invalid entries (e.g. NaN)
-        print (df.head())
         df = df.dropna()
+        print (df.head())
         Console.info("Total valid entries: ", len(df))
         # df.reset)index(drop = True) # not sure if we prefer to reset index, as column index was externallly defined
 
@@ -36,18 +38,11 @@ class CustomDataloader:
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
         # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
-        # let's use regex 
-        df['filename_base'] = df[matching_key]# I think it is possible to do it in a single regex
-        # df['filename_base'] = df[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-        # df['filename_base'] = df['filename_base'].str.rstrip('_')
-
+        df['filename_base'] = df[matching_key]
 
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
         tdf = tdf.dropna()
-        # target_key='mean_rugosity'
-        tdf['filename_base'] = tdf[matching_key]   # I think it is possible to do it in a single regex
-        # tdf['filename_base'] = tdf[matching_key].str.extract('(?:\/)(.*_)')   # I think it is possible to do it in a single regex
-        # tdf['filename_base'] = tdf['filename_base'].str.rstrip('_r002')
+        tdf['filename_base'] = tdf[matching_key]
 
         # print (tdf.head())    
         Console.info("Target entries: ", len(tdf))
