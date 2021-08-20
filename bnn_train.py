@@ -147,7 +147,7 @@ def main(args=None):
     # norm = MinMaxScaler().fit(y)
     # y_norm = norm.transform(y)      # min max normalization of our output data
     # y_norm = (y - 5.0)/30.0          # for slope maps
-    y_norm = y
+    y_norm = 10*y
     # norm = MinMaxScaler().fit(X)
     # X_norm = norm.transform(X)      # min max normalization of our input data
     X_norm = X
@@ -159,12 +159,13 @@ def main(args=None):
     # X_norm = X_ext
     n_latents = X_norm.shape[1]      # this is the only way to retrieve the size of input latent vectors
 
-    print ("N", X_norm.size)
+    Console.warn ("Xnorm_Shape", X_norm.shape)
     # print ("E", X_ext.size)
 
     print ("X [min,max]", np.amin(X),"/", np.amax(X))
     print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
     print ("Y [min,max]", np.amin(y),"/", np.amax(y))
+    print ("Y_norm [min,max]", np.amin(y_norm),"/", np.amax(y_norm))
 
     X_train, X_test, y_train, y_test = train_test_split(X_norm,
                                                         y_norm,
@@ -180,7 +181,7 @@ def main(args=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.006) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.001) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
@@ -201,7 +202,9 @@ def main(args=None):
     fit_hist = []
     ufit_hist = []
 
-    elbo_kld = 1.0
+    elbo_kld = 0.2
+
+    print (regressor)   # show network architecture
 
     print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
     regressor.train()   # set to training mode, just in case
@@ -209,33 +212,38 @@ def main(args=None):
     try:
         for epoch in range(num_epochs):
             train_loss = []
+            # kl_loss = []
+            fl_loss = []
             for i, (datapoints, labels) in enumerate(dataloader_train):
                 optimizer.zero_grad()
                 
-                loss = regressor.sample_elbo(inputs=datapoints.to(device),
+                loss, fit_loss, kl_loss = regressor.sample_elbo(inputs=datapoints.to(device),
                                 labels=labels.to(device),
                                 criterion=criterion,    # MSELoss
                                 sample_nbr=n_samples,
+                                criterion_loss_weight = 2000,
                                 complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
                 loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
                 optimizer.step()
                 train_loss.append(loss.item())  # keep track of training loss
-                
+                fl_loss.append(fit_loss.item())
+
             test_loss = []  # complete loss for test dataset
             fit_loss = []   # regression (fitting) only loss for test dataset
 
             for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
-                sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
+                sample_loss, fit_sample_loss, kl_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                     labels=test_labels.to(device),
                                     criterion=criterion,
                                     sample_nbr=n_samples,
+                                    criterion_loss_weight = 2000,
                                     complexity_cost_weight=elbo_kld/X_test.shape[0])
 
-                fit_sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
-                                    labels=test_labels.to(device),
-                                    criterion=criterion,
-                                    sample_nbr=n_samples,
-                                    complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
+                # fit_sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
+                #                     labels=test_labels.to(device),
+                #                     criterion=criterion,
+                #                     sample_nbr=n_samples,
+                #                     complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
 
                 test_loss.append(sample_loss.item())
                 fit_loss.append(fit_sample_loss.item())
@@ -244,11 +252,13 @@ def main(args=None):
             stdv_test_loss = statistics.stdev(test_loss)
 
             mean_train_loss = statistics.mean(train_loss)
+            mean_trfit_loss = statistics.mean(fl_loss)
+
 
             mean_fit_loss = statistics.mean(fit_loss)
             stdv_fit_loss = statistics.stdev(fit_loss)
 
-            Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Valid. loss: {:.4f}".format(mean_test_loss) + " Fit loss: {:.4f}  ***".format(mean_fit_loss) )
+            Console.info("Epoch [" + str(epoch) + "] Train: {:.2f}".format(mean_train_loss) + " TFit: {:.3f}".format(mean_trfit_loss) + " // Valid.loss: {:.2f}".format(mean_test_loss) + " VFit.loss: {:.3f}  ***".format(mean_fit_loss) )
             Console.progress(epoch, num_epochs)
 
             test_hist.append(mean_test_loss)
