@@ -213,7 +213,7 @@ def main(args=None):
     try:
         for epoch in range(num_epochs):
             if (epoch == 150):          # we train in non-bayesian way during a first phase
-                regressor.unfreeze()
+                regressor.unfreeze_()
 
             train_loss = []
             # kl_loss = []
