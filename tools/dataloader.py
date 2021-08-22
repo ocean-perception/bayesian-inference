@@ -19,7 +19,7 @@ class CustomDataloader:
     def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
         Console.info("load_dataset called for: ", input_filename)
 
-        df = pd.read_csv(input_filename) # remove index_col=0 when using toy dataset (otherwise it's used as df index and won't be available for query)
+        df = pd.read_csv(input_filename, index_col=0) # remove index_col=0 when using toy dataset (otherwise it's used as df index and won't be available for query)
         # df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
 
         # 1) Data validation, remove invalid entries (e.g. NaN)

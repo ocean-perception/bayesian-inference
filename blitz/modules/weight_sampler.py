@@ -90,4 +90,4 @@ class PriorWeightDistribution(nn.Module):
 
         prior_pdf = (self.pi * prob_n1 + (1 - self.pi) * prob_n2)
 
-        return (torch.log(prior_pdf) - 0.5).sum()
+        return (torch.log(prior_pdf+1e-6) - 0.5).sum()

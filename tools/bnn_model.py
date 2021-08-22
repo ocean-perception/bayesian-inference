@@ -12,13 +12,13 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         # simple 2-layer fully connected linear regressor
-        self.blinear1 = BayesianLinear(64, 64, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
-        # self.blinear2 = BayesianLinear(64, 64, bias=True)
-        # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear_input  = nn.Linear(input_dim, 64, bias=True)
-        self.linear1       = nn.Linear(64, 64, bias=True)
-        # self.linear2       = nn.Linear(64, 64, bias=True)
-        self.linear_output = nn.Linear(64, output_dim, bias=True)
+        self.blinear1 = BayesianLinear(128, 256, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        # self.blinear2 = BayesianLinear(128, 128, bias=True)
+        # self.blinear2 = BayesianLinear(128, output_dim, bias=True)
+        self.linear_input  = nn.Linear(input_dim, 128, bias=True)
+        self.linear1       = nn.Linear(256, 128, bias=True)
+        # self.linear2       = nn.Linear(128, 128, bias=True)
+        self.linear_output = nn.Linear(128, output_dim, bias=True)
         self.relu          = nn.LeakyReLU()
 
     def forward(self, x):

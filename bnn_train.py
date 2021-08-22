@@ -181,7 +181,7 @@ def main(args=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.001) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.0015) # learning rate
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
@@ -208,9 +208,13 @@ def main(args=None):
 
     print ("ELBO KLD factor: ", elbo_kld/X_train.shape[0]);
     regressor.train()   # set to training mode, just in case
+    regressor.freeze_()
 
     try:
         for epoch in range(num_epochs):
+            if (epoch == 150):          # we train in non-bayesian way during a first phase
+                regressor.unfreeze()
+
             train_loss = []
             # kl_loss = []
             fl_loss = []
