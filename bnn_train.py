@@ -234,7 +234,8 @@ def main(args=None):
 
             test_loss = []  # complete loss for test dataset
             fit_loss = []   # regression (fitting) only loss for test dataset
-
+            trfit_hist = []
+            
             for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
                 sample_loss, fit_sample_loss, kl_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                     labels=test_labels.to(device),
@@ -268,6 +269,7 @@ def main(args=None):
             test_hist.append(mean_test_loss)
             uncert_hist.append(stdv_test_loss)
             train_hist.append(mean_train_loss)
+            trfit_hist.append(mean_trfit_loss)
 
             fit_hist.append(mean_fit_loss)
             ufit_hist.append(stdv_fit_loss)
@@ -285,8 +287,8 @@ def main(args=None):
     # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
     torch.save(regressor.state_dict(), network_name)
 
-    export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
-    export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
+    export_df = pd.DataFrame([train_hist, trfit_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
+    export_df.columns = ['train_error', 'train_fit_loss', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
 
     # print ("head", export_df.head())
     export_df.to_csv(logfile_name)
