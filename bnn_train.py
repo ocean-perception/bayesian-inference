@@ -2,7 +2,6 @@
 import re
 import sys
 import os
-import signal
 import torch
 import torch.optim as optim
 import numpy as np
@@ -16,6 +15,7 @@ from sklearn.model_selection import train_test_split
 # Helper libaries (viz)
 import matplotlib.pyplot as plt
 import matplotlib
+# Toolkit
 from tools.console import Console
 from tools.dataloader import CustomDataloader
 from tools.predictor import PredictiveEngine

@@ -20,203 +20,21 @@ from sklearn.model_selection import train_test_split
 # Helper lirbaries (viz)
 import matplotlib.pyplot as plt
 import matplotlib
+# Toolkit
 from tools.console import Console
 from tools.dataloader import CustomDataloader
 from tools.predictor import PredictiveEngine
+from tools.bnn_model import BayesianRegressor
+import tools.parser as par
 import statistics
 import math
 
-def add_arguments(obj):
-    obj.add_argument(
-        "-l", "--latent",
-        type=str,
-        default='image_latents.csv',
-        help="Path to CSV containing the latent representation for each image. The 'relative_path' will be used to match against the targe_values.csv"
-    )
-    obj.add_argument(
-        "-o", "--output",
-        default='inferred.csv',
-        type=str,
-        help="File containing the expected and inferred value for each input image (validation + training datasets can be configured)"
-    )
-    obj.add_argument(
-        "-n", "--network",
-        default='bnn_trained.pth',
-        type=str,
-        help="Output path to write the trained Bayesian Neural Network, PyTorch compatible format."
-    )
-    obj.add_argument(
-        "-x", "--xinput",
-        default='x_',
-        type=str,
-        help="Define the input vector keyword"
-    )
-    obj.add_argument(
-        "-k", "--key",
-        default='measurability',
-        type=str,
-        help="Define the keyword that defines the field to be predicted. It must match the column name in the target file"
-    )
-    obj.add_argument(
-        "-s", "--samples",
-        default='20',
-        type=int,
-        help="Define the number of samples for sample_elbo based posterior estimation"
-    )
-
-
-@variational_estimator
-class BayesianRegressor(nn.Module):
-    def __init__(self, input_dim, output_dim):
-        super().__init__()
-        # simple 2-layer fully connected linear regressor
-        # self.linear = nn.Linear(input_dim, output_dim)
-        # self.linear1  = nn.Linear(input_dim, 128)
-        # self.linear2  = nn.Linear(128, 128)
-        # self.linear3  = nn.Linear(128, output_dim)
-        
-        self.blinear1 = BayesianLinear(256, 512, bias=True)
-
-        self.blinear2 = BayesianLinear(256, 256)
-        self.blinear3 = BayesianLinear(256, output_dim)
-
-        self.elu1     = nn.ELU()
-        self.elu2     = nn.ELU()
-        # # self.elu3     = nn.ELU()
-        # self.blinear3 = BayesianLinear(64, 64)
-        # self.blinear4 = BayesianLinear(64, 64)
-        self.sigmoid1 = nn.Sigmoid()
-        self.sigmoid2 = nn.Sigmoid()
-        # self.sigmoid3 = nn.Sigmoid()
-        # self.log = nn.LogSigmoid()
-        self.silu1 = nn.SiLU()
-        self.silu2 = nn.SiLU()
-        # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-        self.linear_input  = nn.Linear(input_dim, 256, bias=True)
-        self.linear1       = nn.Linear(256, 512, bias=True)
-        self.linear2       = nn.Linear(512, 128, bias=True)
-        self.linear3       = nn.Linear(128, 128, bias=True)
-        self.linear4       = nn.Linear(128, 64, bias=True)
-        self.linear_output = nn.Linear(64, output_dim, bias=True)
-        self.lsig1   = nn.Sigmoid()
-
-
-    def forward(self, x):
-        x_ = self.linear_input(x)
-        x_ = self.silu1(x_)
-        x_ = self.blinear1(x_)
-        # x_ = self.elu1(x_)
-        x_ = self.linear2(x_)
-        x_ = self.silu2(x_)
-        x_ = self.linear4(x_)
-        x_ = self.linear_output(x_)
-
-        # x_ = self.lsig1(x_)
-        # x_ = self.blinear1(x)
-        # x_ = self.linear2(x_)
-        # x_ = self.sigmoid1(x_)
-        # x_ = self.linear3(x_)
-        # x_ = self.linear1(x_)
-        return x_
-        # x_ = self.blinear1(x)
-        # x_ = self.blinear3(x_)
-        # # x_ = self.sigmoid1(x_)
-        # # x_ = self.blinear4(x_)
-        # # x_ = self.elu2 (x_)
-        # return self.blinear2(x_)
-
-# class BayesianRegressor(nn.Module):
-#     def __init__(self, input_dim, output_dim):
-#         super().__init__()
-#         # simple 2-layer fully connected linear regressor
-#         # self.linear = nn.Linear(input_dim, output_dim)
-#         # self.linear1  = nn.Linear(input_dim, 128)
-#         # self.linear2  = nn.Linear(128, 128)
-#         # self.linear3  = nn.Linear(128, output_dim)
-        
-#         self.blinear1 = BayesianLinear(256, 512, bias=True)
-
-#         self.blinear2 = BayesianLinear(256, 256)
-#         self.blinear3 = BayesianLinear(256, output_dim)
-
-#         self.elu1     = nn.ELU()
-#         self.elu2     = nn.ELU()
-#         # # self.elu3     = nn.ELU()
-#         # self.blinear3 = BayesianLinear(64, 64)
-#         # self.blinear4 = BayesianLinear(64, 64)
-#         self.sigmoid1 = nn.Sigmoid()
-#         self.sigmoid2 = nn.Sigmoid()
-#         # self.sigmoid3 = nn.Sigmoid()
-#         # self.log = nn.LogSigmoid()
-#         self.silu1 = nn.SiLU()
-#         self.silu2 = nn.SiLU()
-#         # self.blinear2 = BayesianLinear(64, output_dim, bias=True)
-#         self.linear_input  = nn.Linear(input_dim, 256, bias=True)
-#         self.linear1       = nn.Linear(256, 512, bias=True)
-#         self.linear2       = nn.Linear(512, 128, bias=True)
-#         self.linear3       = nn.Linear(128, 128, bias=True)
-#         self.linear4       = nn.Linear(128, 64, bias=True)
-#         self.linear_output = nn.Linear(64, output_dim, bias=True)
-#         self.lsig1   = nn.Sigmoid()
-
-
-#     def forward(self, x):
-#         x_ = self.linear_input(x)
-#         x_ = self.silu1(x_)
-#         x_ = self.blinear1(x_)
-#         # x_ = self.elu1(x_)
-#         x_ = self.linear2(x_)
-#         x_ = self.silu2(x_)
-#         x_ = self.linear4(x_)
-#         x_ = self.linear_output(x_)
-
-#         # x_ = self.lsig1(x_)
-#         # x_ = self.blinear1(x)
-#         # x_ = self.linear2(x_)
-#         # x_ = self.sigmoid1(x_)
-#         # x_ = self.linear3(x_)
-#         # x_ = self.linear1(x_)
-#         return x_
-#         # x_ = self.blinear1(x)
-#         # x_ = self.blinear3(x_)
-#         # # x_ = self.sigmoid1(x_)
-#         # # x_ = self.blinear4(x_)
-#         # # x_ = self.elu2 (x_)
-#         # return self.blinear2(x_)
-
-
-def evaluate_regression(regressor,
-                        X,
-                        y,
-                        samples = 100):
-
-    # we need to draw k-samples for each x-input entry. Posterior sampling is done to obtain the E[y] over a Gaussian distribution
-    # The maximum likelihood estimates: meand & stdev of the sample vector (large enough for a good approximation)
-    # If sample vector is large enough biased and unbiased estimators will converge (samples >> 1)
-    errors = [] # list containing the error as e = y - E[f(x)] for all the x in X. y_pred = f(x)
-                # E[f(x)] is the expected value, computed as the mean(x) as the MLE for a Gaussian distribution (expected)
-    uncert = []
-    y_list = y.tolist()
-    for i in range(len(X)): # for each input x[i] (that should be the latent enconding of the image)
-        y_samples = []
-        for k in range(samples): # draw k-samples.
-            y_tensor = regressor(X[i])
-            y_samples.append(y_tensor[0].tolist()) # Each call to regressor(x = X[i]) will return a different value
-        # print ("y_samples.len", len(y_samples))
-        # print ("y_samples", y_samples)
-        e_y = statistics.mean(y_samples)        # mean(y_samples) as MLE for E[f(x)]
-        u_y = statistics.stdev(y_samples)        # mean(y_samples) as MLE for E[f(x)]
-        error = e_y - y_list[i][0]                      # error = (expected - target)^2
-        errors.append(error*error)
-        uncert.append(u_y)
-
-    errors_mean = math.sqrt(statistics.mean(errors)) # single axis list, eq: (axis = 0)
-    uncert_mean = statistics.mean(uncert)
-    return errors_mean, uncert_mean
-
 def main(args=None):
-    parser = argparse.ArgumentParser()
-    add_arguments(parser)
+    description_str = "Bayesian Neural Network inference module"
+    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
+    parser = argparse.ArgumentParser(description=description_str, formatter_class=formatter)
+    # argparse.HelpFormatter(parser,'width=120')
+    par.add_arguments(parser)
 
     if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
         # Show help if no args provided
@@ -228,10 +46,10 @@ def main(args=None):
     # we are in training mode
     Console.info("Prediction mode enabled. Looking for pretained network and input latent vectors")
     # Looking for CSV with latent vectors (input)
-    if os.path.isfile(args.latent):
-        Console.info("Latent input file: ", args.latent)
+    if os.path.isfile(args.input):
+        Console.info("Latent input file: ", args.input)
     else:
-        Console.error("Latent input file [" + args.latent + "] not found. Please check the provided input path (-l, --latent)")
+        Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-l, --latent)")
 
     # check for pre-trained network
     # if output file exists, warn user
@@ -254,17 +72,17 @@ def main(args=None):
         n_samples = 20
     # this is the key that is used to identity the target output (single) or the column name for the predictions
     if (args.key):
-        col_key = args.key
+        output_key = args.key
     else:
-        col_key = 'measurability'
+        output_key = 'measurability'
     # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.xinput):
-        input_key = args.key
+    if (args.latent):
+        input_key = args.latent
     else:
         input_key = 'latent_'   # default expected from LGA based pipeline 
 
-    Console.info("Loading latent input [", args.latent ,"]")
-    np_latent, n_latents, df = PredictiveEngine.loadData(args.latent, latent_name_prefix= 'latent_')
+    Console.info("Loading latent input [", args.input ,"]")
+    np_latent, n_latents, df = PredictiveEngine.loadData(args.input, latent_name_prefix= 'latent_')
 
     Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -277,7 +95,8 @@ def main(args=None):
     #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
 
     # Apply any pre-existing scaling factor to the input
-    X_norm = np_latent/10.0  # for large latents, input to the network
+    X_norm = np_latent  # for large latents, input to the network
+    # X_norm = np_latent/10.0  # for large latents, input to the network
     print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
 
     # Then, check the dataframe which should contain the same ordered rows from the latent space (see final step of training/validation)
@@ -350,7 +169,7 @@ def main(args=None):
     output_name = args.output
     Console.info("Exporting predictions to:", output_name)
     pred_df.to_csv(output_name)
-    Console.warn("End of tasks")
+    Console.warn("Done!")
     return 0
 
 ########################################################################
