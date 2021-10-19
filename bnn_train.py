@@ -178,6 +178,11 @@ def main(args=None):
     y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
     y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
     # sys.exit(1)
+    if torch.cuda.is_available():
+        Console.info("Using CUDA")
+    else:
+        Console.warn("Using CPU")
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
