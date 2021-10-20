@@ -38,7 +38,7 @@ class CodeTimer:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.took = (timeit.default_timer() - self.start) * 1000.0
-        print(BColors.OKBLUE + self.name + ' took ▸ ' + BColors.ENDC + str(self.took) + ' ms')
+        print(BColors.OKBLUE + self.name + ' took > ' + BColors.ENDC + str(self.took) + ' ms')
 
 # Singleton class to wrap the console output
 class Console:
@@ -48,7 +48,7 @@ class Console:
     def warn(*args, **kwargs):
         """Print a warning message"""
         print(
-            BColors.WARNING + "WARN ▸ " + BColors.ENDC + " ".join(map(str, args)),
+            BColors.WARNING + "WARN > " + BColors.ENDC + " ".join(map(str, args)),
             **kwargs
         )
 
@@ -56,7 +56,7 @@ class Console:
     def error(*args, **kwargs):
         """Print and error message"""
         print(
-            BColors.FAIL + "ERROR ▸ " + BColors.ENDC + " ".join(map(str, args)),
+            BColors.FAIL + "ERROR > " + BColors.ENDC + " ".join(map(str, args)),
             **kwargs
         )
 
@@ -64,7 +64,7 @@ class Console:
     def info(*args, **kwargs):
         """Print and information message"""
         print(
-            BColors.OKBLUE + "INFO ▸ " + BColors.ENDC + " ".join(map(str, args)),
+            BColors.OKBLUE + "INFO > " + BColors.ENDC + " ".join(map(str, args)),
             **kwargs
         )
 
@@ -87,12 +87,12 @@ class Console:
     def banner():
         """Displays Ocean Perception banner and copyright"""
         print(" ")
-        print(BColors.OKBLUE + "     ● ● " + BColors.ENDC + " Ocean Perception")
+        print(BColors.OKBLUE + "     O O " + BColors.ENDC + " Ocean Perception")
         print(
             BColors.OKBLUE
-            + "     ● "
+            + "     O "
             + BColors.WARNING
-            + "▲ "
+            + "A "
             + BColors.ENDC
             + " University of Southampton"
         )
@@ -186,7 +186,7 @@ class Console:
         suffix="Complete",
         length=50,
         decimals=1,
-        fill="█",
+        fill="*",
     ):
         """Call in a loop to create a progress bar in the terminal
 
@@ -205,7 +205,7 @@ class Console:
         decimals : int
             Number of decimal places of the percentage, by default 1
         fill : str
-            Bar fill character, by default '█'
+            Bar fill character, by default '*'
         """
         percent = ("{0:." + str(decimals) + "f}").format(
             100 * (iteration / float(total))
