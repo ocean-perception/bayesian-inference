@@ -1,0 +1,6 @@
+Caller:
+
+python bnn_train.py -t data/oceans2021/M4_Residual-D5_training_transects.csv -i data/oceans2021/latent/LGA_h64/training_transects_h64.csv -o predictions_M4_Residual_E${EPOCHS}F_h64.csv -n bnn_oceans_D5_E${EPOCHS}F_h64.pth -g log_M4_Residual_e${EPOCHS}F_h64.csv -e ${EPOCHS} -k M4_Residual -s 5 -u relative_path
+
+
+Host: [cappelletto@menkalinan]

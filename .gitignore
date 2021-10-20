@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Data files
+*.csv
+*.xls
+
+# Trained networks
+*.pth

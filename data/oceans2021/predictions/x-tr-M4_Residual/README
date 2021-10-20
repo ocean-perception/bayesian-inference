@@ -1,0 +1,18 @@
+h16_training_transects.csv >>
+8xsampled transects:
+1
+6
+11
+16
+21
+26
+31
+36
+
+[caller]
+python bnn_geotech.py -t data/oceans2021/M4_Residual-D5_training_transects.csv -l data/oceans2021/latent/LGA_h16/training_transects.csv -o tained_M4_Residual.csv -n bnn_oceans_D5_E50.pth -e 50 -k M4_Residual -s 8
+
+
+[host]
+[menkalinan] /home/cappelletto/github/self/bnn-geotech-predictor
+

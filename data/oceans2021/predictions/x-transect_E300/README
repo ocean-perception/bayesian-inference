@@ -1,0 +1,16 @@
+h16_training_transects.csv >>
+8xsampled transects:
+1
+6
+11
+16
+21
+26
+31
+36
+
+[caller]
+python bnn_geotech.py -l data/oceans2021/h16_training_transects.csv -t data/oceans2021/M4_training_transects.csv -o h16_m4_d5_training.csv -n bnn_oceans_D5transects.pth -e 300 -k measurability -s 10
+
+[host]
+remote@acropora:/media/data/Datasets/Sync/bnn-geotech-predictor

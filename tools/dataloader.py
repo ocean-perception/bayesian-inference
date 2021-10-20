@@ -19,7 +19,7 @@ class CustomDataloader:
     def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
         Console.info("load_dataset called for: ", input_filename)
 
-        df = pd.read_csv(input_filename, index_col=0) # remove index_col=0 when using toy dataset (otherwise it's used as df index and won't be available for query)
+        df = pd.read_csv(input_filename) # remove index_col=0 when using toy dataset (otherwise it's used as df index and won't be available for query)
         # df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
 
         # 1) Data validation, remove invalid entries (e.g. NaN)
@@ -38,6 +38,11 @@ class CustomDataloader:
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
         # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
+        print ("matching_key: ", matching_key)
+        print ("target_key: ", target_key)
+        print ("latent_name_prefix: ", latent_name_prefix)
+
+
         df['filename_base'] = df[matching_key]
 
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
@@ -46,11 +51,22 @@ class CustomDataloader:
 
         # print (tdf.head())    
         Console.info("Target entries: ", len(tdf))
-        merged_df = pd.merge(df, tdf, how='right', on='filename_base')
+
+        print ("****************************************************\n")
+        print (df.head())
+        print ("****************************************************\n")
+        print (tdf.head())
+        print ("****************************************************\n")
+
+        # merged_df = pd.merge(df, tdf, how='right', on='filename_base') # WARNING < -ORIGINAL MERGE, MODIFIED TO USE WITH TOY DATASET
+        merged_df = pd.merge(df, tdf, how='inner', on='X1', suffixes=('', '_y'))
         merged_df = merged_df.dropna()
+
 
         latent_df = merged_df.filter(regex=latent_name_prefix)
         Console.info ("Latent size: ", latent_df.shape)
+        print (merged_df.head())
+        print ("****************************************************\n")
         target_df = merged_df[target_key]
 
         np_latent = latent_df.to_numpy(dtype='float')
@@ -91,5 +107,5 @@ class CustomDataloader:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.took = (timeit.default_timer() - self.start) * 1000.0
-        print(BColors.OKBLUE + self.name + ' took ▸ ' + BColors.ENDC + str(self.took) + ' ms')
+        print(BColors.OKBLUE + self.name + ' took > ' + BColors.ENDC + str(self.took) + ' ms')
 

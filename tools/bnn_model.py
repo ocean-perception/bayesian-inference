@@ -20,6 +20,8 @@ class BayesianRegressor(nn.Module):
         # self.linear2       = nn.Linear(128, 128, bias=True)
         self.linear_output = nn.Linear(128, output_dim, bias=True)
         self.relu          = nn.LeakyReLU()
+        self.relu2         = nn.LeakyReLU()
+        self.silu1         = nn.SiLU()
 
     def forward(self, x):
         x_ = self.linear_input(x)
@@ -29,7 +31,7 @@ class BayesianRegressor(nn.Module):
         # x_ = F.relu(self.linear1(x_))
         # x_ = F.relu(self.linear2(x_))
         # x_ = self.blinear2(x_)
-        # x_ = self.relu2(x_);
+        x_ = self.silu1(x_);
         x_ = self.linear_output(x_)
         return x_
 
