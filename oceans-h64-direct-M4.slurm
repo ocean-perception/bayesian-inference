@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#SBATCH --mem=16G
+
+#SBATCH --ntasks-per-node=10
+#SBATCH --time=24:00:00
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=cappelletto@gmail.com
+
+ml restore blitz
+conda activate blitz
+
+LATENT_SIZE=64
+LATENT_FILE="data/iridis/latent/latent_h64_TR_ALL.csv"
+TARGET_FILE="data/iridis/target/measurability/direct-r040/direct-r040_TR00-06-36.csv"
+SUFFIX_ESH="E"${BNN_EPOCHS}"s"${BNN_SAMPLES}"_h"${LATENT_SIZE}
+OUT_FILE="directM4_"${SUFFIX_ESH}".csv"
+OUT_NET="trainM4-direct_"${SUFFIX_ESH}".csv"
+
+python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=measurability -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
