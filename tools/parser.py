@@ -51,7 +51,7 @@ def add_arguments(obj):
     # logfile #########################
     obj.add_argument(
         "-g", "--logfile",
-        default='training_log.csv',
+#        default='training_log.csv',
         type=str,
         help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance"
     )

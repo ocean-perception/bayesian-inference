@@ -172,10 +172,10 @@ def main(args=None):
                                                         test_size=.15, # 3:1 ratio
                                                         shuffle = True) 
 
-    X_train, y_train = torch.tensor(X_train).float(), torch.tensor(y_train).float()
-    X_test, y_test   = torch.tensor(X_test).float(),  torch.tensor(y_test).float()
+    X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(y_train).float()
+    X_test, y_test   = torch.Tensor(X_test).float(),  torch.Tensor(y_test).float()
 
-    y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N) tensor rather than a (NX1) tensor
+    y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N).Tensor rather than a (NX1).Tensor
     y_test = torch.unsqueeze(y_test, -1)    # we add an additional dummy dimension
     # sys.exit(1)
     if torch.cuda.is_available():
@@ -190,8 +190,8 @@ def main(args=None):
     criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
-    # for param_tensor in regressor.state_dict():
-    #     print(param_tensor, "\t", regressor .state_dict()[param_tensor].size())
+    # for param.Tensor in regressor.state_dict():
+    #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
     dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
@@ -308,7 +308,7 @@ def main(args=None):
     Console.info("Testing predictions...")
     idx = 0 
     # for x in X_test:
-    Xp_ = torch.tensor(X_norm).float()
+    Xp_ = torch.Tensor(X_norm).float()
 
     regressor.eval() # we need to set eval mode before running inference
                      # this will set dropout and batch normalization to evaluation mode
