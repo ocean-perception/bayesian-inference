@@ -38,6 +38,10 @@ class CustomDataloader:
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
         # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
+        print ("matching_key: ", matching_key)
+        print ("target_key: ", target_key)
+        print ("latent_name_prefix: ", latent_name_prefix)
+
         df['filename_base'] = df[matching_key]
 
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
@@ -46,7 +50,17 @@ class CustomDataloader:
 
         # print (tdf.head())    
         Console.info("Target entries: ", len(tdf))
+
+        print ("****************************************************\n")
+        print (df.head())
+        print ("****************************************************\n")
+        print (tdf.head())
+        print ("****************************************************\n")
+
         merged_df = pd.merge(df, tdf, how='right', on='filename_base')
+        print("Merging on RIGHT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" )
+        print (merged_df.head())
+
         merged_df = merged_df.dropna()
 
         latent_df = merged_df.filter(regex=latent_name_prefix)

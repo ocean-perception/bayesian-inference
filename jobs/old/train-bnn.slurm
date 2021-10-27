@@ -11,12 +11,12 @@
 ml restore blitz
 conda activate blitz
 
-LATENT_SIZE=16
-LATENT_FILE="data/iridis/latent/latent_h16_TR_ALL.csv"
+
+LATENT_SIZE=64
+LATENT_FILE="data/iridis/latent/latent_h64_TR_ALL.csv"
 TARGET_FILE="data/iridis/target/measurability/direct-r040/direct-r040_TR00-06-36.csv"
 SUFFIX_ESH="E"${BNN_EPOCHS}"s"${BNN_SAMPLES}"_h"${LATENT_SIZE}
 OUT_FILE="directM4_"${SUFFIX_ESH}".csv"
-OUT_NET="trainM4-direct_"${SUFFIX_ESH}".csv"
-LOG_FILE="train_directM4_"${SUFFIX_ESH}".log"
+OUT_NET="trainM4-direct_"${SUFFIX_ESH}".pth"
 
-python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=measurability -o ${OUT_FILE} --uuid=uuid -g ${LOG_FILE} -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
+python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=measurability -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
