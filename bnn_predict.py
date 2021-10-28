@@ -164,7 +164,12 @@ def main(args=None):
     # pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     # pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
-    # output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    # Let's clean the dataframe before exporting ti
+    # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
+    df.drop(list(df.filter(regex = 'latent_')), # the regex string could be updated to match any user-defined latent vector name
+            axis =1,            # search in columns
+            inplace = True)     # replace the current df, no need to reassign to a new variable
+
     print (pred_df.head())
     output_name = args.output
     Console.info("Exporting predictions to:", output_name)

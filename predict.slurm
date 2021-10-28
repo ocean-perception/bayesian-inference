@@ -103,15 +103,13 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 
 # to avoid replacing the original predictions (performed at the end of the training stage with the T:V data), we create a new output for the whole map
 OUT_FILE="prd_"${JOB_ID}".csv"
-TRAINED_NET="net_"${JOB_ID}".pth"
+TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/"net_"${JOB_ID}".pth"
 # log file is no longer needed
 #LOG_FILE="log_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
 
 
-python bnn_predict.py 
---input
---network
---samples
---output
+python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET}
+--samples ${BNN_SAMPLES}
+--output 
 
 python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
