@@ -103,9 +103,9 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 
 # SUFFIX_ESH="E"${BNN_EPOCHS}"s"${BNN_SAMPLES}"h"${LATENT_SIZE}
-OUT_FILE="prd_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
-OUT_NET="net_"${JOB_ID}"_"${SUFFIX_ESH}".pth"
-LOG_FILE="log_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
+OUT_FILE="prd_"${JOB_ID}".csv"
+OUT_NET="net_"${JOB_ID}".pth"
+LOG_FILE="log_"${JOB_ID}".csv"
 
 
 python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9

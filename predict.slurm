@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --mem=8G
-#SBATCH --ntasks-per-node=5
+#SBATCH --ntasks-per-node=8
 #SBATCH --time=18:00:00
 
 #SBATCH --mail-type=ALL
@@ -12,6 +12,7 @@ ml restore blitz
 source /local/software/conda/miniconda-py3-new/etc/profile.d/conda.sh
 conda activate blitz
 
+# BNN prediction job. It calls bnn_predict.py to infer onto precalculated latent input vector and pretrained BNN networks
 # Script version 2
 # JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
@@ -95,17 +96,22 @@ else
     exit 1;
 fi
 
-
-
-
+# This should pull the latent vector for all the transects overing the whole map (careful with potential overaps)
 LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
+# The target file is no longer required as we will not train a new network
+#TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 
-TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
+# to avoid replacing the original predictions (performed at the end of the training stage with the T:V data), we create a new output for the whole map
+OUT_FILE="prd_"${JOB_ID}".csv"
+TRAINED_NET="net_"${JOB_ID}".pth"
+# log file is no longer needed
+#LOG_FILE="log_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
 
-# SUFFIX_ESH="E"${BNN_EPOCHS}"s"${BNN_SAMPLES}"h"${LATENT_SIZE}
-OUT_FILE="prd_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
-OUT_NET="net_"${JOB_ID}"_"${SUFFIX_ESH}".pth"
-LOG_FILE="log_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
 
+python bnn_predict.py 
+--input
+--network
+--samples
+--output
 
 python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
