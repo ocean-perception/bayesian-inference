@@ -87,9 +87,18 @@ def main(args=None):
     Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+
+    if torch.cuda.is_available():
+        Console.info("Using CUDA")
+        regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+    else:
+        Console.warn("Using CPU")
+        regressor.load_state_dict(torch.load(args.network, map_location=torch.device('cpu'))) # load state from deserialized object
+#    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+
     regressor.eval()    # switch to inference mode (set dropout layers)
-   
+ 
+
     # print("Model's state_dict:")
     # for param_tensor in regressor.state_dict():
     #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
@@ -166,7 +175,7 @@ def main(args=None):
 
     # Let's clean the dataframe before exporting ti
     # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
-    df.drop(list(df.filter(regex = 'latent_')), # the regex string could be updated to match any user-defined latent vector name
+    pred_df.drop(list(pred_df.filter(regex = 'latent_')), # the regex string could be updated to match any user-defined latent vector name
             axis =1,            # search in columns
             inplace = True)     # replace the current df, no need to reassign to a new variable
 

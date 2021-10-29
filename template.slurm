@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --mem=8G
-#SBATCH --ntasks-per-node=5
+#xBATCH --ntasks-per-node=4
 #SBATCH --time=18:00:00
 
 #SBATCH --mail-type=ALL

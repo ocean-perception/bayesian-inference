@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --mem=8G
-#SBATCH --ntasks-per-node=8
-#SBATCH --time=18:00:00
+#SBATCH --ntasks-per-node=2
+#SBATCH --time=4:00:00
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=cappelletto@gmail.com
@@ -96,20 +96,20 @@ else
     exit 1;
 fi
 
-# This should pull the latent vector for all the transects overing the whole map (careful with potential overaps)
+# This should pull the latent vector for all the transects overing the whole map (careful with potential overlaps)
 LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 # The target file is no longer required as we will not train a new network
 #TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 
 # to avoid replacing the original predictions (performed at the end of the training stage with the T:V data), we create a new output for the whole map
 OUT_FILE="prd_"${JOB_ID}".csv"
-TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/"net_"${JOB_ID}".pth"
-# log file is no longer needed
-#LOG_FILE="log_"${JOB_ID}"_"${SUFFIX_ESH}".csv"
+TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/net_"${JOB_ID}".pth"
 
+python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE}
 
-python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET}
---samples ${BNN_SAMPLES}
---output 
+# We could use a different number of MC samples for the MLE. It does not need to match the same MC samples used for training
 
-python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
+# python bnn_predict.py --input=data/iridis/latent/latent_h16_TR_ALL.csv 
+# --network=/media/cappelletto/ssd480/experiments/iridis5/bnn-analysis/iridis-results/r040/landability/direct/dM3s1631/net_dM3s1631.pth 
+# -s 2 
+# --output=out_dM3s1631_RENAME.csv
