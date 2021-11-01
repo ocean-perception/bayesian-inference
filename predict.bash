@@ -77,10 +77,10 @@ else
 fi
 
 if [ "$_LAYER" == 'M3' ]; then
-    OUT_KEY="landability"
+    OUT_KEY="predicted_landability"
     echo -e "Training for ["${OUT_KEY}"]"
 elif [ "$_LAYER" == 'M4' ]; then
-    OUT_KEY="measurability"
+    OUT_KEY="predicted_measurability"
     echo -e "Training for ["${OUT_KEY}"]"
 else
     echo -e "Target unknown, expected (M3) landability or (M4) measurability. Received: ["${_LAYER}"]"
