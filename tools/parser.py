@@ -84,3 +84,10 @@ def add_arguments(obj):
         type=float,
         help="Define the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0"
     )
+    # output/target scaling
+    obj.add_argument(
+        "--scale",
+        default='1.0',
+        type=float,
+        help="Define the outputtarget scaling factor. Default: 1.0 (no scaling))"
+    )

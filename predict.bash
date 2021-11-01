@@ -9,8 +9,8 @@
 
 #ml restore blitz
 
-source /media/data/install/anaconda3/etc/profile.d/conda.sh
-conda activate blitz
+#source /media/data/install/anaconda3/etc/profile.d/conda.sh
+#conda activate blitz
 
 # BNN prediction job. It calls bnn_predict.py to infer onto precalculated latent input vector and pretrained BNN networks
 # Script version 2
@@ -105,7 +105,7 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 OUT_FILE="prd_"${JOB_ID}".csv"
 TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/net_"${JOB_ID}".pth"
 
-python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE}
+python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --scale 0.1
 
 # We could use a different number of MC samples for the MLE. It does not need to match the same MC samples used for training
 

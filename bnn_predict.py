@@ -81,6 +81,11 @@ def main(args=None):
     else:
         input_key = 'latent_'   # default expected from LGA based pipeline 
 
+    if (args.scale):
+        scaling_factor = args.scale 
+    else:
+        scaling_factor = 1.0
+
     Console.info("Loading latent input [", args.input ,"]")
     np_latent, n_latents, df = PredictiveEngine.loadData(args.input, latent_name_prefix= 'latent_')
 
@@ -112,6 +117,7 @@ def main(args=None):
     # Console.info("testing predictions...")
     idx = 0 
     Xp_ = torch.tensor(X_norm).float()  # convert normalized intput vector into tensor
+    Xp_ = Xp_ * scaling_factor
 
 ########################################################################
 ########################################################################
