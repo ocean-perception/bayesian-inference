@@ -17,7 +17,7 @@ export JOB_ID=$1
 # Let's verify it has 8 character as expected
 if [[ ${#JOB_ID} -lt 8 ]]; then
     echo -e "Invalid JOB_ID="${JOB_ID}" definition, at least 8 character length expected"
-    return -1
+    exit 1
 fi
 # Now, we pull the substring for each parameter defined inside JOB_ID string
 _TYPE=${JOB_ID:0:1}
