@@ -14,7 +14,7 @@
 
 # BNN prediction job. It calls bnn_predict.py to infer onto precalculated latent input vector and pretrained BNN networks
 # Script version 2
-# JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
+# _JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
 # [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
 # [r]  data spatial resolution: (u) ultrahigh res 10mm/px, (h) high res 20mm/px, (s) standard res 40mm/px, (l) low res 500mm/px
@@ -24,18 +24,20 @@
 
 # Sample: dM4h6432 --> direct, measurability, 20mm/px, 64 latent, 300 epochs, 10 samples
 
+_JOB_ID=$1
+
 # Let's verify it has 8 character as expected
-if [[ ${#JOB_ID} -lt 8 ]]; then
-    echo -e "Invalid JOB_ID="${JOB_ID}" definition, at least 8 character length expected"
+if [[ ${#_JOB_ID} -lt 8 ]]; then
+    echo -e "Invalid _JOB_ID="${_JOB_ID}" definition, at least 8 character length expected"
     return -1
 fi
-# Now, we pull the substring for each parameter defined inside JOB_ID string
-_TYPE=${JOB_ID:0:1}
-_LAYER=${JOB_ID:1:2}
-_RESOL=${JOB_ID:3:1}
-_LATEN=${JOB_ID:4:2}
-_EPOCH=${JOB_ID:6:1}
-_SAMPL=${JOB_ID:7:1}
+# Now, we pull the substring for each parameter defined inside _JOB_ID string
+_TYPE=${_JOB_ID:0:1}
+_LAYER=${_JOB_ID:1:2}
+_RESOL=${_JOB_ID:3:1}
+_LATEN=${_JOB_ID:4:2}
+_EPOCH=${_JOB_ID:6:1}
+_SAMPL=${_JOB_ID:7:1}
 
 
 # Easiest ones: Epochs, Samples and Latent
@@ -102,8 +104,8 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 #TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 
 # to avoid replacing the original predictions (performed at the end of the training stage with the T:V data), we create a new output for the whole map
-OUT_FILE="prd_"${JOB_ID}".csv"
-TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/net_"${JOB_ID}".pth"
+OUT_FILE="all_"${_JOB_ID}".csv"
+TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${_JOB_ID}"/net_"${_JOB_ID}".pth"
 
 python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --scale 0.1
 
