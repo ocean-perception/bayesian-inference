@@ -23,7 +23,7 @@ def add_arguments(obj):
     # key #########################
     obj.add_argument(
         "-k", "--key",
-        default='measurability',
+#        default='key',
         type=str,
         help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"
     )

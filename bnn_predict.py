@@ -74,7 +74,7 @@ def main(args=None):
     if (args.key):
         output_key = args.key
     else:
-        output_key = 'measurability'
+        output_key = 'predicted'
     # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
     if (args.latent):
         input_key = args.latent
@@ -168,7 +168,7 @@ def main(args=None):
     pred_df[args.key] = predicted    
     pred_df["uncertainty"] = uncertainty    
     new_cols = pred_df.columns.values
-    new_cols[0]="ID"
+    new_cols[0]="uuid"  # this should be the first non-index column, expected to be the uuid
     # pred_df.columns = new_cols   # we rename the name of the column [0], which has empty
     # pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     # pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
@@ -185,86 +185,6 @@ def main(args=None):
     pred_df.to_csv(output_name)
     Console.warn("Done!")
     return 0
-
-########################################################################
-########################################################################
-#####
-# Older training step
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-
-    # for epoch in range(num_epochs):
-    #     train_loss = []
-    #     for i, (datapoints, labels) in enumerate(dataloader_train):
-    #         optimizer.zero_grad()
-            
-    #         loss = regressor.sample_elbo(inputs=datapoints.to(device),
-    #                         labels=labels.to(device),
-    #                         criterion=criterion,    # MSELoss
-    #                         sample_nbr=n_samples,
-    #                         complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
-    #         loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
-    #         optimizer.step()
-    #         train_loss.append(loss.item())
-            
-    #     test_loss = []
-    #     fit_loss = []
-
-    #     for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
-    #         sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
-    #                             labels=test_labels.to(device),
-    #                             criterion=criterion,
-    #                             sample_nbr=n_samples,
-    #                             complexity_cost_weight=elbo_kld/X_test.shape[0])
-
-    #         fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
-    #                             labels=test_labels.to(device),
-    #                             criterion=criterion,
-    #                             sample_nbr=n_samples,
-    #                             complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
-
-    #         test_loss.append(sample_loss.item())
-    #         fit_loss.append(fit_loss_sample.item())
-
-    #     mean_test_loss = statistics.mean(test_loss)
-    #     stdv_test_loss = statistics.stdev(test_loss)
-
-    #     mean_train_loss = statistics.mean(train_loss)
-
-    #     mean_fit_loss = statistics.mean(fit_loss)
-    #     stdv_fit_loss = statistics.stdev(fit_loss)
-
-    #     Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Valid. loss: {:.4f}".format(mean_test_loss) + " Fit loss: {:.4f}  ***".format(mean_fit_loss) )
-    #     Console.progress(epoch, num_epochs)
-
-    #     test_hist.append(mean_test_loss)
-    #     uncert_hist.append(stdv_test_loss)
-    #     train_hist.append(mean_train_loss)
-
-    #     fit_hist.append(mean_fit_loss)
-    #     ufit_hist.append(stdv_fit_loss)
-
-    #     # train_hist.append(statistics.mean(train_loss))
-
-    #     # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
-    #     #     temp_name = "bnn_model_" + str(epoch) + ".pth"
-    #     #     torch.save(regressor.state_dict(), temp_name)
-
-    # Console.info("Training completed!")
-    # # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
-    # torch.save(regressor.state_dict(), args.network)
-
-    # export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
-    # export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
-
-    # print ("head", export_df.head())
-    # output_name = "bnn_training_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    # export_df.to_csv(output_name)
-    # # export_df.to_csv("bnn_train_report.csv")
-    # # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
 
 
 if __name__ == '__main__':

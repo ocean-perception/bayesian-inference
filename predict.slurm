@@ -75,10 +75,10 @@ else
 fi
 
 if [ "$_LAYER" == 'M3' ]; then
-    OUT_KEY="landability"
+    OUT_KEY="predicted_landability"
     echo -e "Training for ["${OUT_KEY}"]"
 elif [ "$_LAYER" == 'M4' ]; then
-    OUT_KEY="measurability"
+    OUT_KEY="predicted_measurability"
     echo -e "Training for ["${OUT_KEY}"]"
 else
     echo -e "Target unknown, expected (M3) landability or (M4) measurability. Received: ["${_LAYER}"]"
@@ -102,10 +102,10 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 #TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 
 # to avoid replacing the original predictions (performed at the end of the training stage with the T:V data), we create a new output for the whole map
-OUT_FILE="prd_"${JOB_ID}".csv"
+OUT_FILE="all_"${JOB_ID}".csv"
 TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/net_"${JOB_ID}".pth"
 
-python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE}
+python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --key ${OUT_KEY}
 
 # We could use a different number of MC samples for the MLE. It does not need to match the same MC samples used for training
 

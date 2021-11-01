@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --mem=8G
-#xBATCH --ntasks-per-node=4
-#SBATCH --time=18:00:00
+#sBATCH --ntasks-per-node=1
+#SBATCH --time=28:00:00
 
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=cappelletto@gmail.com
@@ -35,7 +35,6 @@ _RESOL=${JOB_ID:3:1}
 _LATEN=${JOB_ID:4:2}
 _EPOCH=${JOB_ID:6:1}
 _SAMPL=${JOB_ID:7:1}
-
 
 # Easiest ones: Epochs, Samples and Latent
 if (( _LATEN < 4 )); then
@@ -95,9 +94,6 @@ else
     exit 1;
 fi
 
-
-
-
 LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 
 TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
@@ -106,6 +102,5 @@ TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_L
 OUT_FILE="prd_"${JOB_ID}".csv"
 OUT_NET="net_"${JOB_ID}".pth"
 LOG_FILE="log_"${JOB_ID}".csv"
-
 
 python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
