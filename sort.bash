@@ -34,7 +34,7 @@ if (( _LATEN < 4 )); then
     exit 1;
 else
     LATENT_SIZE=${_LATEN}
-    echo -e "Latent size: "${LATENT_SIZE}
+#    echo -e "Latent size: "${LATENT_SIZE}
 fi
 
 if (( _EPOCH < 1 )); then
@@ -42,7 +42,7 @@ if (( _EPOCH < 1 )); then
     exit 1;
 else
     BNN_EPOCHS=$((_EPOCH*100))
-    echo -e "Epochs: "${BNN_EPOCHS}
+#    echo -e "Epochs: "${BNN_EPOCHS}
 fi
 
 if ((_SAMPL < 1)); then
@@ -50,15 +50,15 @@ if ((_SAMPL < 1)); then
     exit 1;
 else
     BNN_SAMPLES=$((_SAMPL*5))
-    echo -e "Samples: "${BNN_SAMPLES}
+#    echo -e "Samples: "${BNN_SAMPLES}
 fi
 
 if [ "$_TYPE" == 'd' ]; then
     OUT_TYPE="direct"
-    echo -e "Using ["${OUT_TYPE}"]"
+#    echo -e "Using ["${OUT_TYPE}"]"
 elif [ "$_TYPE" == 'r' ]; then
     OUT_TYPE="residual"
-    echo -e "Using ["${OUT_TYPE}"]"
+#    echo -e "Using ["${OUT_TYPE}"]"
 else
     echo -e "Target type definition unkown. It must be either (d)irect or (r)esidual. Received: ["${_TYPE}"]"
     exit 1;
@@ -66,10 +66,10 @@ fi
 
 if [ "$_LAYER" == 'M3' ]; then
     OUT_KEY="landability"
-    echo -e "Training for ["${OUT_KEY}"]"
+#    echo -e "Training for ["${OUT_KEY}"]"
 elif [ "$_LAYER" == 'M4' ]; then
     OUT_KEY="measurability"
-    echo -e "Training for ["${OUT_KEY}"]"
+#    echo -e "Training for ["${OUT_KEY}"]"
 else
     echo -e "Target unknown, expected (M3) landability or (M4) measurability. Received: ["${_LAYER}"]"
     exit 1;
@@ -77,10 +77,10 @@ fi
 
 if [ "$_RESOL" == 's' ]; then
     RESOLUTION="r040"
-    echo -e "Map resolution ["${RESOLUTION}"]"
+#    echo -e "Map resolution ["${RESOLUTION}"]"
 elif [ "$_RESOL" == 'h' ]; then
     RESOLUTION="r020"
-    echo -e "Map resolution ["${RESOLUTION}"mm/px]"
+#    echo -e "Map resolution ["${RESOLUTION}"mm/px]"
 else
     echo -e "Unknown map resolution, expected (s)tandard 40mm/px or (h)igh 20mm/px. Received: ["${_RESOL}"]"
     exit 1;
