@@ -36,7 +36,7 @@ def main(args=None):
     # argparse.HelpFormatter(parser,'width=120')
     par.add_arguments(parser)
 
-    if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
+    if len(sys.argv) == 1 and args is None: # no argument passed? error, some parameters were expected
         # Show help if no args provided
         parser.print_help(sys.stderr)
         sys.exit(2)
@@ -117,7 +117,6 @@ def main(args=None):
     # Console.info("testing predictions...")
     idx = 0 
     Xp_ = torch.tensor(X_norm).float()  # convert normalized intput vector into tensor
-    Xp_ = Xp_ * scaling_factor
 
 ########################################################################
 ########################################################################
@@ -149,8 +148,8 @@ def main(args=None):
         # print ("pred.type", type(predictions))
         # print ("pred.len", len(predictions))    ---> 10 (n_samples)
 
-        p_mean = statistics.mean(predictions)
-        p_stdv = statistics.stdev(predictions)
+        p_mean = statistics.mean(predictions) * scaling_factor  # --> scaling the output of our prediction (after MC sampling)
+        p_stdv = statistics.stdev(predictions) * scaling_factor
         idx = idx + 1
         # print ("p_mean", type(p_mean))  --> float
 

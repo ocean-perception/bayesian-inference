@@ -77,10 +77,10 @@ else
 fi
 
 if [ "$_LAYER" == 'M3' ]; then
-    OUT_KEY="predicted_landability"
+    OUT_KEY="landability"
     echo -e "Training for ["${OUT_KEY}"]"
 elif [ "$_LAYER" == 'M4' ]; then
-    OUT_KEY="predicted_measurability"
+    OUT_KEY="measurability"
     echo -e "Training for ["${OUT_KEY}"]"
 else
     echo -e "Target unknown, expected (M3) landability or (M4) measurability. Received: ["${_LAYER}"]"
@@ -107,7 +107,10 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 OUT_FILE="all_"${_JOB_ID}".csv"
 TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${_JOB_ID}"/net_"${_JOB_ID}".pth"
 
-python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --scale 0.1
+
+python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --key "predicted_"${OUT_KEY} --scale 0.1
+
+#python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --scale 0.1
 
 # We could use a different number of MC samples for the MLE. It does not need to match the same MC samples used for training
 
