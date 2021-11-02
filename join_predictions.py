@@ -40,6 +40,15 @@ def main(args=None):
     else:
         Console.info("Output file: ", args.output)
 
+
+    if (args.key):
+        index_key = args.key
+        Console.info("Using output key [", index_key,"]")
+    else:
+        index_key = "predicted"
+        Console.warn("Using default output key [", index_key,"]")
+
+
     df1 = pd.read_csv(args.target, index_col = 0)       # <------- ground truth
     df2 = pd.read_csv(args.input, index_col = 0)        # <------- predictions
 
@@ -60,7 +69,7 @@ def main(args=None):
     # [index/empty] | uuid | northing [m] from target | easting [m] from target | [score: measurability/landability] | [predicted score]
 
     # We trim the prediction dataframe, we only need 'uuid' and the prediction + uncertainty columns
-    dfx = df2[["uuid", "predicted", "uncertainty"]]
+    dfx = df2[["uuid", index_key, "uncertainty"]]
     ij_df = pd.merge(df1, dfx, on = 'uuid', how = 'inner')
     Console.info ("Exporting merged dataframes to ", args.output)
     ij_df.to_csv(args.output)

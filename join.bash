@@ -112,4 +112,4 @@ fi
 
 OUTPUT_FILE="map_"${_JOB_ID}".csv"
 
-python join_predictions.py --input ${PREDICT_FILE} --target ${TARGET_FILE} --output ${OUTPUT_FILE}
+python join_predictions.py --input ${PREDICT_FILE} --target ${TARGET_FILE} --output ${OUTPUT_FILE} --key "predicted_"${OUT_KEY}
