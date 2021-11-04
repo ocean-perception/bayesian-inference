@@ -1,2 +1,2 @@
 #!/bin/bash
-find results/ -name all* | awk -F/ '{print $5}'
+find results/ -name net* | awk -F/ '{print $5}'

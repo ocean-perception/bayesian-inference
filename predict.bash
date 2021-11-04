@@ -49,13 +49,23 @@ else
     echo -e "Latent size: "${LATENT_SIZE}
 fi
 
-if (( _EPOCH < 1 )); then
-    echo -e "Training epochs must be positive. _EPOCH = ["$_EPOCH"]"
+# Expand _EPOCH range to admit single-digit hexadecimal (0-9,A-F)
+_r=$((16#$_EPOCH))
+if (( _r < 1 )); then
+    echo -e "Invalid training epoch value, must be single digit positive hexadecimal (1-9,A-F). _EPOCH = ["$_EPOCH"]"
     exit 1;
 else
-    BNN_EPOCHS=$((_EPOCH*100))
-    echo -e "Epochs: "${BNN_EPOCHS}
+    BNN_EPOCHS=$((_r*100))
+   echo -e "Epochs: "${BNN_EPOCHS}
 fi
+
+# if (( _EPOCH < 1 )); then
+#     echo -e "Training epochs must be positive. _EPOCH = ["$_EPOCH"]"
+#     exit 1;
+# else
+#     BNN_EPOCHS=$((_EPOCH*100))
+#     echo -e "Epochs: "${BNN_EPOCHS}
+# fi
 
 if ((_SAMPL < 1)); then
     echo -e "Monte Carlo samples must be positive. _SAMPL = ["$_SAMPL"]"
