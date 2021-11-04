@@ -19,75 +19,25 @@ if [[ ${#JOB_ID} -lt 8 ]]; then
     echo -e "Invalid JOB_ID="${JOB_ID}" definition, at least 8 character length expected"
     exit 1
 fi
-# Now, we pull the substring for each parameter defined inside JOB_ID string
-_TYPE=${JOB_ID:0:1}
-_LAYER=${JOB_ID:1:2}
-_RESOL=${JOB_ID:3:1}
-_LATEN=${JOB_ID:4:2}
-_EPOCH=${JOB_ID:6:1}
-_SAMPL=${JOB_ID:7:1}
 
+DATA_PATH=$(./scripts/id2path.bash ${JOB_ID})
+_R=$?
 
-# Easiest ones: Epochs, Samples and Latent
-if (( _LATEN < 4 )); then
-    echo -e "Latent vector must have more than 4 dimensions. _LATEN = ["$_LATEN"]"
-    exit 1;
+if [[ _R -eq 0 ]]; then
+    # let's check if the target directory exists
+    if [[ ! -d "${DATA_PATH}" ]]; then
+        echo "Target directory ["${DATA_PATH}"] not found."
+        if [[ "$2" == "-c" ]]; then
+            echo " Creating..."
+            mkdir -p ${DATA_PATH}
+        else
+            echo "If you want to create it, use the option '-c' as second argument"
+            echo "    $ sort.bash ${DATA_PATH} -c"
+            exit 1
+        fi     
+    fi
+    echo -e "Moving files to: ["${DATA_PATH}"]"
+    mv *${JOB_ID}* ${DATA_PATH}
 else
-    LATENT_SIZE=${_LATEN}
-#    echo -e "Latent size: "${LATENT_SIZE}
+    echo "Invalid JOB_ID provided: [" ${JOB_ID} "]"
 fi
-
-if (( _EPOCH < 1 )); then
-    echo -e "Training epochs must be positive. _EPOCH = ["$_EPOCH"]"
-    exit 1;
-else
-    BNN_EPOCHS=$((_EPOCH*100))
-#    echo -e "Epochs: "${BNN_EPOCHS}
-fi
-
-if ((_SAMPL < 1)); then
-    echo -e "Monte Carlo samples must be positive. _SAMPL = ["$_SAMPL"]"
-    exit 1;
-else
-    BNN_SAMPLES=$((_SAMPL*5))
-#    echo -e "Samples: "${BNN_SAMPLES}
-fi
-
-if [ "$_TYPE" == 'd' ]; then
-    OUT_TYPE="direct"
-#    echo -e "Using ["${OUT_TYPE}"]"
-elif [ "$_TYPE" == 'r' ]; then
-    OUT_TYPE="residual"
-#    echo -e "Using ["${OUT_TYPE}"]"
-else
-    echo -e "Target type definition unkown. It must be either (d)irect or (r)esidual. Received: ["${_TYPE}"]"
-    exit 1;
-fi
-
-if [ "$_LAYER" == 'M3' ]; then
-    OUT_KEY="landability"
-#    echo -e "Training for ["${OUT_KEY}"]"
-elif [ "$_LAYER" == 'M4' ]; then
-    OUT_KEY="measurability"
-#    echo -e "Training for ["${OUT_KEY}"]"
-else
-    echo -e "Target unknown, expected (M3) landability or (M4) measurability. Received: ["${_LAYER}"]"
-    exit 1;
-fi
-
-if [ "$_RESOL" == 's' ]; then
-    RESOLUTION="r040"
-#    echo -e "Map resolution ["${RESOLUTION}"]"
-elif [ "$_RESOL" == 'h' ]; then
-    RESOLUTION="r020"
-#    echo -e "Map resolution ["${RESOLUTION}"mm/px]"
-else
-    echo -e "Unknown map resolution, expected (s)tandard 40mm/px or (h)igh 20mm/px. Received: ["${_RESOL}"]"
-    exit 1;
-fi
-
-DATA_PATH="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/"
-echo -e "Moving files to: ["${DATA_PATH}"]"
-
-mv *${JOB_ID}* ${DATA_PATH}
-
