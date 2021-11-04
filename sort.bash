@@ -21,7 +21,7 @@ if [[ ${#JOB_ID} -lt 8 ]]; then
 fi
 
 DATA_PATH=$(./scripts/id2path.bash ${JOB_ID})
-_R=$?
+_R=$?   # store the result from the previous call to check if there was an error during JOB_ID parsing. If so, exit
 
 if [[ _R -eq 0 ]]; then
     # let's check if the target directory exists
