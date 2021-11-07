@@ -91,6 +91,6 @@ else
     exit 1;
 fi
 
-DATA_PATH="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/"
-echo ${DATA_PATH}
+TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR_ALL.csv"
+echo ${TARGET_FILE}
 exit 0	# no errors detected
