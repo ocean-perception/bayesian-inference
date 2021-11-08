@@ -6,16 +6,16 @@
 # residual --> [-1.0, +1.0]
 
 # Sample: dM4h6432 --> direct, measurability, 20mm/px, 64 latent, 300 epochs, 10 samples
-# We only need to parse the type of prediction, the rest is processed by the [findid] bash script
+# We only need to parse the type of prediction, the rest is processed by the [id2path] bash script
 _JOB_ID=$1
 
-# Let's verify it has 8 character as expected
+# Let's verify it has 8 characters as expected
 if [[ ${#_JOB_ID} -lt 8 ]]; then
-    echo -e "Invalid _JOB_ID="${_JOB_ID}" definition, at least 8 character length expected"
+    echo -e "Invalid _JOB_ID="${_JOB_ID}" definition, at least 8 characters are expected"
     exit 1
 fi
 # Now, we pull the substring for each parameter defined inside _JOB_ID string
-_TYPE=${_JOB_ID:0:1}    # Direct or Residual
+_TYPE=${_JOB_ID:0:1}    # (d)irect or (r)esidual
 
 # let's retrieve the full path to the corresponding job folder
 DATA_PATH=$(bash scripts/id2path.bash ${_JOB_ID})
@@ -27,12 +27,14 @@ fi
 # Let's check if we have the predicted map all_$JOB_ID
 if [[ ! -f ${DATA_PATH}/all_${_JOB_ID}.csv ]]; then
     echo -e "Missing predicted map ${DATA_PATH}/all_${_JOB_ID}.csv"
+    # TODO: we can try to generate the predictions from the trained network, if available
     exit 1
 else
     echo -e "Found predicted map [${DATA_PATH}/all_${_JOB_ID}].csv"
+    # The predicted map 'all_' contains OPLAB compatible fields that can be ignored. We are interested on uuid and the score
 fi
 
-# If the predicted map type is 'residual' we need to calculate the reconstruction by adding the residual map to the low resolution map
+# If the predicted map type is 'residual' we need to calculate the reconstruction by adding the 'residual' map to the low resolution map
 if [[ $_TYPE == "r" ]]; then
     # This is only necessary when predicting residuals. We need to reconstruct the map using the low resolution version of the map
     # and the predicted residual map. Join (reconstruct) mut be performed on the uuid column
@@ -56,5 +58,4 @@ fi
 exit 0
 
 OUTPUT_FILE="rec_"${_JOB_ID}".csv"
-
 #python join_predictions.py --input ${PREDICT_FILE} --target ${TARGET_FILE} --output ${OUTPUT_FILE} --key "predicted_"${OUT_KEY}

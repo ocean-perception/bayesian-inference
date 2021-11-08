@@ -42,22 +42,22 @@ class CustomDataloader:
         print ("target_key: ", target_key)
         print ("latent_name_prefix: ", latent_name_prefix)
 
-        df['filename_base'] = df[matching_key]
+        df['matching_key'] = df[matching_key]
 
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
         tdf = tdf.dropna()
-        tdf['filename_base'] = tdf[matching_key]
+        tdf['matching_key'] = tdf[matching_key]
 
         # print (tdf.head())    
         Console.info("Target entries: ", len(tdf))
 
-        print ("****************************************************\n")
-        print (df.head())
-        print ("****************************************************\n")
-        print (tdf.head())
-        print ("****************************************************\n")
+        # print ("****************************************************\n")
+        # print (df.head())
+        # print ("****************************************************\n")
+        # print (tdf.head())
+        # print ("****************************************************\n")
 
-        merged_df = pd.merge(df, tdf, how='right', on='filename_base')
+        merged_df = pd.merge(df, tdf, how='right', on='matching_key')
         print("Merging on RIGHT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" )
         print (merged_df.head())
 
@@ -70,7 +70,7 @@ class CustomDataloader:
         np_latent = latent_df.to_numpy(dtype='float')
         np_target = target_df.to_numpy(dtype='float')
         # input-output datasets are linked using the key provided by matching_key
-        return np_latent, np_target, merged_df['filename_base']
+        return np_latent, np_target, merged_df['matching_key']
 
 
     def load_toydataset (input_filename, target_key ='mean_slope', input_prefix= 'latent_', matching_key='relative_path'):

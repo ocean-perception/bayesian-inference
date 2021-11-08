@@ -295,8 +295,8 @@ def main(args=None):
     export_df = pd.DataFrame([train_hist, trfit_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
     export_df.columns = ['train_error', 'train_fit_loss', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
 
-    # print ("head", export_df.head())
-    export_df.to_csv(logfile_name)
+    # export_df.index.names=['index']
+    export_df.to_csv(logfile_name, index = False)
     # export_df.to_csv("bnn_train_report.csv")
     # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
 
@@ -353,7 +353,7 @@ def main(args=None):
     # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
     Console.warn("Exported predictions to: ", predictions_name)
-    pred_df.to_csv(predictions_name)
+    pred_df.to_csv(predictions_name, index = False)
     # print (pred_df.head())
 
 if __name__ == '__main__':
