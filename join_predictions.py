@@ -70,9 +70,10 @@ def main(args=None):
 
     # We trim the prediction dataframe, we only need 'uuid' and the prediction + uncertainty columns
     dfx = df2[["uuid", index_key, "uncertainty"]]
-    ij_df = pd.merge(df1, dfx, on = 'uuid', how = 'inner')
+    merged_df = pd.merge(df1, dfx, on = 'uuid', how = 'inner')
     Console.info ("Exporting merged dataframes to ", args.output)
-    ij_df.to_csv(args.output)
+    merged_df.index.names=['index']
+    merged_df.to_csv(args.output)
     Console.info ("... done!")
 
 if __name__ == '__main__':
