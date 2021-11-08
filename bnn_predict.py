@@ -187,6 +187,7 @@ def main(args=None):
     print (pred_df.head())
     output_name = args.output
     Console.info("Exporting predictions to:", output_name)
+    pred_df.index.names = ['index']
     pred_df.to_csv(output_name)
     Console.warn("Done!")
     return 0
