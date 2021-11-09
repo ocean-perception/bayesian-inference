@@ -1,18 +1,6 @@
 #!/bin/bash
 
-#SBATCH --mem=8G
-#sBATCH --ntasks-per-node=1
-#SBATCH --time=28:00:00
-
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=cappelletto@gmail.com
-
-# ml restore blitz
-
-# source /local/software/conda/miniconda-py3-new/etc/profile.d/conda.sh
-# conda activate blitz
-
-# Script version 2
+# Script version 3
 # JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
 # [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
@@ -110,7 +98,6 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 
 TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 
-# SUFFIX_ESH="E"${BNN_EPOCHS}"s"${BNN_SAMPLES}"h"${LATENT_SIZE}
 OUT_FILE="prd_"${_JOB_ID}".csv"
 OUT_NET="net_"${_JOB_ID}".pth"
 LOG_FILE="log_"${_JOB_ID}".csv"
