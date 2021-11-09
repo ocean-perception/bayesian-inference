@@ -117,14 +117,4 @@ LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
 OUT_FILE="all_"${_JOB_ID}".csv"
 TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${_JOB_ID}"/net_"${_JOB_ID}".pth"
 
-
 python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --key "predicted_"${OUT_KEY} --scale 0.1
-
-#python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --scale 0.1
-
-# We could use a different number of MC samples for the MLE. It does not need to match the same MC samples used for training
-
-# python bnn_predict.py --input=data/iridis/latent/latent_h16_TR_ALL.csv 
-# --network=/media/cappelletto/ssd480/experiments/iridis5/bnn-analysis/iridis-results/r040/landability/direct/dM3s1631/net_dM3s1631.pth 
-# -s 2 
-# --output=out_dM3s1631_RENAME.csv
