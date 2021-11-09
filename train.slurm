@@ -12,6 +12,10 @@ ml restore blitz
 source /local/software/conda/miniconda-py3-new/etc/profile.d/conda.sh
 conda activate blitz
 
+# AT this point we could just call the train.bash script as it already contains the necessary commands to train the model
+bash train.bash ${JOB_ID}
+exit 0
+
 # Script version 2
 # JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
