@@ -339,7 +339,7 @@ def main(args=None):
     pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
     # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
-    pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
+    pred_df.columns = ['y', 'predicted', 'uncertainty', 'uuid']
     Console.warn("Exported predictions to: ", predictions_name)
     pred_df.to_csv(predictions_name, index = False)
     # print (pred_df.head())
