@@ -109,9 +109,8 @@ else
 fi
 
 # This should pull the latent vector for all the transects overing the whole map (careful with potential overlaps)
-LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
-# The target file is no longer required as we will not train a new network
-#TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
+#LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
+LATENT_FILE=$(bash scripts/id2latent.bash $_JOB_ID)
 
 # to avoid replacing the original predictions (performed at the end of the training stage with the T:V data), we create a new output for the whole map
 OUT_FILE="all_"${_JOB_ID}".csv"
