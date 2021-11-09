@@ -12,33 +12,36 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
         # simple 2-layer fully connected linear regressor
-        self.blinear1 = BayesianLinear(128, 256, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
-        # self.blinear2 = BayesianLinear(128, 128, bias=True)
-        # self.blinear2 = BayesianLinear(128, output_dim, bias=True)
-        self.linear_input  = nn.Linear(input_dim, 128, bias=True)
-        self.linear1       = nn.Linear(256, 128, bias=True)
+        self.linear_input  = nn.Linear(input_dim, 256, bias=True)
+
+        self.blinear1 = BayesianLinear(256, 512, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+
+        self.linear2       = nn.Linear(512, 128, bias=True)
+
+        self.linear3       = nn.Linear(128, 64, bias=True)
+
         # self.linear2       = nn.Linear(128, 128, bias=True)
-        self.linear_output = nn.Linear(128, output_dim, bias=True)
-        self.relu          = nn.LeakyReLU()
-        self.relu2         = nn.LeakyReLU()
-        self.silu1         = nn.SiLU()
+        self.linear_output = nn.Linear(64, output_dim, bias=True)
+
+        # self.relu          = nn.LeakyReLU()
+        # self.relu2         = nn.LeakyReLU()
+        # self.silu1         = nn.SiLU()
+
+    # Oceans architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output 
+
 
     def forward(self, x):
-        x_ = self.linear_input(x)
-        x_ = self.blinear1(x_)
-        x_ = self.relu(x_)
-        x_ = self.linear1(x_)
-        # x_ = F.relu(self.linear1(x_))
-        # x_ = F.relu(self.linear2(x_))
-        # x_ = self.blinear2(x_)
-        x_ = self.silu1(x_);
-        x_ = self.linear_output(x_)
+        x_ =        self.linear_input (x)
+        x_ = F.silu(self.blinear1     (x_))
+        x_ = F.silu(self.linear2      (x_))
+        x_ =        self.linear3      (x_);
+        x_ =        self.linear_output(x_)
         return x_
-
+        
 def evaluate_regression(regressor,
                         X,
                         y,
-                        samples = 25):
+                        samples = 15):
 
     # we need to draw k-samples for each x-input entry. Posterior sampling is done to obtain the E[y] over a Gaussian distribution
     # The maximum likelihood estimates: meand & stdev of the sample vector (large enough for a good approximation)

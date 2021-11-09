@@ -23,7 +23,7 @@ def add_arguments(obj):
     # key #########################
     obj.add_argument(
         "-k", "--key",
-        default='measurability',
+#        default='key',
         type=str,
         help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"
     )
@@ -51,7 +51,7 @@ def add_arguments(obj):
     # logfile #########################
     obj.add_argument(
         "-g", "--logfile",
-        default='training_log.csv',
+#        default='training_log.csv',
         type=str,
         help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance"
     )
@@ -83,4 +83,11 @@ def add_arguments(obj):
         default='0.8',
         type=float,
         help="Define the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0"
+    )
+    # output/target scaling
+    obj.add_argument(
+        "--scale",
+        default='1.0',
+        type=float,
+        help="Define the outputtarget scaling factor. Default: 1.0 (no scaling))"
     )
