@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# BNN prediction job. It calls bnn_predict.py to infer onto precalculated latent input vector and pretrained BNN networks
+# Validates and generates training transect targe filename from _JOB_ID/arg
 # Script version 2
 # _JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
@@ -19,14 +19,13 @@ if [[ ${#_JOB_ID} -lt 8 ]]; then
     echo -e "Invalid _JOB_ID="${_JOB_ID}" definition, at least 8 character length expected"
     exit 1
 fi
-# Now, we pull the substring for each parameter defined inside _JOB_ID string
+# Now, we pull the substring for each parameter defined inside JOB_ID string
 _TYPE=${_JOB_ID:0:1}
 _LAYER=${_JOB_ID:1:2}
 _RESOL=${_JOB_ID:3:1}
 _LATEN=${_JOB_ID:4:2}
 _EPOCH=${_JOB_ID:6:1}
 _SAMPL=${_JOB_ID:7:1}
-
 
 # Easiest ones: Epochs, Samples and Latent
 if (( _LATEN < 4 )); then
@@ -91,6 +90,6 @@ else
     exit 1;
 fi
 
-TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR_ALL.csv"
+TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
 echo ${TARGET_FILE}
 exit 0	# no errors detected

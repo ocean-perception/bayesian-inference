@@ -27,13 +27,13 @@ _EPOCH=${_JOB_ID:6:1}
 _SAMPL=${_JOB_ID:7:1}
 
 # Easiest ones: Epochs, Samples and Latent
-if (( _LATEN < 4 )); then
-    echo -e "Latent vector must have more than 4 dimensions. _LATEN = ["$_LATEN"]"
-    exit 1;
-else
-    LATENT_SIZE=${_LATEN}
-    echo -e "Latent size: "${LATENT_SIZE}
-fi
+# if (( _LATEN < 4 )); then
+#     echo -e "Latent vector must have more than 4 dimensions. _LATEN = ["$_LATEN"]"
+#     exit 1;
+# else
+#     LATENT_SIZE=${_LATEN}
+#     echo -e "Latent size: "${LATENT_SIZE}
+# fi
 
 # Expand _EPOCH range to admit single-digit hexadecimal (0-9,A-F)
 _r=$((16#$_EPOCH))
@@ -45,14 +45,6 @@ else
    echo -e "Epochs: "${BNN_EPOCHS}
 fi
 
-# if (( _EPOCH < 1 )); then
-#     echo -e "Training epochs must be positive. _EPOCH = ["$_EPOCH"]"
-#     exit 1;
-# else
-#     BNN_EPOCHS=$((_EPOCH*100))
-#     echo -e "Epochs: "${BNN_EPOCHS}
-# fi
-
 if ((_SAMPL < 1)); then
     echo -e "Monte Carlo samples must be positive. _SAMPL = ["$_SAMPL"]"
     exit 1;
@@ -61,16 +53,16 @@ else
     echo -e "Samples: "${BNN_SAMPLES}
 fi
 
-if [ "$_TYPE" == 'd' ]; then
-    OUT_TYPE="direct"
-    echo -e "Using ["${OUT_TYPE}"]"
-elif [ "$_TYPE" == 'r' ]; then
-    OUT_TYPE="residual"
-    echo -e "Using ["${OUT_TYPE}"]"
-else
-    echo -e "Target type definition unkown. It must be either (d)irect or (r)esidual. Received: ["${_TYPE}"]"
-    exit 1;
-fi
+# if [ "$_TYPE" == 'd' ]; then
+#     OUT_TYPE="direct"
+#     echo -e "Using ["${OUT_TYPE}"]"
+# elif [ "$_TYPE" == 'r' ]; then
+#     OUT_TYPE="residual"
+#     echo -e "Using ["${OUT_TYPE}"]"
+# else
+#     echo -e "Target type definition unkown. It must be either (d)irect or (r)esidual. Received: ["${_TYPE}"]"
+#     exit 1;
+# fi
 
 if [ "$_LAYER" == 'M3' ]; then
     OUT_KEY="landability"
@@ -83,20 +75,22 @@ else
     exit 1;
 fi
 
-if [ "$_RESOL" == 's' ]; then
-    RESOLUTION="r040"
-    echo -e "Map resolution ["${RESOLUTION}"]"
-elif [ "$_RESOL" == 'h' ]; then
-    RESOLUTION="r020"
-    echo -e "Map resolution ["${RESOLUTION}"mm/px]"
-else
-    echo -e "Unknown map resolution, expected (s)tandard 40mm/px or (h)igh 20mm/px. Received: ["${_RESOL}"]"
-    exit 1;
-fi
+# if [ "$_RESOL" == 's' ]; then
+#     RESOLUTION="r040"
+#     echo -e "Map resolution ["${RESOLUTION}"]"
+# elif [ "$_RESOL" == 'h' ]; then
+#     RESOLUTION="r020"
+#     echo -e "Map resolution ["${RESOLUTION}"mm/px]"
+# else
+#     echo -e "Unknown map resolution, expected (s)tandard 40mm/px or (h)igh 20mm/px. Received: ["${_RESOL}"]"
+#     exit 1;
+# fi
 
-LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
+#LATENT_FILE="data/iridis/latent/latent_h"${LATENT_SIZE}"_TR_ALL.csv"
+LATENT_FILE=$(bash scripts/id2latent.bash $_JOB_ID)
 
-TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
+#TARGET_FILE="data/iridis/target/"${OUT_KEY}"/"${OUT_TYPE}"-"${RESOLUTION}"/"${_LAYER}"_"${OUT_TYPE}"_"${RESOLUTION}"_TR00-06-36.csv"
+TARGET_FILE=$(bash scripts/id2train.bash $_JOB_ID)
 
 OUT_FILE="prd_"${_JOB_ID}".csv"
 OUT_NET="net_"${_JOB_ID}".pth"
