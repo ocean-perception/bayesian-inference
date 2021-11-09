@@ -138,23 +138,15 @@ def main(args=None):
 
     # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = output_key, input_prefix= latent_key, matching_key='uuid')    # relative_path is the common key in both tables
 
-    # y = y/10    #some rescale    WARNING
-
-    # X = X/10.0  # for large latents
     # n_sample = X.shape[0]
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
     # norm = MinMaxScaler().fit(y)
     # y_norm = norm.transform(y)      # min max normalization of our output data
-    # y_norm = (y - 5.0)/30.0          # for slope maps
     y_norm = 10*y
     # norm = MinMaxScaler().fit(X)
     # X_norm = norm.transform(X)      # min max normalization of our input data
     X_norm = X
-
-    # Pre-augmentation: second array column: X^2
-    # X_norm2 = X_norm * X_norm
-    # X_ext = np.column_stack([X_norm, X_norm2]) # side by side join as aug input
 
     # X_norm = X_ext
     n_latents = X_norm.shape[1]      # this is the only way to retrieve the size of input latent vectors
@@ -279,10 +271,6 @@ def main(args=None):
             fit_hist.append(mean_fit_loss)
             ufit_hist.append(stdv_fit_loss)
 
-            # train_hist.append(statistics.mean(train_loss))
-            # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
-            #     temp_name = "bnn_model_" + str(epoch) + ".pth"
-            #     torch.save(regressor.state_dict(), temp_name)
 
     except KeyboardInterrupt:
         Console.warn("Training interrupted...")
