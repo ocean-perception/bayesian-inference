@@ -24,7 +24,7 @@ fi
     read -r LATENT_SIZE
     read -r BNN_EPOCHS
     read -r BNN_SAMPLES
-} <<< "$(bash parse_id.bash $JOB_ID)"   # multiline read for the 6 expected variables parsed from JOB_ID
+} <<< "$(bash scripts/parse_id.bash $JOB_ID)"   # multiline read for the 6 expected variables parsed from JOB_ID
 
 if [[ "$?" -ne "0" ]]; then
     echo "Error parsing JOB_ID"
