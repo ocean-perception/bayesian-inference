@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# BNN prediction job. It calls bnn_predict.py to infer onto precalculated latent input vector and pretrained BNN networks
-# Script version 2
+# Script version 3
+# Generate the base directory path for a given JOB_ID
 # JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
 # [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
@@ -12,7 +12,7 @@
 
 # Sample: dM4h6432 --> direct, measurability, 20mm/px, 64 latent, 300 epochs, 10 samples
 
-export JOB_ID=$1
+JOB_ID=$1
 if [[ -z "$JOB_ID" ]]; then
     echo "Missing JOB_ID argument"
     exit 1
