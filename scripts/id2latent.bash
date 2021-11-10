@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script version 2
-# Generates corresponding CSV filepath for the corresponding latent vector given JOB_ID
+# Script version 3
+# Generates CSV filepath for the corresponding latent vector given JOB_ID
 # [t]  type of data: (r) for residual or (d) for direct calculation
 # [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
 # [r]  data spatial resolution: (u) ultrahigh res 10mm/px, (h) high res 20mm/px, (s) standard res 40mm/px, (l) low res 500mm/px
