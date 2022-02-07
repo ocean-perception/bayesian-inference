@@ -25,9 +25,8 @@ from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-# Helper lirbaries (viz)
+# Helper libaries (viz)
 import matplotlib.pyplot as plt
-import matplotlib
 # Toolkit
 from tools.console import Console
 from tools.dataloader import CustomDataloader
@@ -38,7 +37,7 @@ import statistics
 import math
 
 def main(args=None):
-    description_str = "Bayesian Neural Network inference module"
+    description_str = "Bayesian Neural Network inference module to predict terrain related derivatives from low-resolution priors"
     formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
     parser = argparse.ArgumentParser(description=description_str, formatter_class=formatter)
     # argparse.HelpFormatter(parser,'width=120')
@@ -51,7 +50,7 @@ def main(args=None):
     args = parser.parse_args(args)  # retrieve parsed arguments
     Console.info("Bayesian Neural Network for hi-res inference from low res acoustic priors (LGA-Bathymetry)")
 
-    # we are in training mode
+    # we are in prediction (inference) mode
     Console.info("Prediction mode enabled. Looking for pretained network and input latent vectors")
     # Looking for CSV with latent vectors (input)
     if os.path.isfile(args.input):
@@ -60,25 +59,24 @@ def main(args=None):
         Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-l, --latent)")
 
     # check for pre-trained network
-    # if output file exists, warn user
-
     if os.path.isfile(args.network):
         Console.info("Pre-trained network file [", args.network, "] found")
     else:
         Console.error("No pre-trained network found at: ", args.network)
         Console.info ("Terminating...")
         return -1
-
+    # if output file exists, warn user
     if os.path.isfile(args.output):
         Console.warn("Output file [", args.output, "] already exists. It will be overwritten (default action)")
     else:
         Console.info("Output file: ", args.output)
     # ELBO k-sampling for posterior estimation. The larger the better the MLE, but slower. Good range: 5~25
+    # WARNING: current MLE relies on the assumption that the predicted output follows a symmetric distribution, spec. Gaussian. 
     if (args.samples):
-        n_samples = args.samples
+        k_samples = args.samples
     else:
-        n_samples = 20
-    # this is the key that is used to identity the target output (single) or the column name for the predictions
+        k_samples = 20
+    # this is the 'key' that is used to identity the target output (single) or the column name for the predictions
     if (args.key):
         output_key = args.key
     else:
@@ -88,7 +86,7 @@ def main(args=None):
         input_key = args.latent
     else:
         input_key = 'latent_'   # default expected from LGA based pipeline 
-
+    # if necessary, the user can provide a scaling factor for the input values
     if (args.scale):
         scaling_factor = args.scale 
     else:
@@ -99,7 +97,7 @@ def main(args=None):
 
     Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
+    regressor = BayesianRegressor(n_latents, 1).to(device)                  # Single output being predicted
 
     if torch.cuda.is_available():
         Console.info("Using CUDA")
@@ -110,51 +108,40 @@ def main(args=None):
 #    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
 
     regressor.eval()    # switch to inference mode (set dropout layers)
- 
 
+    # DEBUG information
     # print("Model's state_dict:")
     # for param_tensor in regressor.state_dict():
     #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
 
     # Apply any pre-existing scaling factor to the input
     X_norm = np_latent  # for large latents, input to the network
-    # X_norm = np_latent/10.0  # for large latents, input to the network
     print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
 
     # Then, check the dataframe which should contain the same ordered rows from the latent space (see final step of training/validation)
-    # Console.info("testing predictions...")
     idx = 0 
     Xp_ = torch.tensor(X_norm).float()  # convert normalized intput vector into tensor
 
 ########################################################################
 ########################################################################
 ########################################################################
-########################################################################
 
-    # iteration = 0
-    # # Training time
-    # test_hist = []
-    # uncert_hist = []
-    # train_hist = []
-    # fit_hist = []
-    # ufit_hist = []
-    # elbo_kld = 1.0
-
-    # # Once trained, we start inferring
+    # Network is pretrained so we start inferring
     expected = []
     uncertainty = []
     predicted = [] # == y
 
+    # For every input (row) we draw a K samples from the posterior
     for x in Xp_:
         predictions = []
-        for n in range(n_samples):
+        for n in range(k_samples):
             p = regressor(x.to(device)).item()
             # print ("p.type", type(p)) ----> float
             # print ("p.len", len(p))
             predictions.append(p) #1D output, retieve single item
 
         # print ("pred.type", type(predictions))
-        # print ("pred.len", len(predictions))    ---> 10 (n_samples)
+        # print ("pred.len", len(predictions))    ---> 10 (k_samples)
 
         p_mean = statistics.mean(predictions) * scaling_factor  # --> scaling the output of our prediction (after MC sampling)
         p_stdv = statistics.stdev(predictions) * scaling_factor
@@ -165,8 +152,6 @@ def main(args=None):
         uncertainty.append(p_stdv)
         Console.progress(idx, len(Xp_))
 
-
-########################################################################
 ########################################################################
 ########################################################################
 ########################################################################
@@ -189,8 +174,8 @@ def main(args=None):
     # Let's clean the dataframe before exporting ti
     # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
     pred_df.drop(list(pred_df.filter(regex = 'latent_')), # the regex string could be updated to match any user-defined latent vector name
-            axis =1,            # search in columns
-            inplace = True)     # replace the current df, no need to reassign to a new variable
+                axis =1,            # search in columns
+                inplace = True)     # replace the current df, no need to reassign to a new variable
 
     print (pred_df.head())
     output_name = args.output
@@ -199,7 +184,6 @@ def main(args=None):
     pred_df.to_csv(output_name)
     Console.warn("Done!")
     return 0
-
 
 if __name__ == '__main__':
     main()
