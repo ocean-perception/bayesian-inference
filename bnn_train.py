@@ -1,5 +1,5 @@
-# Importe general libraries
-import re
+# Import general libraries
+import re # Regular expressions (eventually to be deprecated)
 import sys
 import os
 import torch
@@ -277,7 +277,6 @@ def main(args=None):
         # sys.exit()
 
     Console.info("Training completed!")
-    # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
     torch.save(regressor.state_dict(), network_name)
 
     export_df = pd.DataFrame([train_hist, trfit_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
@@ -322,23 +321,11 @@ def main(args=None):
 
         Console.progress(idx, len(Xp_))
 
-    # print ("predicted:" , predicted)
-    # print ("predicted.type", type(predicted))
-    # print ("predicted.len", len(predicted))
-    # print ("X.len:" , len(X_test))
-    # y_list = y_train.squeeze().tolist()
     y_list = y_norm.squeeze().tolist()
-    # y_list = y_test.squeeze().tolist()
-    # y_list = [element.item() for element in y_test.flatten()]
 
     xl = np.squeeze(X_norm).tolist()
 
-    # print ("y_list.len", len(y_list))
-    # predicted.len = X.len (as desired)
-    # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
     pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
-    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df.values.tolist() ]).transpose()
-    # pred_df.columns = ['Xp_', 'y', 'predicted', 'uncertainty', 'index']
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'uuid']
     Console.warn("Exported predictions to: ", predictions_name)
     pred_df.to_csv(predictions_name, index = False)

@@ -1,5 +1,5 @@
-# Importe general libraries
-import re
+# Import general libraries
+import re # Regular expressions (eventually to be deprecated)
 import sys
 import os
 import torch
