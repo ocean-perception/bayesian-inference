@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Copyright (c) 2022, Ocean Perception Lab, Univ. of Southampton
+All rights reserved.
+Licensed under GNU General Public License v3.0
+See LICENSE file in the project root for full license information.
+"""
+
 # Import general libraries
 import re # Regular expressions (eventually to be deprecated)
 import sys
