@@ -1,5 +1,5 @@
-# Importe general libraries
-import re
+# Import general libraries
+import re # Regular expressions (eventually to be deprecated)
 import sys
 import os
 import torch
@@ -36,7 +36,7 @@ def main(args=None):
     # argparse.HelpFormatter(parser,'width=120')
     par.add_arguments(parser)
 
-    if len(sys.argv) == 1 and args is None: # no arggument passed? error, some parameters were expected
+    if len(sys.argv) == 1 and args is None: # no argument passed? error, some parameters were expected
         # Show help if no args provided
         parser.print_help(sys.stderr)
         sys.exit(2)
@@ -74,12 +74,17 @@ def main(args=None):
     if (args.key):
         output_key = args.key
     else:
-        output_key = 'measurability'
+        output_key = 'predicted'
     # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
     if (args.latent):
         input_key = args.latent
     else:
         input_key = 'latent_'   # default expected from LGA based pipeline 
+
+    if (args.scale):
+        scaling_factor = args.scale 
+    else:
+        scaling_factor = 1.0
 
     Console.info("Loading latent input [", args.input ,"]")
     np_latent, n_latents, df = PredictiveEngine.loadData(args.input, latent_name_prefix= 'latent_')
@@ -87,9 +92,18 @@ def main(args=None):
     Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
-    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+
+    if torch.cuda.is_available():
+        Console.info("Using CUDA")
+        regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+    else:
+        Console.warn("Using CPU")
+        regressor.load_state_dict(torch.load(args.network, map_location=torch.device('cpu'))) # load state from deserialized object
+#    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+
     regressor.eval()    # switch to inference mode (set dropout layers)
-   
+ 
+
     # print("Model's state_dict:")
     # for param_tensor in regressor.state_dict():
     #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
@@ -134,8 +148,8 @@ def main(args=None):
         # print ("pred.type", type(predictions))
         # print ("pred.len", len(predictions))    ---> 10 (n_samples)
 
-        p_mean = statistics.mean(predictions)
-        p_stdv = statistics.stdev(predictions)
+        p_mean = statistics.mean(predictions) * scaling_factor  # --> scaling the output of our prediction (after MC sampling)
+        p_stdv = statistics.stdev(predictions) * scaling_factor
         idx = idx + 1
         # print ("p_mean", type(p_mean))  --> float
 
@@ -159,98 +173,24 @@ def main(args=None):
     pred_df[args.key] = predicted    
     pred_df["uncertainty"] = uncertainty    
     new_cols = pred_df.columns.values
-    new_cols[0]="ID"
+    new_cols[0]="uuid"  # this should be the first non-index column, expected to be the uuid
     # pred_df.columns = new_cols   # we rename the name of the column [0], which has empty
     # pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     # pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
-    # output_name = "bnn_predictions_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
+    # Let's clean the dataframe before exporting ti
+    # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
+    pred_df.drop(list(pred_df.filter(regex = 'latent_')), # the regex string could be updated to match any user-defined latent vector name
+            axis =1,            # search in columns
+            inplace = True)     # replace the current df, no need to reassign to a new variable
+
     print (pred_df.head())
     output_name = args.output
     Console.info("Exporting predictions to:", output_name)
+    pred_df.index.names = ['index']
     pred_df.to_csv(output_name)
     Console.warn("Done!")
     return 0
-
-########################################################################
-########################################################################
-#####
-# Older training step
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-########################################################################
-
-    # for epoch in range(num_epochs):
-    #     train_loss = []
-    #     for i, (datapoints, labels) in enumerate(dataloader_train):
-    #         optimizer.zero_grad()
-            
-    #         loss = regressor.sample_elbo(inputs=datapoints.to(device),
-    #                         labels=labels.to(device),
-    #                         criterion=criterion,    # MSELoss
-    #                         sample_nbr=n_samples,
-    #                         complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
-    #         loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
-    #         optimizer.step()
-    #         train_loss.append(loss.item())
-            
-    #     test_loss = []
-    #     fit_loss = []
-
-    #     for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
-    #         sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
-    #                             labels=test_labels.to(device),
-    #                             criterion=criterion,
-    #                             sample_nbr=n_samples,
-    #                             complexity_cost_weight=elbo_kld/X_test.shape[0])
-
-    #         fit_loss_sample = regressor.sample_elbo(inputs=test_datapoints.to(device),
-    #                             labels=test_labels.to(device),
-    #                             criterion=criterion,
-    #                             sample_nbr=n_samples,
-    #                             complexity_cost_weight=0)   # we are interested in the reconstruction/prediction loss only (no KL cost)
-
-    #         test_loss.append(sample_loss.item())
-    #         fit_loss.append(fit_loss_sample.item())
-
-    #     mean_test_loss = statistics.mean(test_loss)
-    #     stdv_test_loss = statistics.stdev(test_loss)
-
-    #     mean_train_loss = statistics.mean(train_loss)
-
-    #     mean_fit_loss = statistics.mean(fit_loss)
-    #     stdv_fit_loss = statistics.stdev(fit_loss)
-
-    #     Console.info("Epoch [" + str(epoch) + "] Train loss: {:.4f}".format(mean_train_loss) + " Valid. loss: {:.4f}".format(mean_test_loss) + " Fit loss: {:.4f}  ***".format(mean_fit_loss) )
-    #     Console.progress(epoch, num_epochs)
-
-    #     test_hist.append(mean_test_loss)
-    #     uncert_hist.append(stdv_test_loss)
-    #     train_hist.append(mean_train_loss)
-
-    #     fit_hist.append(mean_fit_loss)
-    #     ufit_hist.append(stdv_fit_loss)
-
-    #     # train_hist.append(statistics.mean(train_loss))
-
-    #     # if (epoch % 50) == 0:   # every 50 epochs, we save a network snapshot
-    #     #     temp_name = "bnn_model_" + str(epoch) + ".pth"
-    #     #     torch.save(regressor.state_dict(), temp_name)
-
-    # Console.info("Training completed!")
-    # # torch.save(regressor.state_dict(), "bnn_model_N" + str (num_epochs) + ".pth")
-    # torch.save(regressor.state_dict(), args.network)
-
-    # export_df = pd.DataFrame([train_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
-    # export_df.columns = ['train_error', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
-
-    # print ("head", export_df.head())
-    # output_name = "bnn_training_S" + str(n_samples) + "_E" + str(num_epochs) + "_H" + str(n_latents) + ".csv"
-    # export_df.to_csv(output_name)
-    # # export_df.to_csv("bnn_train_report.csv")
-    # # df = pd.read_csv(input_filename, index_col=0) # use 1t column as ID, the 2nd (relative_path) can be used as part of UUID
 
 
 if __name__ == '__main__':
