@@ -4,7 +4,7 @@
 # as a multi-line echo output that can be used in other scripts viar 'read'
 # _JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
-# [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
+# [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability, (A1) hislope
 # [r]  data spatial resolution: (u) ultrahigh res 10mm/px, (h) high res 20mm/px, (s) standard res 40mm/px, (l) low res 500mm/px
 # [hh] latent vector dimension: 16~64
 # [e]  number of training epochs x 100 (e.g. 3 -> 300 epochs) 
@@ -48,9 +48,11 @@ if [ "$_LAYER" == 'M3' ]; then
 #    echo -e "Training for ["${OUT_KEY}"]"
 elif [ "$_LAYER" == 'M4' ]; then
     OUT_KEY="measurability"
+elif [ "$_LAYER" == 'A1' ]; then
+    OUT_KEY="hislope_log"   # as it appears in the header of the CSV file
 #    echo -e "Training for ["${OUT_KEY}"]"
 else
-    echo -e "Target unknown, expected (M3) landability or (M4) measurability. Received: ["${_LAYER}"]"
+    echo -e "Target unknown, expected (M3) landability, (M4) measurability or (A1) hislope. Received: ["${_LAYER}"]"
     exit 1;
 fi
 

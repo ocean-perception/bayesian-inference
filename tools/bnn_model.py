@@ -5,6 +5,7 @@ All rights reserved.
 Licensed under GNU General Public License v3.0
 See LICENSE file in the project root for full license information.
 """
+# Author: Jose Cappelletto (j.cappelletto@soton.ac.uk) 
 
 import statistics
 import math
