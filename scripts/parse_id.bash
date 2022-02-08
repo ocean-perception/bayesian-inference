@@ -43,14 +43,14 @@ else
     exit 1;
 fi
 
-if [ "$_LAYER" == 'M3' ]; then
+if   [ "$_LAYER" == 'M3' ]; then
     OUT_KEY="landability"
-#    echo -e "Training for ["${OUT_KEY}"]"
 elif [ "$_LAYER" == 'M4' ]; then
     OUT_KEY="measurability"
 elif [ "$_LAYER" == 'A1' ]; then
+    OUT_KEY="hislope"   
+elif [ "$_LAYER" == 'A3' ]; then
     OUT_KEY="hislope_log"   # as it appears in the header of the CSV file
-#    echo -e "Training for ["${OUT_KEY}"]"
 else
     echo -e "Target unknown, expected (M3) landability, (M4) measurability or (A1) hislope. Received: ["${_LAYER}"]"
     exit 1;

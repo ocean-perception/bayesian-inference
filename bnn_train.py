@@ -23,7 +23,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 # Helper libaries (viz)
 import matplotlib.pyplot as plt
-import matplotlib
+import matplotlib                   # TODO: drop
 # Toolkit
 from tools.console import Console
 from tools.dataloader import CustomDataloader
@@ -152,7 +152,7 @@ def main(args=None):
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
     # norm = MinMaxScaler().fit(y)
     # y_norm = norm.transform(y)      # min max normalization of our output data
-    y_norm = 10*y
+    y_norm = 1*y
     # norm = MinMaxScaler().fit(X)
     # X_norm = norm.transform(X)      # min max normalization of our input data
     X_norm = X
@@ -208,7 +208,7 @@ def main(args=None):
     fit_hist = []
     ufit_hist = []
 
-    elbo_kld = 0.2
+    elbo_kld = 1.0
 
     print (regressor)   # show network architecture
 
@@ -218,7 +218,7 @@ def main(args=None):
 
     try:
         for epoch in range(num_epochs):
-            if (epoch == 50):          # we train in non-bayesian way during a first phase
+            if (epoch == 50):          # we train in non-bayesian way during a first phase of P-epochs (P:50)
                 regressor.unfreeze_()
 
             train_loss = []
@@ -231,9 +231,9 @@ def main(args=None):
                                 labels=labels.to(device),
                                 criterion=criterion,    # MSELoss
                                 sample_nbr=n_samples,
-                                criterion_loss_weight = 2000,
+                                criterion_loss_weight = 200,
                                 complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
-                loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against the )
+                loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against a nominal Normal distribution )
                 optimizer.step()
                 train_loss.append(loss.item())  # keep track of training loss
                 fl_loss.append(fit_loss.item())
@@ -243,11 +243,12 @@ def main(args=None):
             trfit_hist = []
             
             for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
+                # calculate the fit loss and the KL-divergence cost for the test points set
                 sample_loss, fit_sample_loss, kl_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
                                     labels=test_labels.to(device),
                                     criterion=criterion,
                                     sample_nbr=n_samples,
-                                    criterion_loss_weight = 2000,
+                                    criterion_loss_weight = 200,   # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
                                     complexity_cost_weight=elbo_kld/X_test.shape[0])
 
                 # fit_sample_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),

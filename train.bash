@@ -3,7 +3,7 @@
 # Script version 3
 # JOB_ID must follow 8 character convention [t][LL][r][hh][e][k]
 # [t]  type of data: (r) for residual or (d) for direct calculation
-# [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
+# [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability, (A1) hislope
 # [r]  data spatial resolution: (u) ultrahigh res 10mm/px, (h) high res 20mm/px, (s) standard res 40mm/px, (l) low res 500mm/px
 # [hh] latent vector dimension: 16~64
 # [e]  number of training epochs x 100 (e.g. 3 -> 300 epochs) 
