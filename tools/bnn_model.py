@@ -21,12 +21,12 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
 
-        DIM1 = 16
-        DIM2 = 4
-        DIM3 = 2
-        # DIM1 = 256
-        # DIM2 = 128
-        # DIM3 = 64
+        # DIM1 = 16
+        # DIM2 = 4
+        # DIM3 = 2
+        DIM1 = 256
+        DIM2 = 128
+        DIM3 = 64
 
         self.linear_input  = nn.Linear(input_dim, DIM1, bias=True)
 
