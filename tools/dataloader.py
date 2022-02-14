@@ -58,23 +58,17 @@ class CustomDataloader:
         # print ("****************************************************\n")
 
         merged_df = pd.merge(df, tdf, how='right', on='matching_key')
-        print("Merging on RIGHT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" )
-        print (merged_df.head())
-
         merged_df = merged_df.dropna()
-
 
         latent_df = merged_df.filter(regex=latent_name_prefix)
         Console.info ("Latent size: ", latent_df.shape)
-        print (merged_df.head())
-        print ("****************************************************\n")
+        # print (merged_df.head())
+        # print ("****************************************************\n")
         target_df = merged_df[target_key]
-
         np_latent = latent_df.to_numpy(dtype='float')
         np_target = target_df.to_numpy(dtype='float')
         # input-output datasets are linked using the key provided by matching_key
         return np_latent, np_target, merged_df['matching_key']
-
 
     def load_toydataset (input_filename, target_key ='mean_slope', input_prefix= 'latent_', matching_key='relative_path'):
         Console.info("load_toydataset called for: ", input_filename)

@@ -231,8 +231,9 @@ def main(args=None):
 
     try:
         for epoch in range(num_epochs):
-            if (epoch == 10):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
+            if (epoch == 2):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
                 regressor.unfreeze_()
+                Console.info("Unfreezing the network")
 
             # We store a list of losses for each epoch (multiple samples per epoch)
             train_loss = []
@@ -258,13 +259,18 @@ def main(args=None):
                 optimizer.step()
                 train_loss.append    (_loss.item())  # keep track of training loss
                 train_fit_loss.append(_fit_loss.item())
-                train_kld_loss.append(_kld_loss)
+                # When the network is frozen the complexity cost is not computed and the kld_loss is 0
+                # The problem is that the return type changes from a Tensor to a scalar
+                if (type(_kld_loss) == torch.Tensor):
+                    train_kld_loss.append(_kld_loss.item())
+                else:
+                    train_kld_loss.append(0.0)
+
                 # print ("_loss.item()", _loss.item(), "\t_fit_loss.item()", _fit_loss.item(), "\t_kld_loss", _kld_loss)
             
             for k, (valid_datapoints, valid_labels) in enumerate(dataloader_valid):
                 # calculate the fit loss and the KL-divergence cost for the test points set
                 valid_labels = valid_labels.squeeze(2)
-                # print ("valid_labels.shape", test_   labels.shape)
                 _loss, _fit_loss, _kld_loss = regressor.sample_elbo(inputs=valid_datapoints.to(device),
                                     labels=valid_labels.to(device),
                                     criterion=criterion,
@@ -274,7 +280,12 @@ def main(args=None):
 
                 valid_loss.append    (_loss.item())  # keep track of training loss
                 valid_fit_loss.append(_fit_loss.item())
-                valid_kld_loss.append(_kld_loss)
+                # When the network is frozen the complexity cost is not computed and the kld_loss is 0
+                # The problem is that the return type changes from a Tensor to a scalar
+                if (type(_kld_loss) == torch.Tensor):
+                    valid_kld_loss.append(_kld_loss.item())
+                else:
+                    valid_kld_loss.append(0.0)
 
             mean_train_loss = statistics.mean(train_loss)
             mean_valid_loss = statistics.mean(valid_loss)
@@ -292,8 +303,8 @@ def main(args=None):
             valid_fit_loss_history.append(mean_valid_fit_loss)
             valid_kld_loss_history.append(mean_valid_kld_loss)
 
-            Console.info("Epoch [" + str(epoch) + "] Train: {:.2f}".format(mean_train_loss) + " MSE: {:.3f}".format(mean_train_fit_loss) + " + KLD: {:.3f}".format(mean_train_kld_loss) + 
-                                                "\t||Valid: {:.2f}".format(mean_valid_loss) + " MSE: {:.3f}".format(mean_valid_fit_loss) + " + KLD: {:.3f}".format(mean_valid_kld_loss) )
+            Console.info("Epoch [" + str(epoch) + "] Train (MSE + KLD): {:.3f}".format(mean_train_loss) + " = {:.3f}".format(mean_train_fit_loss) + " + {:.3f}".format(mean_train_kld_loss) + 
+                                              "    | Valid (MSE + KLD): {:.3f}".format(mean_valid_loss) + " = {:.3f}".format(mean_valid_fit_loss) + " + {:.3f}".format(mean_valid_kld_loss) )
             Console.progress(epoch, num_epochs)
 
     except KeyboardInterrupt:
@@ -307,7 +318,7 @@ def main(args=None):
     export_df = pd.DataFrame([train_loss_history, train_fit_loss_history, train_kld_loss_history, valid_loss_history, valid_fit_loss_history, valid_kld_loss_history]).transpose()
     export_df.columns = ['train_loss', 'train_fit_loss', 'train_kld_loss', 'valid_loss', 'valid_fit_loss', 'valid_kld_loss']
 
-    # export_df.index.names=['index']
+    export_df.index.names=['index']
     export_df.to_csv(logfile_name, index = False)
 
     # Once trained, we start inferring

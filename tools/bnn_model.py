@@ -21,18 +21,25 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
 
-        self.linear_input  = nn.Linear(input_dim, 256, bias=True)
+        DIM1 = 16
+        DIM2 = 4
+        DIM3 = 2
+        # DIM1 = 256
+        # DIM2 = 128
+        # DIM3 = 64
 
-        self.blinear1 = BayesianLinear(256, 256, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        self.linear_input  = nn.Linear(input_dim, DIM1, bias=True)
+
+        self.blinear1 = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
         self.silu1         = nn.SiLU()
 
-        self.linear2       = nn.Linear(256, 128, bias=True)
+        self.linear2       = nn.Linear(DIM1, DIM2, bias=True)
         self.silu2         = nn.SiLU()
 
-        self.linear3       = nn.Linear(128, 64, bias=True)
+        self.linear3       = nn.Linear(DIM2, DIM3, bias=True)
 
         # self.linear2       = nn.Linear(128, 128, bias=True)
-        self.linear_output = nn.Linear(64, output_dim, bias=True)
+        self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
         # self.relu          = nn.LeakyReLU()
         # self.relu2         = nn.LeakyReLU()
