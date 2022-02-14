@@ -180,15 +180,15 @@ def main(args=None):
     print ("Y [min,max]\t",      np.amin(y),"/",      np.amax(y))
     print ("Y_norm [min,max]\t", np.amin(y_norm),"/", np.amax(y_norm))
 
-    X_train, X_test, y_train, y_test = train_test_split(X_norm,
+    X_train, X_valid, y_train, y_valid = train_test_split(X_norm,
                                                         y_norm,
                                                         test_size=.2, # 8:2 ratio
                                                         shuffle = True) 
     # Convert train and test vectors to tensors
     X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(y_train).float()
-    X_test,  y_test  = torch.Tensor(X_test).float(),  torch.Tensor(y_test).float()
+    X_valid, y_valid = torch.Tensor(X_valid).float(), torch.Tensor(y_valid).float()
     y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N).Tensor rather than a (NX1).Tensor
-    y_test =  torch.unsqueeze(y_test, -1)   # we add an additional dummy dimension
+    y_valid = torch.unsqueeze(y_valid, -1)   # we add an additional dummy dimension
 
     if torch.cuda.is_available():
         Console.info("Using CUDA")
@@ -209,87 +209,92 @@ def main(args=None):
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
     dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
 
-    ds_test = torch.utils.data.TensorDataset(X_test, y_test)
-    dataloader_test = torch.utils.data.DataLoader(ds_test, batch_size=16, shuffle=True)
+    ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
+    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=16, shuffle=True)
 
     iteration = 0
-    # Training time
-    test_hist   = []
-    uncert_hist = []
-    train_hist  = []
-    fit_hist    = []
-    ufit_hist   = []
-    trfit_hist  = []
+    # Log of training and validation losses
+    train_loss_history = []
+    train_fit_loss_history = []
+    train_kld_loss_history = []
+    valid_loss_history = []
+    valid_fit_loss_history = []
+    valid_kld_loss_history = []
+
     lambda_fit_loss = 1000.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld    = 10.0
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
     print ("ELBO KLD factor: ", elbo_kld);  # then it needs to be normalized by the number of samples on each dataset (train/test)
     regressor.train()   # set to training mode, just in case
-    regressor.freeze_() # while frozen, the network will behave as a normal network (non-bayesian)
+    regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
 
     try:
         for epoch in range(num_epochs):
-            if (epoch == 10):          # we train in non-bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
+            if (epoch == 10):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
                 regressor.unfreeze_()
 
+            # We store a list of losses for each epoch (multiple samples per epoch)
             train_loss = []
-            kl_loss = []
-            fl_loss = []
+            valid_loss = []
+            #Loss (cost) values are separated into fit_loss and kld_loss
+            train_fit_loss = []
+            train_kld_loss = []
+            valid_fit_loss = []
+            valid_kld_loss = []
+
             for i, (datapoints, labels) in enumerate(dataloader_train):
                 optimizer.zero_grad()
                 # labels.shape = (h,1,1) is adding an extra dimension to the tensor, so we need to remove it
                 labels = labels.squeeze(2)
                 # print ("labels.shape", labels.shape)
-                loss, fit_loss, kl_loss = regressor.sample_elbo(inputs=datapoints.to(device),
+                _loss, _fit_loss, _kld_loss = regressor.sample_elbo(inputs=datapoints.to(device),
                                 labels=labels.to(device),
                                 criterion=criterion,    # MSELoss
                                 sample_nbr=n_samples,
                                 criterion_loss_weight = lambda_fit_loss,
                                 complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
-                loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against a nominal Normal distribution )
+                _loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against a nominal Normal distribution )
                 optimizer.step()
-                train_loss.append(loss.item())  # keep track of training loss
-                fl_loss.append(fit_loss.item())
-                # kl_loss.append(kl_loss.item())
-
-            test_loss = []  # complete loss for test dataset
-            fit_loss = []   # regression (fitting) only loss for test dataset
+                train_loss.append    (_loss.item())  # keep track of training loss
+                train_fit_loss.append(_fit_loss.item())
+                train_kld_loss.append(_kld_loss)
+                # print ("_loss.item()", _loss.item(), "\t_fit_loss.item()", _fit_loss.item(), "\t_kld_loss", _kld_loss)
             
-            for k, (test_datapoints, test_labels) in enumerate(dataloader_test):
+            for k, (valid_datapoints, valid_labels) in enumerate(dataloader_valid):
                 # calculate the fit loss and the KL-divergence cost for the test points set
-                test_labels = test_labels.squeeze(2)
-                # print ("test_labels.shape", test_   labels.shape)
-                sample_loss, fit_sample_loss, kl_loss = regressor.sample_elbo(inputs=test_datapoints.to(device),
-                                    labels=test_labels.to(device),
+                valid_labels = valid_labels.squeeze(2)
+                # print ("valid_labels.shape", test_   labels.shape)
+                _loss, _fit_loss, _kld_loss = regressor.sample_elbo(inputs=valid_datapoints.to(device),
+                                    labels=valid_labels.to(device),
                                     criterion=criterion,
                                     sample_nbr=n_samples,
                                     criterion_loss_weight = lambda_fit_loss,   # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
-                                    complexity_cost_weight=elbo_kld/X_test.shape[0])
+                                    complexity_cost_weight=elbo_kld/X_valid.shape[0])
 
-                test_loss.append(sample_loss.item())
-                fit_loss.append(fit_sample_loss.item())
-
-            mean_test_loss = statistics.mean(test_loss)
-            stdv_test_loss = statistics.stdev(test_loss)
+                valid_loss.append    (_loss.item())  # keep track of training loss
+                valid_fit_loss.append(_fit_loss.item())
+                valid_kld_loss.append(_kld_loss)
 
             mean_train_loss = statistics.mean(train_loss)
-            mean_trfit_loss = statistics.mean(fl_loss)
+            mean_valid_loss = statistics.mean(valid_loss)
+            mean_train_fit_loss = statistics.mean(train_fit_loss)
+            mean_valid_fit_loss = statistics.mean(valid_fit_loss)
+            mean_train_kld_loss = statistics.mean(train_kld_loss)
+            mean_valid_kld_loss = statistics.mean(valid_kld_loss)
 
-            mean_fit_loss = statistics.mean(fit_loss)
-            stdv_fit_loss = statistics.stdev(fit_loss)
+            # Log of training and validation losses
+            train_loss_history.append(mean_train_loss)
+            train_fit_loss_history.append(mean_train_fit_loss)
+            train_kld_loss_history.append(mean_train_kld_loss)
+            
+            valid_loss_history.append(mean_valid_loss)
+            valid_fit_loss_history.append(mean_valid_fit_loss)
+            valid_kld_loss_history.append(mean_valid_kld_loss)
 
-            Console.info("Epoch [" + str(epoch) + "] Train: {:.2f}".format(mean_train_loss) + " TFit: {:.3f}".format(mean_trfit_loss) + " // Valid.loss: {:.2f}".format(mean_test_loss) + " VFit.loss: {:.3f}  ***".format(mean_fit_loss) )
+            Console.info("Epoch [" + str(epoch) + "] Train: {:.2f}".format(mean_train_loss) + " MSE: {:.3f}".format(mean_train_fit_loss) + " + KLD: {:.3f}".format(mean_train_kld_loss) + 
+                                                "\t||Valid: {:.2f}".format(mean_valid_loss) + " MSE: {:.3f}".format(mean_valid_fit_loss) + " + KLD: {:.3f}".format(mean_valid_kld_loss) )
             Console.progress(epoch, num_epochs)
-
-            test_hist.append(mean_test_loss)
-            uncert_hist.append(stdv_test_loss)
-            train_hist.append(mean_train_loss)
-            trfit_hist.append(mean_trfit_loss)
-
-            fit_hist.append(mean_fit_loss)
-            ufit_hist.append(stdv_fit_loss)
-
 
     except KeyboardInterrupt:
         Console.warn("Training interrupted...")
@@ -298,12 +303,9 @@ def main(args=None):
     Console.info("Training completed!")
     torch.save(regressor.state_dict(), network_name)
 
-    type(train_hist)
-    type(trfit_hist)
-    type(test_hist)
 
-    export_df = pd.DataFrame([train_hist, trfit_hist, test_hist, uncert_hist, fit_hist, ufit_hist]).transpose()
-    export_df.columns = ['train_error', 'train_fit_loss', 'test_error', 'test_error_stdev', 'test_loss', 'test_loss_stdev']
+    export_df = pd.DataFrame([train_loss_history, train_fit_loss_history, train_kld_loss_history, valid_loss_history, valid_fit_loss_history, valid_kld_loss_history]).transpose()
+    export_df.columns = ['train_loss', 'train_fit_loss', 'train_kld_loss', 'valid_loss', 'valid_fit_loss', 'valid_kld_loss']
 
     # export_df.index.names=['index']
     export_df.to_csv(logfile_name, index = False)
@@ -315,7 +317,7 @@ def main(args=None):
 
     Console.info("Testing predictions...")
     idx = 0 
-    # for x in X_test:
+    # for x in X_valid:
     Xp_ = torch.Tensor(X_norm).float()
 
     regressor.eval() # we need to set eval mode before running inference
@@ -324,18 +326,11 @@ def main(args=None):
         predictions = []
         for n in range(n_samples):
             p = regressor(x.to(device)).item()
-            # print ("p.type", type(p)) ----> float
-            # print ("p.len", len(p))
             predictions.append(p) #1D output, retieve single item
-
-        # print ("pred.type", type(predictions))
-        # print ("pred.len", len(predictions))    ---> 10 (n_samples)
 
         p_mean = statistics.mean(predictions)
         p_stdv = statistics.stdev(predictions)
         idx = idx + 1
-
-        # print ("p_mean", type(p_mean))  --> float
 
         predicted.append(p_mean)
         uncertainty.append(p_stdv)
@@ -343,14 +338,11 @@ def main(args=None):
         Console.progress(idx, len(Xp_))
 
     y_list = y_norm.squeeze().tolist()
-
     xl = np.squeeze(X_norm).tolist()
-
     pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
     pred_df.columns = ['y', 'predicted', 'uncertainty', 'uuid']
     Console.warn("Exported predictions to: ", predictions_name)
     pred_df.to_csv(predictions_name, index = False)
-    # print (pred_df.head())
 
 if __name__ == '__main__':
     main()
