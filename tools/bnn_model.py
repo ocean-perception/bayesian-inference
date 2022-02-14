@@ -20,12 +20,14 @@ from blitz.utils import variational_estimator
 class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
-        # simple 2-layer fully connected linear regressor
+
         self.linear_input  = nn.Linear(input_dim, 256, bias=True)
 
-        self.blinear1 = BayesianLinear(256, 512, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        self.blinear1 = BayesianLinear(256, 256, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        self.silu1         = nn.SiLU()
 
-        self.linear2       = nn.Linear(512, 128, bias=True)
+        self.linear2       = nn.Linear(256, 128, bias=True)
+        self.silu2         = nn.SiLU()
 
         self.linear3       = nn.Linear(128, 64, bias=True)
 
@@ -34,17 +36,16 @@ class BayesianRegressor(nn.Module):
 
         # self.relu          = nn.LeakyReLU()
         # self.relu2         = nn.LeakyReLU()
-        # self.silu1         = nn.SiLU()
 
-    # Oceans architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output 
+    # Oceans2021 architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output 
 
 
     def forward(self, x):
-        x_ =        self.linear_input (x)
-        x_ = F.silu(self.blinear1     (x_))
-        x_ = F.silu(self.linear2      (x_))
-        x_ =        self.linear3      (x_);
-        x_ =        self.linear_output(x_)
+        x_ =            self.linear_input (x)
+        x_ = self.silu1(self.blinear1     (x_))
+        x_ = self.silu2(self.linear2      (x_))
+        x_ =            self.linear3      (x_);
+        x_ =            self.linear_output(x_)
         return x_
         
 def evaluate_regression(regressor,

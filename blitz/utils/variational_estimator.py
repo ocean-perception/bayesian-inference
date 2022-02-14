@@ -38,7 +38,7 @@ def variational_estimator(nn_class):
                     labels,
                     criterion,
                     sample_nbr,
-                    criterion_loss_weight = 1000,
+                    criterion_loss_weight = 1,
                     complexity_cost_weight=1):
 
         """ Samples the ELBO Loss for a batch of data, consisting of inputs and corresponding-by-index labels
