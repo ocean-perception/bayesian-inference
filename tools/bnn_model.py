@@ -30,13 +30,14 @@ class BayesianRegressor(nn.Module):
 
         self.linear_input  = nn.Linear(input_dim, DIM1, bias=True)
 
-        self.blinear1 = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        self.blinear1      = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
         self.silu1         = nn.SiLU()
 
         self.linear2       = nn.Linear(DIM1, DIM2, bias=True)
-        self.silu2         = nn.SiLU()
+        # self.silu2         = nn.SiLU()
 
-        self.linear3       = nn.Linear(DIM2, DIM3, bias=True)
+        self.blinear2      = BayesianLinear(DIM2, DIM3, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        # self.linear3       = nn.Linear(DIM2, DIM3, bias=True)
 
         # self.linear2       = nn.Linear(128, 128, bias=True)
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
@@ -50,8 +51,8 @@ class BayesianRegressor(nn.Module):
     def forward(self, x):
         x_ =            self.linear_input (x)
         x_ = self.silu1(self.blinear1     (x_))
-        x_ = self.silu2(self.linear2      (x_))
-        x_ =            self.linear3      (x_);
+        x_ =            self.linear2      (x_)
+        x_ =            self.blinear2     (x_);
         x_ =            self.linear_output(x_)
         return x_
         
