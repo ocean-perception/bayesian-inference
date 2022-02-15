@@ -89,12 +89,12 @@ def main(args=None):
         num_epochs = 100    # default
     # number of random samples used by sample_elbo to estimate the mean/std for each inference epoch
     if (args.samples):
-        # Verify the number of samples is larger than 1, otherwise Monte Carlo sampling is not possible
-        if (args.samples > 1):
+        # Verify the number of samples is larger than 2, otherwise Monte Carlo sampling is not possible (won't make sense)
+        if (args.samples > 2):
             n_samples = args.samples
         else:
-            # If the number of samples is not larger than 1, show an error and exit
-            Console.error("The number of MC samples must be larger than 1. Please provide a number larger than 1 (-s, --samples)")
+            # If the number of samples is not larger than 2, show an error and exit
+            Console.error("The number of MC samples must be larger than 2. Please provide a number larger than 2 (-s, --samples)")
             exit(1)
     else:
         n_samples = 10      # default

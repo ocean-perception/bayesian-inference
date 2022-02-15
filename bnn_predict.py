@@ -125,10 +125,9 @@ def main(args=None):
 
 ########################################################################
 ########################################################################
-########################################################################
 
     # Network is pretrained so we start inferring
-    expected = []
+    # expected = [] # if we provide the target file (labels) then we can append a column with the expected values
     uncertainty = []
     predicted = [] # == y
 
@@ -137,23 +136,16 @@ def main(args=None):
         predictions = []
         for n in range(k_samples):
             p = regressor(x.to(device)).item()
-            # print ("p.type", type(p)) ----> float
-            # print ("p.len", len(p))
             predictions.append(p) #1D output, retieve single item
 
-        # print ("pred.type", type(predictions))
-        # print ("pred.len", len(predictions))    ---> 10 (k_samples)
-
         p_mean = statistics.mean(predictions) * scaling_factor  # --> scaling the output of our prediction (after MC sampling)
-        p_stdv = statistics.stdev(predictions) * scaling_factor
+        p_stdv = statistics.stdev(predictions) * scaling_factor # yes, stdev needs to be scaled too (under Normal distribution assumption)
         idx = idx + 1
-        # print ("p_mean", type(p_mean))  --> float
 
         predicted.append(p_mean)
         uncertainty.append(p_stdv)
         Console.progress(idx, len(Xp_))
 
-########################################################################
 ########################################################################
 ########################################################################
     print ("Total predicted rows: ", len(predicted))
@@ -164,17 +156,14 @@ def main(args=None):
     # # predicted.len = X.len (as desired)
     # # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
     pred_df  = df.copy()    # make a copy, then we append the results
-    pred_df[args.key] = predicted    
+    pred_df[output_key] = predicted    
     pred_df["uncertainty"] = uncertainty    
     new_cols = pred_df.columns.values
     new_cols[0]="uuid"  # this should be the first non-index column, expected to be the uuid
-    # pred_df.columns = new_cols   # we rename the name of the column [0], which has empty
-    # pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
-    # pred_df.columns = ['y', 'predicted', 'uncertainty', 'index']
 
-    # Let's clean the dataframe before exporting ti
+    # Let's clean the dataframe before exporting it
     # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
-    pred_df.drop(list(pred_df.filter(regex = 'latent_')), # the regex string could be updated to match any user-defined latent vector name
+    pred_df.drop(list(pred_df.filter(regex = input_key)), # the regex string could be updated to match any user-defined latent vector name
                 axis =1,            # search in columns
                 inplace = True)     # replace the current df, no need to reassign to a new variable
 
