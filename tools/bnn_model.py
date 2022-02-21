@@ -24,23 +24,25 @@ class BayesianRegressor(nn.Module):
         # DIM1 = 16
         # DIM2 = 4
         # DIM3 = 2
-        DIM1 = 256
-        DIM2 = 128
-        DIM3 = 64
+        DIM1 = 64
+        DIM2 = 32
+        DIM3 = 16
 
         self.linear_input  = nn.Linear(input_dim, DIM1, bias=True)
 
-        self.blinear1      = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
-        self.silu1         = nn.SiLU()
+        # self.blinear1      = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        # self.silu1         = nn.SiLU()
+        # self.sigmoid       = nn.Sigmoid()
+        self.tanh          = nn.Tanh()
 
         self.linear2       = nn.Linear(DIM1, DIM2, bias=True)
         # self.silu2         = nn.SiLU()
 
-        self.blinear2      = BayesianLinear(DIM2, DIM3, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        # self.blinear2      = BayesianLinear(DIM2, DIM3, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
         # self.linear3       = nn.Linear(DIM2, DIM3, bias=True)
 
         # self.linear2       = nn.Linear(128, 128, bias=True)
-        self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
+        self.linear_output = nn.Linear(DIM2, output_dim, bias=True)
 
         # self.relu          = nn.LeakyReLU()
         # self.relu2         = nn.LeakyReLU()
@@ -49,13 +51,13 @@ class BayesianRegressor(nn.Module):
 
 
     def forward(self, x):
-        x_ =            self.linear_input (x)
-        x_ = self.silu1(self.blinear1     (x_))
-        x_ =            self.linear2      (x_)
-        x_ =            self.blinear2     (x_);
-        x_ =            self.linear_output(x_)
+        x_ =              self.linear_input (x)
+        # x_ =    self.tanh(self.blinear1     (x_))
+        x_ =              self.linear2      (x_)
+        # x_ =              self.linear3      (x_);
+        x_ =              self.linear_output(x_)
         return x_
-        
+       
 def evaluate_regression(regressor,
                         X,
                         y,

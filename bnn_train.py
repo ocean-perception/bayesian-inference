@@ -166,7 +166,7 @@ def main(args=None):
     # Warning: we do not use the data to fit the scaler as there is no guarantee that the ata sample covers all the expected range
     _d      = np.array([       0.01,         90.0])
     _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
-    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaler = MinMaxScaler(feature_range=(0, 90))
     scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
     y = np.expand_dims(y, -1)
     y_norm = scaler.transform(y)
@@ -198,7 +198,7 @@ def main(args=None):
 
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.0015) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.005) # learning rate
     criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
 
     # print("Model's state_dict:")
@@ -220,8 +220,8 @@ def main(args=None):
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = 1000.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
-    elbo_kld    = 10.0
+    lambda_fit_loss = 10.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    elbo_kld    = 1.0
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
     print ("ELBO KLD factor: ", elbo_kld);  # then it needs to be normalized by the number of samples on each dataset (train/test)
