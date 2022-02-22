@@ -206,10 +206,10 @@ def main(args=None):
     #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
-    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=16, shuffle=True)
+    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=32, shuffle=True)
 
     ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
-    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=16, shuffle=True)
+    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=32, shuffle=True)
 
     iteration = 0
     # Log of training and validation losses
