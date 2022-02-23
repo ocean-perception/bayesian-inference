@@ -17,6 +17,8 @@ if [[ -z "$JOB_ID" ]]; then
     exit 1
 fi
 
+export IFS=$(echo -e "\n") 
+
 {
     read -r OUT_TYPE
     read -r OUT_KEY
