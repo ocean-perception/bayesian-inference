@@ -198,7 +198,7 @@ def main(args=None):
 
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.005) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=0.001) # learning rate
     criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
 
     # print("Model's state_dict:")
@@ -206,10 +206,10 @@ def main(args=None):
     #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
-    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=32, shuffle=True)
+    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=24, shuffle=True)
 
     ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
-    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=32, shuffle=True)
+    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=24, shuffle=True)
 
     iteration = 0
     # Log of training and validation losses
@@ -220,7 +220,7 @@ def main(args=None):
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = 10.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    lambda_fit_loss = 1.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld    = 1.0
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
