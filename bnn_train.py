@@ -224,15 +224,17 @@ def main(args=None):
     elbo_kld    = 1.0
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
-    print ("ELBO KLD factor: ", elbo_kld);  # then it needs to be normalized by the number of samples on each dataset (train/test)
+    print ("MSE-Loss lambda: ", lambda_fit_loss);  # Print the regularisation parameter for regression loss
+    print ("ELBO KLD lambda: ", elbo_kld);  # Print regularisation parameter for KL divergence loss
     regressor.train()   # set to training mode, just in case
-    regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
+    # regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
+    regressor.unfreeze_()   # we no longer start with "warming-up" phase of non-Bayesian training
 
     try:
         for epoch in range(num_epochs):
-            if (epoch == 2):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
-                regressor.unfreeze_()
-                Console.info("Unfreezing the network")
+            # if (epoch == 2):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
+            #     regressor.unfreeze_()
+            #     Console.info("Unfreezing the network")
 
             # We store a list of losses for each epoch (multiple samples per epoch)
             train_loss = []
