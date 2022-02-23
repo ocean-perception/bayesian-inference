@@ -220,7 +220,7 @@ def main(args=None):
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = 1.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    lambda_fit_loss = 10.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld    = 1.0
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
