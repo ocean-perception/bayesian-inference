@@ -106,6 +106,21 @@ def main(args=None):
     else:
         learning_rate = 0.001 # Default value
 
+    # Check if user specified a lambda for reconstruction loss
+    if (args.lambda_recon):
+        lambda_recon = args.lambda_recon
+        Console.info("Using user-defined lambda for reconstruction loss:\t[", lambda_recon, "]")
+    else:
+        lambda_recon = 10.0
+
+    # Check if user specified a lambda for ELBO KL loss
+    if (args.lambda_elbo):
+        lambda_elbo = args.lambda_elbo
+        Console.info("Using user-defined lambda for ELBO KL loss:\t[", lambda_elbo, "]")
+    else:
+        lambda_elbo = 1.0
+
+
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
     Console.info("Loading dataset: " + dataset_filename)
@@ -227,8 +242,9 @@ def main(args=None):
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = 10.0   # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
-    elbo_kld    = 1.0
+
+    lambda_fit_loss = lambda_recon     # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    elbo_kld        = lambda_elbo_kld  # regularization parameter for the KL divergence loss 
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
     print ("MSE-Loss lambda: ", lambda_fit_loss);  # Print the regularisation parameter for regression loss

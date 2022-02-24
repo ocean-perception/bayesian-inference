@@ -95,7 +95,23 @@ def add_arguments(obj):
     # user defined learning rate
     obj.add_argument(
         "--lr",
-        default='0.001',
+        # default='0.001',
         type=float,
         help="Define the learning rate for the optimizer. Default: 0.001"
+    )
+
+    # user defined lamba reconstruction loss
+    obj.add_argument(
+        "--lambda_recon",
+        # default='10.0',
+        type=float,
+        help="Define the lambda value for the reconstruction loss. Default: 10.0"
+    )
+
+    # User defined lambda value for ELBO KL divergence cost
+    obj.add_argument(
+        "--lambda_elbo",
+        # default='1.0',
+        type=float,
+        help="Define the lambda value for the ELBO KL divergence cost. Default: 1.0"
     )
