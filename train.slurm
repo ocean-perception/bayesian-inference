@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #SBATCH --mem=8G
-#sBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=1
 #SBATCH --time=28:00:00
 
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=cappelletto@gmail.com
+#CH --mail-type=ALL
+#CH --mail-user=cappelletto@gmail.com
 
 ml restore blitz
 
