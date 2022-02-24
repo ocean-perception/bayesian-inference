@@ -91,3 +91,11 @@ def add_arguments(obj):
         type=float,
         help="Define the outputtarget scaling factor. Default: 1.0 (no scaling))"
     )
+
+    # user defined learning rate
+    obj.add_argument(
+        "--lr",
+        default='0.001',
+        type=float,
+        help="Define the learning rate for the optimizer. Default: 0.001"
+    )

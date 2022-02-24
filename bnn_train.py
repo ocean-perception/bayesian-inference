@@ -99,6 +99,13 @@ def main(args=None):
     else:
         n_samples = 10      # default
 
+    # Check if user specified a learning rate
+    if (args.lr):
+        learning_rate = args.lr
+        Console.info("Using user-defined learning rate:\t[", learning_rate, "]")
+    else:
+        learning_rate = 0.001 # Default value
+
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
     Console.info("Loading dataset: " + dataset_filename)
@@ -198,7 +205,7 @@ def main(args=None):
 
     regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=0.001) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
     criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
 
     # print("Model's state_dict:")
