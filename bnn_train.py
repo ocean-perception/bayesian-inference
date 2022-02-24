@@ -243,8 +243,8 @@ def main(args=None):
     valid_kld_loss_history = []
 
 
-    lambda_fit_loss = lambda_recon     # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
-    elbo_kld        = lambda_elbo_kld  # regularization parameter for the KL divergence loss 
+    lambda_fit_loss = lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    elbo_kld        = lambda_elbo   # regularization parameter for the KL divergence loss 
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
     print ("MSE-Loss lambda: ", lambda_fit_loss);  # Print the regularisation parameter for regression loss

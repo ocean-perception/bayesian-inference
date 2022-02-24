@@ -52,4 +52,12 @@ OUT_FILE="prd_"${JOB_ID}".csv"
 OUT_NET="net_"${JOB_ID}".pth"
 LOG_FILE="log_"${JOB_ID}".csv"
 
-python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9
+if [[ -z "$LAMBDA_ELBO" ]]; then
+    export LAMBDA_ELBO=1.0
+fi
+
+if [[ -z "$LAMBDA_RECON" ]]; then
+    export LAMBDA_RECON=10.0
+fi
+
+python bnn_train.py --input=${LATENT_FILE} --target=${TARGET_FILE} --key=${OUT_KEY} -g ${LOG_FILE} -o ${OUT_FILE} --uuid=uuid -n ${OUT_NET} -e ${BNN_EPOCHS} -s ${BNN_SAMPLES} -x 0.9 --lr=0.0015 --lambda_elbo=${LAMBDA_ELBO} --lambda_recon=${LAMBDA_RECON}
