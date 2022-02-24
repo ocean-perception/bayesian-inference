@@ -18,6 +18,8 @@ if [[ -z "$JOB_ID" ]]; then
     exit 1
 fi
 
+export IFS=$(echo -e "\n")
+
 {
     read -r OUT_TYPE
     read -r OUT_KEY
@@ -49,4 +51,4 @@ LATENT_FILE=$(bash scripts/id2latent.bash $JOB_ID)
 OUT_FILE="all_"${JOB_ID}".csv"
 TRAINED_NET="results/"${RESOLUTION}"/"${OUT_KEY}"/"${OUT_TYPE}"/"${JOB_ID}"/net_"${JOB_ID}".pth"
 
-python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --key "predicted_"${OUT_KEY} --scale 0.1
+python bnn_predict.py --input ${LATENT_FILE} --network ${TRAINED_NET} --samples ${BNN_SAMPLES} --output ${OUT_FILE} --key "predicted_"${OUT_KEY} --scale 1.0

@@ -20,6 +20,7 @@ if [[ ${#JOB_ID} -lt 8 ]]; then
     exit 1
 fi
 
+export IFS=$(echo -e "\n")
 DATA_PATH=$(./scripts/id2path.bash ${JOB_ID})
 _R=$?   # store the result from the previous call to check if there was an error during JOB_ID parsing. If so, exit
 
