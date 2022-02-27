@@ -21,6 +21,9 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
 
+        # Per-layer dimensions could be defined at construction time, store it as class attributes and save it in the state_dict
+        # Layer transfer function type (relu, sigmoid, tanh, etc) are static (sames as the calculation DAG) for PyTorch definitions
+        # ONNX definitions are dynamic (differentiable)
         # DIM1 = 16
         # DIM2 = 4
         # DIM3 = 2
@@ -30,7 +33,7 @@ class BayesianRegressor(nn.Module):
 
         self.linear_input  = nn.Linear(input_dim, DIM1, bias=True)
 
-        self.blinear1 = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
+        self.blinear1      = BayesianLinear(DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5)
         self.silu1         = nn.SiLU()
 
         self.linear2       = nn.Linear(DIM1, DIM2, bias=True)
@@ -72,8 +75,6 @@ def evaluate_regression(regressor,
         for k in range(samples): # draw k-samples.
             y_tensor = regressor(X[i])
             y_samples.append(y_tensor[0].tolist()) # Each call to regressor(x = X[i]) will return a different value
-        # print ("y_samples.len", len(y_samples))
-        # print ("y_samples", y_samples)
         e_y = statistics.mean(y_samples)        # mean(y_samples) as MLE for E[f(x)]
         u_y = statistics.stdev(y_samples)       # mean(y_samples) as MLE for E[f(x)]
         error = e_y - y_list[i][0]              # error = (expected - target)^2

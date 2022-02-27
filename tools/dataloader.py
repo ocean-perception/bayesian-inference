@@ -58,10 +58,10 @@ class CustomDataloader:
         Console.info ("Latent size: ", latent_df.shape)
 
         target_df = merged_df[target_key]
-        np_latent = latent_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
-        np_target = target_df.to_numpy(dtype='float')   # Apply to both target and latent data
+        latent_np = latent_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
+        target_np = target_df.to_numpy(dtype='float')   # Apply to both target and latent data
         # input-output datasets are linked using the key provided by matching_key
-        return np_latent, np_target, merged_df['matching_key']
+        return latent_np, target_np, merged_df['matching_key']
 
     def load_toydataset (input_filename, target_key ='mean_slope', input_prefix= 'latent_', matching_key='relative_path'):
         Console.info("load_toydataset called for: ", input_filename)
@@ -84,11 +84,11 @@ class CustomDataloader:
         target_df = df[target_key]
         Console.info ("Latent size: ", latent_df.shape)
 
-        np_latent = latent_df.to_numpy(dtype='float')
-        np_target = target_df.to_numpy(dtype='float')
-        np_uuid   = df[matching_key].to_numpy()
+        latent_np = latent_df.to_numpy(dtype='float')
+        target_np = target_df.to_numpy(dtype='float')
+        uuid_np   = df[matching_key].to_numpy()     # UUIDs are retrieved from the matching_key column
         # input-output datasets are linked using the key provided by matching_key
-        return np_latent, np_target, np_uuid
+        return latent_np, target_np, uuid_np
 
     def __enter__(self):
         self.start = timeit.default_timer()
