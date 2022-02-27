@@ -226,12 +226,13 @@ def main(args=None):
     # print("Model's state_dict:")
     # for param.Tensor in regressor.state_dict():
     #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
+    data_batch_size = 16
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
-    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=24, shuffle=True)
+    dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=data_batch_size, shuffle=True)
 
     ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
-    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=24, shuffle=True)
+    dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=data_batch_size, shuffle=True)
 
     iteration = 0
     # Log of training and validation losses
@@ -335,9 +336,16 @@ def main(args=None):
         Console.warn("Training interrupted...")
         # sys.exit()
 
-    Console.info("Training completed!")
-    torch.save(regressor.state_dict(), network_name)
-
+    Console.info("Training completed. Saving the model...")
+    # create dictionary with the trained model and some training parameters
+    model_dict = {'epochs': num_epochs,
+                  'batch_size': data_batch_size,
+                  'learning_rate': learning_rate,
+                  'lambda_fit_loss': lambda_fit_loss,
+                  'elbo_kld': elbo_kld,
+                  'optimizer': optimizer.state_dict(),
+                  'model_state_dict': regressor.state_dict()}
+    torch.save(model_dict, network_name)
 
     export_df = pd.DataFrame([train_loss_history, train_fit_loss_history, train_kld_loss_history, valid_loss_history, valid_fit_loss_history, valid_kld_loss_history]).transpose()
     export_df.columns = ['train_loss', 'train_fit_loss', 'train_kld_loss', 'valid_loss', 'valid_fit_loss', 'valid_kld_loss']

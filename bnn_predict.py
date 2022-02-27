@@ -102,15 +102,31 @@ def main(args=None):
 
     if torch.cuda.is_available():
         Console.info("Using CUDA")
-        regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+        trained_network = torch.load(args.network)          # load pretrained model (dictionary)
+        regressor.load_state_dict(trained_network['model_state_dict']) # load state from deserialized object
     else:
         Console.warn("Using CPU")
-        regressor.load_state_dict(torch.load(args.network, map_location=torch.device('cpu'))) # load state from deserialized object
-#    regressor.load_state_dict(torch.load(args.network)) # load state from deserialized object
+        trained_network = torch.load(args.network, map_location=torch.device('cpu')) # load pretrained model (dictionary)
+        regressor.load_state_dict(trained_network['model_state_dict']) # load state from deserialized object
 
     regressor.eval()    # switch to inference mode (set dropout layers)
 
-    # DEBUG information
+    # Show information about the model dictionary
+    # Model dictionary contains:
+    # model_dict = {'epochs': num_epochs,
+    #               'batch_size': data_batch_size,
+    #               'learning_rate': learning_rate,
+    #               'lambda_fit_loss': lambda_fit_loss,
+    #               'elbo_kld': elbo_kld,
+    #               'model_state_dict': regressor.state_dict()}
+
+    print ("Model dictionary:")      # For each key in the dictionary, we can check if defined and show warning if not
+    print ("\tEpochs: ", trained_network['epochs'])
+    print ("\tBatch size: ", trained_network['batch_size'])
+    print ("\tLearning rate: ", trained_network['learning_rate'])
+    print ("\tLambda fit loss: ", trained_network['lambda_fit_loss'])
+    print ("\tELBO k-samples: ", trained_network['elbo_kld'])
+    
     # print("Model's state_dict:")
     # for param_tensor in regressor.state_dict():
     #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
@@ -124,10 +140,9 @@ def main(args=None):
     Xp_ = torch.tensor(X_norm).float()  # convert normalized intput vector into tensor
 
 ########################################################################
-########################################################################
+
 
     # Network is pretrained so we start inferring
-    # expected = [] # if we provide the target file (labels) then we can append a column with the expected values
     uncertainty = []
     predicted = [] # == y
 
