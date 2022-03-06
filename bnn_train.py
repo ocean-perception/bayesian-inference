@@ -274,7 +274,7 @@ def main(args=None):
                 # labels.shape = (h,1,1) is adding an extra dimension to the tensor, so we need to remove it
                 labels = labels.squeeze(2)
                 # print ("labels.shape", labels.shape)
-                _loss, _fit_loss, _kld_loss = regressor.sample_elbo(inputs=datapoints.to(device),
+                _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted(inputs=datapoints.to(device),
                                 labels=labels.to(device),
                                 criterion=criterion,    # MSELoss
                                 sample_nbr=n_samples,
@@ -296,7 +296,7 @@ def main(args=None):
             for k, (valid_datapoints, valid_labels) in enumerate(dataloader_valid):
                 # calculate the fit loss and the KL-divergence cost for the test points set
                 valid_labels = valid_labels.squeeze(2)
-                _loss, _fit_loss, _kld_loss = regressor.sample_elbo(inputs=valid_datapoints.to(device),
+                _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted(inputs=valid_datapoints.to(device),
                                     labels=valid_labels.to(device),
                                     criterion=criterion,
                                     sample_nbr=n_samples,
