@@ -10,6 +10,7 @@ See LICENSE.md file in the project root for full license information.
 """
 from tools.console import Console
 import pandas as pd
+import os
 
 class CustomDataloader:
     def __init__(self, name=None):
@@ -21,13 +22,18 @@ class CustomDataloader:
     """
     def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
 
+        # check if input_filename exists
+        if not os.path.isfile(input_filename):
+            Console.error("Input file does not exist: ", input_filename)
+            return
+
         df = pd.read_csv(input_filename) # remove index_col=0 when using toy dataset (otherwise it's used as df index and won't be available for query)
         # df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
 
         # 1) Data validation, remove invalid entries (e.g. NaN)
         df = df.dropna()
         # print (df.head()) # Enable for debug purposes
-        Console.info("Total valid entries: ", len(df))
+        Console.info("Input entries (NaN removed): ", len(df))
 
         # 2) Let's determine number of latent-space dimensions
         # The number of 'features' are defined by those columns labeled as 'relative_path'xxx, where xx is 0-based index for the h-latent space vector
@@ -43,16 +49,27 @@ class CustomDataloader:
         print ("target_key: ", target_key)
         print ("latent_name_prefix: ", latent_name_prefix)
 
+        # Check if matching_key is present in the df dataframe
+        if matching_key not in df.columns:
+            Console.error("Matching key not found in input file: ", matching_key)
+            return
         df['matching_key'] = df[matching_key]   # create a new dataframe column with the matching key
 
+        # Check if target_filename exists
+        if not os.path.isfile(target_filename):
+            Console.error("Target file does not exist: ", target_filename)
+            return
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
         tdf = tdf.dropna()
+        if matching_key not in tdf.columns:
+            Console.error("Matching key not found in target file: ", matching_key)
+            return
         tdf['matching_key'] = tdf[matching_key] # create the dataframe containing the target values
 
         Console.info("Target entries: ", len(tdf))
 
         merged_df = pd.merge(df, tdf, how='right', on='matching_key')   # join on right, so that we can use the target values
-        merged_df = merged_df.dropna()  # drop any stray NaN values
+        merged_df = merged_df.dropna()  # drop any stray NaN values. There should be none
 
         latent_df = merged_df.filter(regex=latent_name_prefix)  # remove all columns not starting with latent_name_prefix ('latent_')
         Console.info ("Latent size: ", latent_df.shape)
