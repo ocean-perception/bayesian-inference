@@ -48,6 +48,13 @@ def main(args=None):
         index_key = "predicted"
         Console.warn("Using default output key [", index_key,"]")
 
+    if (not os.path.isfile(args.target)):
+        Console.error("Target file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
+        return -1
+
+    if (not os.path.isfile(args.input)):
+        Console.error("Prediction file [" + args.input + "] not found. Please check the provided input path (-i, --input)")
+        return -1
 
     df1 = pd.read_csv(args.target, index_col = 0)       # <------- ground truth
     df2 = pd.read_csv(args.input, index_col = 0)        # <------- predictions

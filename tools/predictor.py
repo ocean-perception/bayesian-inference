@@ -10,15 +10,19 @@ See LICENSE.md file in the project root for full license information.
 """
 from tools.console import Console
 import pandas as pd
+import os
 
 class PredictiveEngine:
     def __init__(self, name=None):
         self.name = " '"  + name + "'" if name else ''
 
-
     def loadData (input_filename, latent_name_prefix= 'latent_'):
         Console.info("PredictiveEngine.predict called for: ", input_filename)
 
+        # Check if input_filename exists
+        if not os.path.isfile(input_filename):
+            Console.error("Input file does not exist: ", input_filename)
+            return
         df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
         # 1) Data validation, remove invalid entries (e.g. NaN)
         # print (df.head())
