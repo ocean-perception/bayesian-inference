@@ -40,7 +40,7 @@ class CustomDataloader:
         # Example: (8 dimensions: h0, h1, ... , h7)
         # relative_path northing [m] easting [m] ... latitude [deg] longitude [deg] recon_loss h0 h1 h2 h3 h4 h5 h6 h7
         n_latents = len(df.filter(regex=latent_name_prefix).columns)
-        Console.info ("Latent dimensions: ", n_latents)
+        Console.info ("Input latent entries: ", df.shape)
 
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
@@ -72,7 +72,7 @@ class CustomDataloader:
         merged_df = merged_df.dropna()  # drop any stray NaN values. There should be none
 
         latent_df = merged_df.filter(regex=latent_name_prefix)  # remove all columns not starting with latent_name_prefix ('latent_')
-        Console.info ("Latent size: ", latent_df.shape)
+        Console.info ("Filtered latent size: ", latent_df.shape)
 
         target_df = merged_df[target_key]
         latent_np = latent_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
