@@ -23,7 +23,7 @@ def main(args=None):
         parser.print_help(sys.stderr)
         sys.exit(2)
     args = parser.parse_args(args)  # retrieve parsed arguments
-    Console.info("Postprocessing tool for predictions generated with BNN. Merges predicted entries with target values by key (uuid) as export as a single file")
+    Console.info("Postprocessing tool for predictions generated with BNN. Merges predicted entries with target values by key (uuid) and export as a single file")
 
     if os.path.isfile(args.target):
         Console.info("Target file:\t", args.target)
