@@ -94,7 +94,7 @@ def main(args=None):
         scaling_factor = 1.0
 
     Console.info("Loading latent input [", args.input ,"]")
-    np_latent, n_latents, df = PredictiveEngine.loadData(args.input, latent_name_prefix= 'latent_')
+    np_latent, n_latents, df = PredictiveEngine.loadData(args.input, input_key_prefix= 'latent_')
 
     Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

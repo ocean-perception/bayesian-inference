@@ -16,7 +16,7 @@ class PredictiveEngine:
     def __init__(self, name=None):
         self.name = " '"  + name + "'" if name else ''
 
-    def loadData (input_filename, latent_name_prefix= 'latent_'):
+    def loadData (input_filename, input_key_prefix= 'latent_'):
         Console.info("PredictiveEngine.predict called for: ", input_filename)
 
         # Check if input_filename exists
@@ -32,10 +32,10 @@ class PredictiveEngine:
         # The number of 'features' are defined by those columns labeled as 'relative_path'xxx, where xx is 0-based index for the h-latent space vector
         # Example: (8 dimensions: h0, h1, ... , h7)
         # relative_path northing [m] easting [m] ... latitude [deg] longitude [deg] recon_loss h0 h1 h2 h3 h4 h5 h6 h7
-        n_latents = len(df.filter(regex=latent_name_prefix).columns)
+        n_latents = len(df.filter(regex=input_key_prefix).columns)
         Console.info ("Latent dimensions: ", n_latents)
 
-        latent_df = df.filter(regex=latent_name_prefix)
+        latent_df = df.filter(regex=input_key_prefix)
         Console.info ("Latent size: ", latent_df.shape)
 
         np_latent = latent_df.to_numpy(dtype='float')

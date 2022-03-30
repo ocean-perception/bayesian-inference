@@ -18,9 +18,9 @@ class CustomDataloader:
 
     """
     Dataset loader for oplab pipeline compatible CSV files. The 'matching_key' is used to build the input-output paris (e.g. label for each input row)
-    The name of the target label is defined using 'target_key'
+    The name of the target label is defined using 'target_key_prefix'
     """
-    def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key ='mean_slope', latent_name_prefix= 'latent_'):
+    def load_dataset (input_filename, target_filename, matching_key='relative_path', target_key_prefix ='mean_slope', input_key_prefix= 'latent_'):
 
         # check if input_filename exists
         if not os.path.isfile(input_filename):
@@ -39,48 +39,64 @@ class CustomDataloader:
         # The number of 'features' are defined by those columns labeled as 'relative_path'xxx, where xx is 0-based index for the h-latent space vector
         # Example: (8 dimensions: h0, h1, ... , h7)
         # relative_path northing [m] easting [m] ... latitude [deg] longitude [deg] recon_loss h0 h1 h2 h3 h4 h5 h6 h7
-        n_latents = len(df.filter(regex=latent_name_prefix).columns)
-        Console.info ("Input latent entries: ", df.shape)
+        n_latents = len(df.filter(regex=input_key_prefix).columns)
+        Console.info ("Input latent entries: ", n_latents)
+
+        # If the number of latent dimensions is zero, show error message and exit
+        if n_latents == 0:
+            Console.error("No columns matching the input_key [" + input_key_prefix + "] found in input file: ", input_filename)
+            return
+
+        # Check if the matching_key column exists in the dataframe df
+        if matching_key not in df.columns:
+            Console.error("Matching key [" + matching_key + "] not found in input file: ", input_filename)
+            return
+        df['matching_key'] = df[matching_key]   # create a new dataframe column with the matching key
 
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
         # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
         print ("matching_key: ", matching_key)
-        print ("target_key: ", target_key)
-        print ("latent_name_prefix: ", latent_name_prefix)
-
-        # Check if matching_key is present in the df dataframe
-        if matching_key not in df.columns:
-            Console.error("Matching key not found in input file: ", matching_key)
-            return
-        df['matching_key'] = df[matching_key]   # create a new dataframe column with the matching key
-
+        print ("target_key_prefix: ", target_key_prefix)
+        print ("input_key_prefix: ", input_key_prefix)
+        ###############################################
+        # Let's repeat the process with the target file
         # Check if target_filename exists
         if not os.path.isfile(target_filename):
             Console.error("Target file does not exist: ", target_filename)
             return
         tdf = pd.read_csv(target_filename) # expected header: relative_path	mean_slope [ ... ] mean_rugosity
         tdf = tdf.dropna()
+
+        n_targets = len(tdf.filter(regex=target_key_prefix).columns)
+        Console.info ("Target entries: ", n_targets)
+        # If the number of target dimensions is zero, show error message and exit
+        if n_targets == 0:
+            Console.error("No columns matching the target_key_prefix [" + target_key_prefix + "] found in target file: ", target_filename)
+            return
+        # Check if the matching_key column exists in the target dataframe tdf
         if matching_key not in tdf.columns:
             Console.error("Matching key not found in target file: ", matching_key)
             return
         tdf['matching_key'] = tdf[matching_key] # create the dataframe containing the target values
+        ###############################################
 
-        Console.info("Target entries: ", len(tdf))
+        Console.info("Target (label) entries: ", len(tdf))
 
         merged_df = pd.merge(df, tdf, how='right', on='matching_key')   # join on right, so that we can use the target values
         merged_df = merged_df.dropna()  # drop any stray NaN values. There should be none
 
-        latent_df = merged_df.filter(regex=latent_name_prefix)  # remove all columns not starting with latent_name_prefix ('latent_')
+        latent_df = merged_df.filter(regex=input_key_prefix)  # remove all columns not starting with input_key_prefix ('latent_')
         Console.info ("Filtered latent size: ", latent_df.shape)
 
-        target_df = merged_df[target_key]
+        target_df = merged_df.filter(regex=target_key_prefix)  # remove all columns not starting with input_key_prefix ('latent_')
+#        target_df = merged_df[target_key_prefix]
         latent_np = latent_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
         target_np = target_df.to_numpy(dtype='float')   # Apply to both target and latent data
         # input-output datasets are linked using the key provided by matching_key
         return latent_np, target_np, merged_df['matching_key']
 
-    def load_toydataset (input_filename, target_key ='mean_slope', input_prefix= 'latent_', matching_key='relative_path'):
+    def load_toydataset (input_filename, target_key_prefix ='mean_slope', input_prefix= 'latent_', matching_key='relative_path'):
         Console.info("load_toydataset called for: ", input_filename)
 
         df = pd.read_csv(input_filename, index_col=0) # use 1st column as ID, the 2nd (relative_path) can be used as part of UUID
@@ -98,7 +114,7 @@ class CustomDataloader:
         Console.info ("Latent dimensions: ", n_latents)
 
         latent_df = df.filter(regex=input_prefix)
-        target_df = df[target_key]
+        target_df = df[target_key_prefix]
         Console.info ("Latent size: ", latent_df.shape)
 
         latent_np = latent_df.to_numpy(dtype='float')

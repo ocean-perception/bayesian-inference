@@ -127,8 +127,8 @@ def main(args=None):
     X, y, index_df = CustomDataloader.load_dataset( input_filename  = dataset_filename, 
                                                     target_filename = target_filename,
                                                     matching_key    = UUID,
-                                                    target_key      = output_key,
-                                                    latent_name_prefix = latent_key)    # relative_path is the common key in both tables
+                                                    target_key_prefix      = output_key,
+                                                    input_key_prefix = latent_key)    # relative_path is the common key in both tables
     n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
     Console.info("Data loaded...")
 
@@ -167,7 +167,7 @@ def main(args=None):
         Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
 
     # For testing purposes, you can use toydataset loader
-    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key = output_key, input_prefix= latent_key, matching_key='uuid')    # relative_path is the common key in both tables
+    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key_prefix = output_key, input_prefix= latent_key, matching_key='uuid')    # relative_path is the common key in both tables
 
     # To maintain equivalent metrics for normal, log-normal data, we need to normalize the data
     # However the normalization must be reversible at prediction and interpretration time.
@@ -184,18 +184,21 @@ def main(args=None):
     # X_norm = norm.transform(X)      # min max normalization of our input data
     X_norm = X
 
+    Console.warn ("Xnorm_Shape", X_norm.shape)
+    Console.warn ("y_shape", y.shape)
+
     # We impose fixed normalization for the input data, as we know the expected data range.
     # Warning: we do not use the data to fit the scaler as there is no guarantee that the ata sample covers all the expected range
     _d      = np.array([       0.01,         90.0])
     _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
     scaler = MinMaxScaler(feature_range=(0, 90))
     scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
-    y = np.expand_dims(y, -1)
+#    y = np.expand_dims(y, -1)
     y_norm = scaler.transform(y)
 
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
+    n_targets = y_norm.shape[1]      # retrieve the size of output targets
 
-    Console.warn ("Xnorm_Shape", X_norm.shape)
     print ("X [min,max]\t",      np.amin(X),"/",      np.amax(X))
     print ("X_norm [min,max]\t", np.amin(X_norm),"/", np.amax(X_norm))
     print ("Y [min,max]\t",      np.amin(y),"/",      np.amax(y))
@@ -218,15 +221,17 @@ def main(args=None):
         Console.warn("Using CPU")
         device = torch.device("cpu")
 
-    regressor = BayesianRegressor(n_latents, 1).to(device)  # Single output being predicted
+    regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
-    criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    # criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
+
 
     # print("Model's state_dict:")
     # for param.Tensor in regressor.state_dict():
     #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
-    data_batch_size = 16
+    data_batch_size = 18
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
     dataloader_train = torch.utils.data.DataLoader(ds_train, batch_size=data_batch_size, shuffle=True)
@@ -253,6 +258,7 @@ def main(args=None):
     regressor.train()   # set to training mode, just in case
     # regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
     regressor.unfreeze_()   # we no longer start with "warming-up" phase of non-Bayesian training
+
 
     try:
         for epoch in range(num_epochs):
@@ -368,22 +374,50 @@ def main(args=None):
     for x in Xp_:
         predictions = []
         for n in range(n_samples):
-            p = regressor(x.to(device)).item()
-            predictions.append(p) #1D output, retieve single item
+            y_ = regressor(x.to(device)).detach().cpu().numpy()
+            predictions.append(y_) #N-dimensional output, stack/append as "single item"
 
-        p_mean = statistics.mean(predictions)
-        p_stdv = statistics.stdev(predictions)
-        idx = idx + 1
-
+        p_mean = np.mean(predictions, axis=0)
+        p_stdv = np.std(predictions, axis=0)
         predicted.append(p_mean)
         uncertainty.append(p_stdv)
 
+        idx = idx + 1
         Console.progress(idx, len(Xp_))
 
-    y_list = y_norm.squeeze().tolist()
-    xl = np.squeeze(X_norm).tolist()
-    pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
-    pred_df.columns = ['y', 'predicted', 'uncertainty', 'uuid']
+    y_list = y_norm.squeeze().tolist()  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
+    # xl = np.squeeze(X_norm).tolist()
+
+    # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
+    column_names = []
+    for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
+        column_names.append('y_' + str(i))    
+    
+    _ydf = pd.DataFrame(y_list, columns=column_names)
+    print("_df.head", _ydf.head())
+    # we repeat this for predicted and uncertainty
+    column_names = []
+    for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
+        column_names.append('predicted_' + str(i))    
+    _pdf = pd.DataFrame(predicted, columns=column_names)
+    print("_df.head", _pdf.head())
+
+    column_names = []
+    for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
+        column_names.append('uncertainty_' + str(i))    
+    _udf = pd.DataFrame(predicted, columns=column_names)
+    print("_df.head", _udf.head())
+
+    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
+    # pred_df.columns = ['y', 'predicted', 'uncertainty', 'uuid']
+    pred_df  = pd.DataFrame ([index_df]).transpose()
+    pred_df.columns = ['uuid']
+
+    # Finally, let's append _ydf dataframe to pred_df
+    pred_df = pd.concat([pred_df, _ydf], axis=1)
+    pred_df = pd.concat([pred_df, _pdf], axis=1)
+    pred_df = pd.concat([pred_df, _udf], axis=1)
+
     Console.warn("Exported predictions to: ", predictions_name)
     pred_df.to_csv(predictions_name, index = False)
 
