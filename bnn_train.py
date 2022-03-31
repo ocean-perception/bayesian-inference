@@ -395,7 +395,6 @@ def main(args=None):
         Console.progress(idx, len(Xp_))
 
     y_list = y_norm.squeeze().tolist()  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
-    # xl = np.squeeze(X_norm).tolist()
 
     # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
     column_names = []
@@ -403,22 +402,21 @@ def main(args=None):
         column_names.append('y_' + str(i))    
     
     _ydf = pd.DataFrame(y_list, columns=column_names)
-    print("_df.head", _ydf.head())
+
     # we repeat this for predicted and uncertainty
     column_names = []
     for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('predicted_' + str(i))    
+        # the column names is created by prepending 'p_' to the column names of the y_df
+        column_names.append('pred_' + y_df.columns[i])
+        # column_names.append('predicted_' + str(i))    
     _pdf = pd.DataFrame(predicted, columns=column_names)
-    print("_df.head", _pdf.head())
 
     column_names = []
     for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('uncertainty_' + str(i))    
+        column_names.append('std_' + y_df.columns[i])
+        # column_names.append('uncertainty_' + str(i))    
     _udf = pd.DataFrame(uncertainty, columns=column_names)
-    print("_df.head", _udf.head())
 
-    # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
-    # pred_df.columns = ['y', 'predicted', 'uncertainty', 'uuid']
     pred_df  = pd.DataFrame ([index_df]).transpose()
     pred_df.columns = ['uuid']
 
