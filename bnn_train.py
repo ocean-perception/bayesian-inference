@@ -124,11 +124,15 @@ def main(args=None):
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
     Console.info("Loading dataset: " + dataset_filename)
-    X, y, index_df = CustomDataloader.load_dataset( input_filename  = dataset_filename, 
+    X_df, y_df, index_df = CustomDataloader.load_dataset( input_filename  = dataset_filename, 
                                                     target_filename = target_filename,
                                                     matching_key    = UUID,
                                                     target_key_prefix      = output_key,
                                                     input_key_prefix = latent_key)    # relative_path is the common key in both tables
+    
+    X = X_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
+    y = y_df.to_numpy(dtype='float')   # Apply to both target and latent data
+    
     n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
     Console.info("Data loaded...")
 
@@ -189,9 +193,9 @@ def main(args=None):
 
     # We impose fixed normalization for the input data, as we know the expected data range.
     # Warning: we do not use the data to fit the scaler as there is no guarantee that the ata sample covers all the expected range
-    _d      = np.array([       0.01,         90.0])
-    _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
-    scaler = MinMaxScaler(feature_range=(0, 90))
+    _d      = np.array([       0.0,         1.0])
+    # _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
+    scaler = MinMaxScaler(feature_range=(0, 1.0))
     scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
 #    y = np.expand_dims(y, -1)
     y_norm = scaler.transform(y)
@@ -259,6 +263,11 @@ def main(args=None):
     # regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
     regressor.unfreeze_()   # we no longer start with "warming-up" phase of non-Bayesian training
 
+
+    # Create customized criterion function
+    # Add output layer normalization option: L1 or L2 norm
+    # Add option to configure cosine or MSELoss
+    # Improve constant torch.ones for CosineEmbeddingLoss, or juts use own cosine distance loss (torch compatible)
 
     try:
         for epoch in range(num_epochs):
@@ -405,7 +414,7 @@ def main(args=None):
     column_names = []
     for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
         column_names.append('uncertainty_' + str(i))    
-    _udf = pd.DataFrame(predicted, columns=column_names)
+    _udf = pd.DataFrame(uncertainty, columns=column_names)
     print("_df.head", _udf.head())
 
     # pred_df  = pd.DataFrame ([y_list, predicted, uncertainty, index_df]).transpose()
@@ -416,7 +425,7 @@ def main(args=None):
     # Finally, let's append _ydf dataframe to pred_df
     pred_df = pd.concat([pred_df, _ydf], axis=1)
     pred_df = pd.concat([pred_df, _pdf], axis=1)
-    pred_df = pd.concat([pred_df, _udf], axis=1)
+    # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
 
     Console.warn("Exported predictions to: ", predictions_name)
     pred_df.to_csv(predictions_name, index = False)
