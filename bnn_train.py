@@ -228,8 +228,8 @@ def main(args=None):
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
-    # criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
-    criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
+    criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
 
 
     # print("Model's state_dict:")
@@ -399,7 +399,7 @@ def main(args=None):
     # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
     column_names = []
     for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('y_' + str(i))    
+        column_names.append('target_' + y_df.columns[i])
     
     _ydf = pd.DataFrame(y_list, columns=column_names)
 

@@ -98,17 +98,20 @@ def main(args=None):
 
     Console.info("Loading pretrained network [", args.network ,"]")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    regressor = BayesianRegressor(n_latents, 1).to(device)                  # Single output being predicted
 
     if torch.cuda.is_available():
         Console.info("Using CUDA")
         trained_network = torch.load(args.network)          # load pretrained model (dictionary)
-        regressor.load_state_dict(trained_network['model_state_dict']) # load state from deserialized object
+        # we need to determine the number of outputs by looking at the linear_output layer
+        output_size = len(trained_network['model_state_dict']['linear_output.weight'].data.cpu().numpy())
+        regressor = BayesianRegressor(n_latents, output_size).to(device)                  # Single output being predicted
     else:
         Console.warn("Using CPU")
         trained_network = torch.load(args.network, map_location=torch.device('cpu')) # load pretrained model (dictionary)
-        regressor.load_state_dict(trained_network['model_state_dict']) # load state from deserialized object
+        output_size = len(trained_network['model_state_dict']['linear_output.weight'].data.cpu().numpy())
+        regressor = BayesianRegressor(n_latents, output_size).to(device)                  # Single output being predicted
 
+    regressor.load_state_dict(trained_network['model_state_dict']) # load state from deserialized object
     regressor.eval()    # switch to inference mode (set dropout layers)
 
     # Show information about the model dictionary
@@ -120,17 +123,13 @@ def main(args=None):
     #               'elbo_kld': elbo_kld,
     #               'model_state_dict': regressor.state_dict()}
 
-    print ("Model dictionary:")      # For each key in the dictionary, we can check if defined and show warning if not
+    print ("Model dictionary loaded network ||")      # For each key in the dictionary, we can check if defined and show warning if not
     print ("\tEpochs: ", trained_network['epochs'])
     print ("\tBatch size: ", trained_network['batch_size'])
     print ("\tLearning rate: ", trained_network['learning_rate'])
     print ("\tLambda fit loss: ", trained_network['lambda_fit_loss'])
     print ("\tELBO k-samples: ", trained_network['elbo_kld'])
     
-    # print("Model's state_dict:")
-    # for param_tensor in regressor.state_dict():
-    #     print(param_tensor, "\t", regressor.state_dict()[param_tensor].size())
-
     # Apply any pre-existing scaling factor to the input
     X_norm = np_latent  # for large latents, input to the network
     print ("X_norm [min,max]", np.amin(X_norm),"/", np.amax(X_norm))
@@ -141,7 +140,6 @@ def main(args=None):
 
 ########################################################################
 
-
     # Network is pretrained so we start inferring
     uncertainty = []
     predicted = [] # == y
@@ -150,29 +148,41 @@ def main(args=None):
     for x in Xp_:
         predictions = []
         for n in range(k_samples):
-            p = regressor(x.to(device)).item()
-            predictions.append(p) #1D output, retieve single item
+            y_ = regressor(x.to(device)).detach().cpu().numpy()
+            # p = regressor(x.to(device)).item()
+            predictions.append(y_) #1D output, retieve single item
 
-        p_mean = statistics.mean(predictions) * scaling_factor  # --> scaling the output of our prediction (after MC sampling)
-        p_stdv = statistics.stdev(predictions) * scaling_factor # yes, stdev needs to be scaled too (under Normal distribution assumption)
-        idx = idx + 1
-
+        p_mean = np.mean(predictions, axis=0) * scaling_factor
+        p_stdv = np.std(predictions, axis=0) * scaling_factor
         predicted.append(p_mean)
         uncertainty.append(p_stdv)
+
+        idx = idx + 1
         Console.progress(idx, len(Xp_))
 
 ########################################################################
 ########################################################################
     print ("Total predicted rows: ", len(predicted))
 
-    # # y_list = [element.item() for element in y_test.flatten()]
-    # xl = np.squeeze(X_norm).tolist()
+    # we repeat this for predicted and uncertainty
+    column_names = []
+    for i in range(output_size): # for each entry 'i' we create a column with the name 'y_i'
+        # the column names is created by prepending 'p_' to the column names of the y_df
+        column_names.append('pred_' + output_key + "_" + str(i))   # TODO: use the same naming convention as in the training dataframe (retrieved from NN model dictionary maybe?) 
+        # column_names.append('predicted_' + str(i))    
+    _pdf = pd.DataFrame(predicted, columns=column_names)
 
-    # # predicted.len = X.len (as desired)
-    # # pred_df  = pd.DataFrame ([xl, y_list, predicted, uncertainty, index_df]).transpose()
+    # we repeat this for predicted and uncertainty
+    column_names = []
+    for i in range(output_size): # for each entry 'i' we create a column with the name 'y_i'
+        # the column names is created by prepending 'p_' to the column names of the y_df
+        column_names.append('std_' + output_key + "_" + str(i))   # TODO: use the same naming convention as in the training dataframe (retrieved from NN model dictionary maybe?) 
+        # column_names.append('predicted_' + str(i))    
+    _udf = pd.DataFrame(uncertainty, columns=column_names)
+
     pred_df  = df.copy()    # make a copy, then we append the results
-    pred_df[output_key] = predicted    
-    pred_df["uncertainty"] = uncertainty    
+    pred_df = pd.concat([pred_df, _pdf], axis=1)
+    pred_df = pd.concat([pred_df, _udf], axis=1)
     new_cols = pred_df.columns.values
     new_cols[0]="uuid"  # this should be the first non-index column, expected to be the uuid
 

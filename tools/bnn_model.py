@@ -37,17 +37,14 @@ class BayesianRegressor(nn.Module):
 
         self.linear2       = nn.Linear(DIM1, DIM2, bias=True)
         # self.silu2         = nn.Hardtanh(0.0,1.0)                          # consider using Softsign
-        self.silu2         = nn.Softsign()                          # consider using Softsign
-        # self.silu2         = nn.SiLU()                          # consider using Softsign
+        # self.silu2         = nn.Softsign()                          # consider using Softsign
+        self.silu2         = nn.SiLU()                          # consider using Softsign
 
         self.linear3       = nn.Linear(DIM2, DIM3, bias=True)
-
         # self.linear2       = nn.Linear(128, 128, bias=True)
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
-        self.last_layer = nn.Softsign()
-        # self.relu          = nn.LeakyReLU()
-        # self.relu2         = nn.LeakyReLU()
+        self.last_layer = nn.Softmin(dim=0)
 
     # Oceans2021 architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output 
 
@@ -58,9 +55,9 @@ class BayesianRegressor(nn.Module):
         x_ = self.silu2(self.linear2      (x_))
         x_ =            self.linear3      (x_)
         x_ =            self.linear_output(x_)
-        x_ = self.last_layer(x_)
+        x_ = self.last_layer(x_)    # last layer is Softmin to produce that output Tensor lie in the range [0, 1] and sum to 1
         # normalize output using L1 norm
-        x_ = F.normalize (x_, p=1, dim=-1)
+        # x_ = F.normalize (x_, p=1, dim=-1)
         return x_
         
 def evaluate_regression(regressor,
