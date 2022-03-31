@@ -193,13 +193,14 @@ def main(args=None):
 
     # We impose fixed normalization for the input data, as we know the expected data range.
     # Warning: we do not use the data to fit the scaler as there is no guarantee that the ata sample covers all the expected range
-    _d      = np.array([       0.0,         1.0])
+    # _d      = np.array([       0.0,         1.0])
     # _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
-    scaler = MinMaxScaler(feature_range=(0, 1.0))
-    scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
+    # scaler = MinMaxScaler(feature_range=(0, 1.0))
+    # scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
 #    y = np.expand_dims(y, -1)
-    y_norm = scaler.transform(y)
-
+    # y_norm = scaler.transform(y)
+    y_norm = y
+    
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]      # retrieve the size of output targets
 
