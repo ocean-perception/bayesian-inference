@@ -229,8 +229,8 @@ def main(args=None):
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
-    criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
-    # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
+    # criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
 
 
     # print("Model's state_dict:")
