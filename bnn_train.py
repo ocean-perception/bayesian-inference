@@ -32,6 +32,14 @@ import tools.parser as par
 import statistics
 import math
 
+def custom_loss_function (y_pred, y_true):
+    # y_pred = torch.tensor(y_pred, dtype=torch.float32)
+    # y_true = torch.tensor(y_true, dtype=torch.float32)
+    # return torch.mean(torch.abs(y_pred - y_true))
+    
+
+    return torch.mean(torch.abs(y_pred - y_true))
+
 def handler(signum, frame):
     Console.warn ("CTRL + C pressed. Stopping...")
     exit(1)
@@ -229,8 +237,8 @@ def main(args=None):
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
-    criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
-    # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
+    # criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
 
 
     # print("Model's state_dict:")
