@@ -207,7 +207,7 @@ def main(args=None):
     # scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
 #    y = np.expand_dims(y, -1)
     # y_norm = scaler.transform(y)
-    y_norm = y
+    y_norm = y / 10.0
     
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]      # retrieve the size of output targets
@@ -237,8 +237,8 @@ def main(args=None):
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
-    # criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
-    criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
+    criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
 
 
     # print("Model's state_dict:")
