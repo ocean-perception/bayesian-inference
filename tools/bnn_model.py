@@ -26,9 +26,16 @@ class BayesianRegressor(nn.Module):
         # DIM1 = 16
         # DIM2 = 4
         # DIM3 = 2
-        DIM1 = 256
-        DIM2 = 128
-        DIM3 = 64
+
+        # Complex network
+        # DIM1 = 256
+        # DIM2 = 128
+        # DIM3 = 64
+
+        # Medium network
+        DIM1 = 64
+        DIM2 = 32
+        DIM3 = 8
 
         self.linear_input  = nn.Linear(input_dim, DIM1, bias=True)
 
