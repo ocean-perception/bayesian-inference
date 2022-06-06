@@ -136,6 +136,12 @@ def main(args=None):
         xratio = 0.9 # Default value 80:20 for training/validation
 
 
+    if (args.scale):
+        scale_factor = args.scale
+        Console.info("Using user-defined scale:\t[", scale_factor, "]")
+    else:
+        scale_factor = 1.0
+
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
     Console.info("Loading dataset: " + dataset_filename)
@@ -214,7 +220,7 @@ def main(args=None):
     # scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
 #    y = np.expand_dims(y, -1)
     # y_norm = scaler.transform(y)
-    y_norm = y / 10.0
+    y_norm = y / scale_factor
     
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]      # retrieve the size of output targets
@@ -226,7 +232,7 @@ def main(args=None):
 
     X_train, X_valid, y_train, y_valid = train_test_split(X_norm,
                                                         y_norm,
-                                                        test_size=.2, # 8:2 ratio
+                                                        test_size=xratio, # 8:2 ratio
                                                         shuffle = True) 
     # Convert train and test vectors to tensors
     X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(y_train).float()
@@ -392,10 +398,11 @@ def main(args=None):
     Console.info("Testing predictions...")
     idx = 0 
     # for x in X_valid:
+    regressor.eval() # we need to set eval mode before running inference
+                     # this will set dropout and batch normalization (if any) to evaluation mode
+
     Xp_ = torch.Tensor(X_norm).float()
 
-    regressor.eval() # we need to set eval mode before running inference
-                     # this will set dropout and batch normalization to evaluation mode
     for x in Xp_:
         predictions = []
         for n in range(n_samples):

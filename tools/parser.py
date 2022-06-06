@@ -89,7 +89,7 @@ def add_arguments(obj):
         "--scale",
         default='1.0',
         type=float,
-        help="Define the outputtarget scaling factor. Default: 1.0 (no scaling))"
+        help="Define the output target scaling factor. Default: 1.0 (no scaling))"
     )
 
     # user defined learning rate
