@@ -128,6 +128,13 @@ def main(args=None):
     else:
         lambda_elbo = 1.0
 
+    # Check if user specified a xratio for T:V ratio
+    if (args.xratio):
+        xratio = args.xratio
+        Console.info("Using user-defined xratio:\t[", xratio, "]")
+    else:
+        xratio = 0.9 # Default value 80:20 for training/validation
+
 
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
