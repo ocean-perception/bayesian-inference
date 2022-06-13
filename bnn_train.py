@@ -390,19 +390,22 @@ def main(args=None):
     export_df.index.names=['index']
     export_df.to_csv(logfile_name, index = False)
 
-    # Once trained, we start inferring
-    expected = []
-    uncertainty = []
-    predicted = [] # == y
 
-    Console.info("Testing predictions...")
     idx = 0 
     # for x in X_valid:
     regressor.eval() # we need to set eval mode before running inference
                      # this will set dropout and batch normalization (if any) to evaluation mode
 
-    Xp_ = torch.Tensor(X_norm).float()
+    Console.info("Testing predictions [train dataset]...")
+    # Xp_ = torch.Tensor(X_norm).float()
+    Xt_ = torch.Tensor(X_train).float().to(device)
+    Xv_ = torch.Tensor(X_valid).float().to(device)
 
+    Xp_ = Xt_
+    y_list = y_train.squeeze().tolist()  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
+
+    uncertainty = []
+    predicted = [] # == y
     for x in Xp_:
         predictions = []
         for n in range(n_samples):
@@ -417,7 +420,6 @@ def main(args=None):
         idx = idx + 1
         Console.progress(idx, len(Xp_))
 
-    y_list = y_norm.squeeze().tolist()  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
 
     # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
     column_names = []
@@ -448,8 +450,68 @@ def main(args=None):
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
 
-    Console.warn("Exported predictions to: ", predictions_name)
-    pred_df.to_csv(predictions_name, index = False)
+    Console.warn("Exported [train dataset] predictions to: ", "train_" + predictions_name)
+    pred_df.to_csv("train_" + predictions_name, index = False)
+
+    ######################################################################################################################
+    # We repeat the same procedure for the validation dataset
+    ######################################################################################################################
+
+    Console.info("Testing predictions [validation dataset]...")
+    Xp_ = Xv_
+    y_list = y_valid.squeeze().tolist()  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
+
+    # Once trained, we start inferring
+    expected = []
+    uncertainty = []
+    predicted = [] # == y
+    for x in Xp_:
+        predictions = []
+        for n in range(n_samples):
+            y_ = regressor(x.to(device)).detach().cpu().numpy()
+            predictions.append(y_) #N-dimensional output, stack/append as "single item"
+
+        p_mean = np.mean(predictions, axis=0)
+        p_stdv = np.std(predictions, axis=0)
+        predicted.append(p_mean)
+        uncertainty.append(p_stdv)
+
+        idx = idx + 1
+        Console.progress(idx, len(Xp_))
+
+
+    # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
+    column_names = []
+    for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
+        column_names.append('target_' + y_df.columns[i])
+    
+    _ydf = pd.DataFrame(y_list, columns=column_names)
+
+    # we repeat this for predicted and uncertainty
+    column_names = []
+    for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
+        # the column names is created by prepending 'p_' to the column names of the y_df
+        column_names.append('pred_' + y_df.columns[i])
+        # column_names.append('predicted_' + str(i))    
+    _pdf = pd.DataFrame(predicted, columns=column_names)
+
+    column_names = []
+    for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
+        column_names.append('std_' + y_df.columns[i])
+        # column_names.append('uncertainty_' + str(i))    
+    _udf = pd.DataFrame(uncertainty, columns=column_names)
+
+    pred_df  = pd.DataFrame ([index_df]).transpose()
+    pred_df.columns = ['uuid']
+
+    # Finally, let's append _ydf dataframe to pred_df
+    pred_df = pd.concat([pred_df, _ydf], axis=1)
+    pred_df = pd.concat([pred_df, _pdf], axis=1)
+    # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
+
+    Console.warn("Exported [validation dataset] predictions to: ", "valid_" + predictions_name)
+    pred_df.to_csv("valid_" + predictions_name, index = False)
+
 
 if __name__ == '__main__':
     main()
