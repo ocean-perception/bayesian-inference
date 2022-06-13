@@ -442,11 +442,12 @@ def main(args=None):
         # column_names.append('uncertainty_' + str(i))    
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
-    pred_df  = pd.DataFrame ([index_df]).transpose()
-    pred_df.columns = ['uuid']
+    # pred_df  = pd.DataFrame ([index_df]).transpose()
+    # pred_df.columns = ['uuid']
 
     # Finally, let's append _ydf dataframe to pred_df
-    pred_df = pd.concat([pred_df, _ydf], axis=1)
+    # pred_df = pd.concat([pred_df, _ydf], axis=1)
+    pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
 
@@ -501,11 +502,12 @@ def main(args=None):
         # column_names.append('uncertainty_' + str(i))    
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
-    pred_df  = pd.DataFrame ([index_df]).transpose()
-    pred_df.columns = ['uuid']
+    # pred_df  = pd.DataFrame ([index_df]).transpose()
+    # pred_df.columns = ['uuid']
 
     # Finally, let's append _ydf dataframe to pred_df
-    pred_df = pd.concat([pred_df, _ydf], axis=1)
+    # pred_df = pd.concat([pred_df, _ydf], axis=1)
+    pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
 
