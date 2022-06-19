@@ -246,10 +246,9 @@ def main(args=None):
         if torch.cuda.device_count() > 1:
             # Check which device has more free memory
             Console.info("More than one GPU detected. Using the one with more free memory...")
-#            mem0 = torch.cuda.get_device_properties(0).free_memory
-#            mem1 = torch.cuda.get_device_properties(1).free_memory
-            mem0 = 1
-            mem1 = 0
+            # Pytorch 1.7 API. Newer version provide explicit methods to get the device with more free memory
+            mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
+            mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
             if mem0 > mem1:
                 device = torch.device("cuda:0")
                 torch.cuda.set_device("cuda:0")
