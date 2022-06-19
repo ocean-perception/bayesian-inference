@@ -252,22 +252,22 @@ def main(args=None):
             mem1 = 0
             if mem0 > mem1:
                 device = torch.device("cuda:0")
-                torch.cuda.set_device(0)
+                torch.cuda.set_device("cuda:0")
                 Console.info("Using device: ", device)
             else:
                 device = torch.device("cuda:1")
-                torch.cuda.set_device(1)
+                torch.cuda.set_device("cuda:1")
                 Console.info("Using device: ", device)
         else:
             Console.info("Only 1 GPU is available")
             # use the only available GPU
-            device = torch.device("cuda")
+            device = torch.device("cuda:0")
     else:
         Console.warn("Using CPU")
         device = torch.device("cpu")
 
     # set the device
-    torch.cuda.set_device(device)
+    # torch.cuda.set_device(device)
     Console.warn("Using device:", torch.cuda.current_device())
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
