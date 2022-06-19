@@ -242,11 +242,20 @@ def main(args=None):
 
     # check if CUDA device is available
     if torch.cuda.is_available():
-        Console.info("Using CUDA")
+        Console.info("CUDA detected. Using GPU...")
         if torch.cuda.device_count() > 1:
-            Console.info("More than 1 GPU is available. Using second GPU")
-            # use the second GPU
-            device = torch.device("cuda:1")
+            # Check which device has more free memory
+            Console.info("More than one GPU detected. Using the one with more free memory...")
+            mem0 = torch.cuda.get_device_properties(0).free_memory
+            mem1 = torch.cuda.get_device_properties(1).free_memory
+            if mem0 > mem1:
+                device = torch.device("cuda:0")
+                torch.cuda.set_device(0)
+                Console.info("Using device: ", device)
+            else:
+                device = torch.device("cuda:1")
+                torch.cuda.set_device(1)
+                Console.info("Using device: ", device)
         else:
             Console.info("Only 1 GPU is available")
             # use the only available GPU
@@ -255,6 +264,9 @@ def main(args=None):
         Console.warn("Using CPU")
         device = torch.device("cpu")
 
+    # set the device
+    torch.cuda.set_device(device)
+    Console.warn("Using device:", torch.cuda.current_device())
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
