@@ -240,9 +240,17 @@ def main(args=None):
     y_train = torch.unsqueeze(y_train, -1)  # PyTorch will complain if we feed the (N).Tensor rather than a (NX1).Tensor
     y_valid = torch.unsqueeze(y_valid, -1)   # we add an additional dummy dimension
 
+    # check if CUDA device is available
     if torch.cuda.is_available():
         Console.info("Using CUDA")
-        device = torch.device("cuda")
+        if torch.cuda.device_count() > 1:
+            Console.info("More than 1 GPU is available. Using second GPU")
+            # use the second GPU
+            device = torch.device("cuda:1")
+        else:
+            Console.info("Only 1 GPU is available")
+            # use the only available GPU
+            device = torch.device("cuda")
     else:
         Console.warn("Using CPU")
         device = torch.device("cpu")
