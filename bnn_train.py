@@ -188,6 +188,10 @@ def main(args=None):
     else:
         Console.info("Trained output:\t", network_name)
 
+    if (args.gpu):
+        Console.info("User-defined GPU index: \t", args.gpu)
+        device_index = args.gpu # to be used if CUDA is available
+
     if (args.config):
         Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
 
@@ -247,9 +251,9 @@ def main(args=None):
             # Check which device has more free memory
             Console.info("More than one GPU detected. Using the one with more free memory...")
             # Pytorch 1.7 API. Newer version provide explicit methods to get the device with more free memory
-            mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
-            mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
-            if mem0 > mem1:
+            # mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
+            # mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
+            if device_index is None or device_index == 0:
                 device = torch.device("cuda:0")
                 torch.cuda.set_device("cuda:0")
                 Console.info("Using device: ", device)

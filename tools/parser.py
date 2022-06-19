@@ -115,3 +115,11 @@ def add_arguments(obj):
         type=float,
         help="Define the lambda value for the ELBO KL divergence cost. Default: 1.0"
     )
+
+    # GPU index #########################
+    obj.add_argument(
+        "--gpu",
+        type=int,
+        default=0,
+        help="Index of CUDA device to be used. Default: 0"
+    )
