@@ -188,6 +188,7 @@ def main(args=None):
     else:
         Console.info("Trained output:\t", network_name)
 
+    device_index = 0
     if (args.gpu):
         Console.info("User-defined GPU index: \t", args.gpu)
         device_index = args.gpu # to be used if CUDA is available
