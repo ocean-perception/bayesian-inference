@@ -5,6 +5,7 @@ All rights reserved.
 Licensed under the BSD 3-Clause License.
 See LICENSE.md file in the project root for full license information.
 """
+import sys
 
 """Utility class to print messages to the console
 """
@@ -81,7 +82,7 @@ class Console:
             + " ".join(map(str, args)),
             **kwargs
         )
-        quit()
+        sys.exit()
 
     @staticmethod
     def banner():
