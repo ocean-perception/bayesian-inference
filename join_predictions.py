@@ -8,7 +8,7 @@ from tools.console import Console
 
 def handler(signum, frame):
     Console.warn ("CTRL + C pressed. Stopping...")
-    exit(1)
+    sys.exit(1)
 
 
 def main(args=None):

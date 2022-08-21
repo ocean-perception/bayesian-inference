@@ -42,7 +42,7 @@ def custom_loss_function (y_pred, y_true):
 
 def handler(signum, frame):
     Console.warn ("CTRL + C pressed. Stopping...")
-    exit(1)
+    sys.exit(1)
 
 def main(args=None):
     description_str = "Bayesian Neural Network training module"
@@ -103,7 +103,7 @@ def main(args=None):
         else:
             # If the number of samples is not larger than 2, show an error and exit
             Console.error("The number of MC samples must be larger than 2. Please provide a number larger than 2 (-s, --samples)")
-            exit(1)
+            sys.exit(1)
     else:
         n_samples = 10      # default
 
