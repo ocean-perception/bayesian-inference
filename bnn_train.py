@@ -51,7 +51,7 @@ def main(args=None):
     # argparse.HelpFormatter(parser,'width=120')
     par.add_arguments(parser)
 
-    Console.info("Bayesian Neural Network for hi-res inference from low resolution acoustic priors (LGA-Bathymetry)")
+    Console.info("Bayesian Neural Network for predicting hi-res terrain observation from feature representation of low resolution terrain priors")
     if len(sys.argv) == 1 and args is None: # no argument passed? show help as some parameters were expected
         parser.print_help(sys.stderr)
         sys.exit(2)
