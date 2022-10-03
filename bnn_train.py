@@ -77,7 +77,6 @@ def main(args=None):
     # for each output file, we check if user defined name is provided. If not, use default naming convention
     filename_suffix = "H" + str(n_latents) + "_E" + str(config.num_epochs) + "_S" + str(config.n_samples)
     # Console.warn("Suffix:", filename_suffix)
-
     if (args.output is None):
         predictions_name = "bnn_predictions_" + filename_suffix +  ".csv"
     else:
@@ -86,7 +85,6 @@ def main(args=None):
         Console.warn("Output file [", predictions_name, "] already exists. It will be overwritten (default action)")
     else:
         Console.info("Output file:   \t", predictions_name)
-
     if (args.logfile is None):
         logfile_name = "bnn_logfile_" + filename_suffix +  ".csv"
     else:
@@ -95,7 +93,6 @@ def main(args=None):
         Console.warn("Log file [", logfile_name, "] already exists. It will be overwritten (default action)")
     else:
         Console.info("Log file:      \t", logfile_name)
-
     if (args.network is None):
         network_name = "bnn_" + filename_suffix +  ".pth"   # PyTorch compatible netwrok definition file
     else:
@@ -105,11 +102,7 @@ def main(args=None):
     else:
         Console.info("Trained output:\t", network_name)
 
-    if (args.config):
-        Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
-
-    # For testing purposes, you can use toydataset loader
-    # X, y, index_df = CustomDataloader.load_toydataset(dataset_filename, target_key_prefix = output_key, input_prefix= latent_key, matching_key='uuid')    # relative_path is the common key in both tables
+    # All the previous section requires the latent dimension (X.shape[1]) to be known.
 
     # To maintain equivalent metrics for normal, log-normal data, we need to normalize the data
     # However the normalization must be reversible at prediction and interpretration time.
@@ -125,7 +118,6 @@ def main(args=None):
     # norm = MinMaxScaler().fit(X)
     # X_norm = norm.transform(X)      # min max normalization of our input data
     X_norm = X
-
     Console.warn ("Xnorm_Shape", X_norm.shape)
     Console.warn ("y_shape", y.shape)
 
@@ -185,12 +177,11 @@ def main(args=None):
     # set the device
     # torch.cuda.set_device(device)
     Console.warn("Using device:", torch.cuda.current_device())
-    regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
+    regressor = BayesianRegressor(n_latents, n_targets).to(device)
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=config.learning_rate) # learning rate
     criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
     # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
-
 
     # print("Model's state_dict:")
     # for param.Tensor in regressor.state_dict():
@@ -203,7 +194,6 @@ def main(args=None):
     ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
     dataloader_valid = torch.utils.data.DataLoader(ds_valid, batch_size=data_batch_size, shuffle=True)
 
-    iteration = 0
     # Log of training and validation losses
     train_loss_history = []
     train_fit_loss_history = []
@@ -211,7 +201,6 @@ def main(args=None):
     valid_loss_history = []
     valid_fit_loss_history = []
     valid_kld_loss_history = []
-
 
     lambda_fit_loss = config.lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld        = config.lambda_elbo   # regularization parameter for the KL divergence loss 
@@ -222,7 +211,6 @@ def main(args=None):
     regressor.train()   # set to training mode, just in case
     # regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
     regressor.unfreeze_()   # we no longer start with "warming-up" phase of non-Bayesian training
-
 
     # Create customized criterion function
     # Add output layer normalization option: L1 or L2 norm
@@ -266,8 +254,6 @@ def main(args=None):
                 else:
                     train_kld_loss.append(0.0)
 
-                # print ("_loss.item()", _loss.item(), "\t_fit_loss.item()", _fit_loss.item(), "\t_kld_loss", _kld_loss)
-            
             for k, (valid_datapoints, valid_labels) in enumerate(dataloader_valid):
                 # calculate the fit loss and the KL-divergence cost for the test points set
                 valid_labels = valid_labels.squeeze(2)
@@ -313,21 +299,19 @@ def main(args=None):
 
     Console.info("Training completed. Saving the model...")
     # create dictionary with the trained model and some training parameters
-    model_dict = {'epochs': config.num_epochs,
-                  'batch_size': data_batch_size,
-                  'learning_rate': config.learning_rate,
-                  'lambda_fit_loss': lambda_fit_loss,
-                  'elbo_kld': elbo_kld,
-                  'optimizer': optimizer.state_dict(),
-                  'model_state_dict': regressor.state_dict()}
+    model_dict = {'epochs':             config.num_epochs,
+                  'batch_size':         data_batch_size,
+                  'learning_rate':      config.learning_rate,
+                  'lambda_fit_loss':    lambda_fit_loss,
+                  'elbo_kld':           elbo_kld,
+                  'optimizer':          optimizer.state_dict(),
+                  'model_state_dict':   regressor.state_dict()}
     torch.save(model_dict, network_name)
 
     export_df = pd.DataFrame([train_loss_history, train_fit_loss_history, train_kld_loss_history, valid_loss_history, valid_fit_loss_history, valid_kld_loss_history]).transpose()
     export_df.columns = ['train_loss', 'train_fit_loss', 'train_kld_loss', 'valid_loss', 'valid_fit_loss', 'valid_kld_loss']
-
     export_df.index.names=['index']
     export_df.to_csv(logfile_name, index = False)
-
 
     idx = 0 
     # for x in X_valid:
@@ -418,7 +402,6 @@ def main(args=None):
         idx = idx + 1
         Console.progress(idx, len(Xp_))
 
-
     # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
     column_names = []
     for i in range(n_targets): # for each entry 'i' we create a column with the name 'y_i'
@@ -451,7 +434,6 @@ def main(args=None):
 
     Console.warn("Exported [validation dataset] predictions to: ", "valid_" + predictions_name)
     pred_df.to_csv("valid_" + predictions_name, index = False)
-
 
 if __name__ == '__main__':
     main()
