@@ -29,6 +29,7 @@ from tools.dataloader import CustomDataloader
 from tools.predictor import PredictiveEngine
 from tools.bnn_model import BayesianRegressor
 import tools.parser as par
+from tools.bnn_configuration import BNNConfiguration
 import statistics
 import math
 
@@ -36,8 +37,6 @@ def custom_loss_function (y_pred, y_true):
     # y_pred = torch.tensor(y_pred, dtype=torch.float32)
     # y_true = torch.tensor(y_true, dtype=torch.float32)
     # return torch.mean(torch.abs(y_pred - y_true))
-    
-
     return torch.mean(torch.abs(y_pred - y_true))
 
 def handler(signum, frame):
@@ -57,99 +56,17 @@ def main(args=None):
         sys.exit(2)
     args = parser.parse_args(args)  # retrieve parsed arguments
 
-    # Start verifying mandatory arguments
-    # [mandatory] Check if input file (latents) exists
-    if os.path.isfile(args.input):
-        Console.info("Latent input file:\t", args.input)
-    else:
-        Console.error("Latent input file [" + args.input + "] not found. Please check the provided input path (-i, --input)")
-    # [mandatory] target file
-    if os.path.isfile(args.target):
-        Console.info("Target input file:\t", args.target)
-    else:
-        Console.error("Target input file [" + args.target + "] not found. Please check the provided input path (-t, --target)")
-
-    # this is the key that is used to identity the target output (single) or the column name for the predictions
-    if (args.key):
-        output_key = args.key
-        Console.info("Using user-defined target key:\t[", output_key, "]")
-    else:
-        output_key = 'measurability'
-        Console.warn("Using default target key:     \t[", output_key, "]")
-    # user defined keyword (prefix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.latent):
-        latent_key = args.latent
-        Console.info("Using user-defined latent key:\t[", latent_key, "]")
-    else:
-        latent_key = 'latent_'
-        Console.info("Using default latent key:     \t[", latent_key, "]")
-    # user defined keyword (prefix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.uuid):
-        UUID = args.uuid
-        Console.info("Using user-defined UUID:\t[", UUID, "]")
-    else:
-        UUID = 'relative_path'
-        Console.info("Using default UUID:     \t[", UUID, "]")
-    # these parameters are only used in training mode
-    if (args.epochs):
-        num_epochs = args.epochs
-    else:
-        num_epochs = 100    # default
-    # number of random samples used by sample_elbo to estimate the mean/std for each inference epoch
-    if (args.samples):
-        # Verify the number of samples is larger than 2, otherwise Monte Carlo sampling is not possible (won't make sense)
-        if (args.samples > 2):
-            n_samples = args.samples
-        else:
-            # If the number of samples is not larger than 2, show an error and exit
-            Console.error("The number of MC samples must be larger than 2. Please provide a number larger than 2 (-s, --samples)")
-            sys.exit(1)
-    else:
-        n_samples = 10      # default
-
-    # Check if user specified a learning rate
-    if (args.lr):
-        learning_rate = args.lr
-        Console.info("Using user-defined learning rate:\t[", learning_rate, "]")
-    else:
-        learning_rate = 0.001 # Default value
-
-    # Check if user specified a lambda for reconstruction loss
-    if (args.lambda_recon):
-        lambda_recon = args.lambda_recon
-        Console.info("Using user-defined lambda for reconstruction loss:\t[", lambda_recon, "]")
-    else:
-        lambda_recon = 10.0
-
-    # Check if user specified a lambda for ELBO KL loss
-    if (args.lambda_elbo):
-        lambda_elbo = args.lambda_elbo
-        Console.info("Using user-defined lambda for ELBO KL loss:\t[", lambda_elbo, "]")
-    else:
-        lambda_elbo = 1.0
-
-    # Check if user specified a xratio for T:V ratio
-    if (args.xratio):
-        xratio = args.xratio
-        Console.info("Using user-defined xratio:\t[", xratio, "]")
-    else:
-        xratio = 0.9 # Default value 80:20 for training/validation
-
-
-    if (args.scale):
-        scale_factor = args.scale
-        Console.info("Using user-defined scale:\t[", scale_factor, "]")
-    else:
-        scale_factor = 1.0
+    config = BNNConfiguration()
+    config.load_from_parser(args)
 
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
     Console.info("Loading dataset: " + dataset_filename)
     X_df, y_df, index_df = CustomDataloader.load_dataset( input_filename  = dataset_filename, 
                                                     target_filename = target_filename,
-                                                    matching_key    = UUID,
-                                                    target_key_prefix      = output_key,
-                                                    input_key_prefix = latent_key)    # relative_path is the common key in both tables
+                                                    matching_key    = config.UUID,
+                                                    target_key_prefix = config.output_key,
+                                                    input_key_prefix  = config.latent_key)    # relative_path is the common key in both tables
     
     X = X_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
     y = y_df.to_numpy(dtype='float')   # Apply to both target and latent data
@@ -158,7 +75,7 @@ def main(args=None):
     Console.info("Data loaded...")
 
     # for each output file, we check if user defined name is provided. If not, use default naming convention
-    filename_suffix = "H" + str(n_latents) + "_E" + str(num_epochs) + "_S" + str(n_samples)
+    filename_suffix = "H" + str(n_latents) + "_E" + str(config.num_epochs) + "_S" + str(config.n_samples)
     # Console.warn("Suffix:", filename_suffix)
 
     if (args.output is None):
@@ -187,10 +104,6 @@ def main(args=None):
         Console.warn("Trained output [", network_name, "] already exists. It will be overwritten (default action)")
     else:
         Console.info("Trained output:\t", network_name)
-
-    if (args.gpu):
-        Console.info("User-defined GPU index: \t", args.gpu)
-        device_index = args.gpu # to be used if CUDA is available
 
     if (args.config):
         Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
@@ -224,7 +137,7 @@ def main(args=None):
     # scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
 #    y = np.expand_dims(y, -1)
     # y_norm = scaler.transform(y)
-    y_norm = y / scale_factor
+    y_norm = y / config.scale_factor
     
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]      # retrieve the size of output targets
@@ -236,7 +149,7 @@ def main(args=None):
 
     X_train, X_valid, y_train, y_valid = train_test_split(X_norm,
                                                         y_norm,
-                                                        test_size=xratio, # 8:2 ratio
+                                                        test_size=config.xratio, # 8:2 ratio
                                                         shuffle = True) 
     # Convert train and test vectors to tensors
     X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(y_train).float()
@@ -253,7 +166,7 @@ def main(args=None):
             # Pytorch 1.7 API. Newer version provide explicit methods to get the device with more free memory
             # mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
             # mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
-            if device_index is None or device_index == 0:
+            if config.device_index is None or config.device_index == 0:
                 device = torch.device("cuda:0")
                 torch.cuda.set_device("cuda:0")
                 Console.info("Using device: ", device)
@@ -274,7 +187,7 @@ def main(args=None):
     Console.warn("Using device:", torch.cuda.current_device())
     regressor = BayesianRegressor(n_latents, n_targets).to(device)  # Single output being predicted
     # regressor.init
-    optimizer = optim.Adam(regressor.parameters(), lr=learning_rate) # learning rate
+    optimizer = optim.Adam(regressor.parameters(), lr=config.learning_rate) # learning rate
     criterion = torch.nn.MSELoss()  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
     # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss 
 
@@ -300,8 +213,8 @@ def main(args=None):
     valid_kld_loss_history = []
 
 
-    lambda_fit_loss = lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
-    elbo_kld        = lambda_elbo   # regularization parameter for the KL divergence loss 
+    lambda_fit_loss = config.lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    elbo_kld        = config.lambda_elbo   # regularization parameter for the KL divergence loss 
     print (regressor)       # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
     print ("MSE-Loss lambda: ", lambda_fit_loss);  # Print the regularisation parameter for regression loss
@@ -317,7 +230,7 @@ def main(args=None):
     # Improve constant torch.ones for CosineEmbeddingLoss, or juts use own cosine distance loss (torch compatible)
 
     try:
-        for epoch in range(num_epochs):
+        for epoch in range(config.num_epochs):
             # if (epoch == 2):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
             #     regressor.unfreeze_()
             #     Console.info("Unfreezing the network")
@@ -339,7 +252,7 @@ def main(args=None):
                 _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted(inputs=datapoints.to(device),
                                 labels=labels.to(device),
                                 criterion=criterion,    # MSELoss
-                                sample_nbr=n_samples,
+                                sample_nbr=config.n_samples,
                                 criterion_loss_weight = lambda_fit_loss,
                                 complexity_cost_weight=elbo_kld/X_train.shape[0])  # normalize the complexity cost by the number of input points
                 _loss.backward() # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against a nominal Normal distribution )
@@ -361,7 +274,7 @@ def main(args=None):
                 _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted(inputs=valid_datapoints.to(device),
                                     labels=valid_labels.to(device),
                                     criterion=criterion,
-                                    sample_nbr=n_samples,
+                                    sample_nbr=config.n_samples,
                                     criterion_loss_weight = lambda_fit_loss,   # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
                                     complexity_cost_weight=elbo_kld/X_valid.shape[0])
 
@@ -392,7 +305,7 @@ def main(args=None):
 
             Console.info("Epoch [" + str(epoch) + "] Train (MSE + KLD): {:.3f}".format(mean_train_loss) + " = {:.3f}".format(mean_train_fit_loss) + " + {:.3f}".format(mean_train_kld_loss) + 
                                               "    | Valid (MSE + KLD): {:.3f}".format(mean_valid_loss) + " = {:.3f}".format(mean_valid_fit_loss) + " + {:.3f}".format(mean_valid_kld_loss) )
-            Console.progress(epoch, num_epochs)
+            Console.progress(epoch, config.num_epochs)
 
     except KeyboardInterrupt:
         Console.warn("Training interrupted...")
@@ -400,9 +313,9 @@ def main(args=None):
 
     Console.info("Training completed. Saving the model...")
     # create dictionary with the trained model and some training parameters
-    model_dict = {'epochs': num_epochs,
+    model_dict = {'epochs': config.num_epochs,
                   'batch_size': data_batch_size,
-                  'learning_rate': learning_rate,
+                  'learning_rate': config.learning_rate,
                   'lambda_fit_loss': lambda_fit_loss,
                   'elbo_kld': elbo_kld,
                   'optimizer': optimizer.state_dict(),
@@ -433,7 +346,7 @@ def main(args=None):
     predicted = [] # == y
     for x in Xp_:
         predictions = []
-        for n in range(n_samples):
+        for n in range(config.n_samples):
             y_ = regressor(x.to(device)).detach().cpu().numpy()
             predictions.append(y_) #N-dimensional output, stack/append as "single item"
 
@@ -493,7 +406,7 @@ def main(args=None):
     predicted = [] # == y
     for x in Xp_:
         predictions = []
-        for n in range(n_samples):
+        for n in range(config.n_samples):
             y_ = regressor(x.to(device)).detach().cpu().numpy()
             predictions.append(y_) #N-dimensional output, stack/append as "single item"
 
