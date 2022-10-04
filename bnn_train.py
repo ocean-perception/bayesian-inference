@@ -8,9 +8,7 @@ See LICENSE file in the project root for full license information.
 # Author: Jose Cappelletto (j.cappelletto@soton.ac.uk) 
 
 # Import general libraries
-import re # Regular expressions (eventually to be deprecated)
 import sys
-import os
 import torch
 import torch.optim as optim
 import numpy as np
@@ -76,8 +74,6 @@ def main(args=None):
 
     config.set_filenames(args, n_latents) # set the filenames for the model and the training log
 
-    # All the previous section requires the latent dimension (X.shape[1]) to be known.
-
     # To maintain equivalent metrics for normal, log-normal data, we need to normalize the data
     # However the normalization must be reversible at prediction and interpretration time.
     # We can used fixed normalization IF we know the data range (e.g. 0-90 degrees for slope)
@@ -96,7 +92,7 @@ def main(args=None):
     Console.warn ("y_shape", y.shape)
 
     # We impose fixed normalization for the input data, as we know the expected data range.
-    # Warning: we do not use the data to fit the scaler as there is no guarantee that the ata sample covers all the expected range
+    # Warning: we do not use the data to fit the scaler as there is no guarantee that the data sample covers all the expected range
     # _d      = np.array([       0.0,         1.0])
     # _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
     # scaler = MinMaxScaler(feature_range=(0, 1.0))
@@ -107,7 +103,7 @@ def main(args=None):
     
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]      # retrieve the size of output targets
-
+    np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
     print ("X [min,max]\t",      np.amin(X),"/",      np.amax(X))
     print ("X_norm [min,max]\t", np.amin(X_norm),"/", np.amax(X_norm))
     print ("Y [min,max]\t",      np.amin(y),"/",      np.amax(y))
