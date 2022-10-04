@@ -364,6 +364,7 @@ def main(args=None):
     expected = []
     uncertainty = []
     predicted = [] # == y
+    idx = 0
     for x in Xp_:
         predictions = []
         for n in range(config.n_samples):
