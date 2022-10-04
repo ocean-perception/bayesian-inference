@@ -103,11 +103,11 @@ def main(args=None):
     
     n_latents = X_norm.shape[1]      # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]      # retrieve the size of output targets
-    np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
-    print ("X [min,max]\t",      np.amin(X),"/",      np.amax(X))
-    print ("X_norm [min,max]\t", np.amin(X_norm),"/", np.amax(X_norm))
-    print ("Y [min,max]\t",      np.amin(y),"/",      np.amax(y))
-    print ("Y_norm [min,max]\t", np.amin(y_norm),"/", np.amax(y_norm))
+    # np.set_printoptions(formatter={'float': lambda x: "{0:0.4f}".format(x)})
+    print ("X_orig [min,max]: ", '{:.4}'.format(np.amin(X)),"/",'{:.4}'.format(np.amax(X)))
+    print ("X_norm [min,max]: ", '{:.4}'.format(np.amin(X_norm)),"/", '{:.4}'.format(np.amax(X_norm)))
+    print ("Y_orig [min,max]: ", '{:.4}'.format(np.amin(y)),"/",'{:.4}'.format(np.amax(y)))
+    print ("Y_norm [min,max]: ", '{:.4}'.format(np.amin(y_norm)),"/", '{:.4}'.format(np.amax(y_norm)))
 
     X_train, X_valid, y_train, y_valid = train_test_split(X_norm,
                                                         y_norm,
