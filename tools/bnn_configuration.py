@@ -25,7 +25,46 @@ class BNNConfiguration:
         self.input = []
         self.device_index = 0
 
+        self.predictions_name = None
+        self.logfile_name = None
+        self.network_name = None
+        self.filename_suffix = None
+
+
+    def set_filenames(self, args, n_latents):
+            # for each output file, we check if user defined name is provided. If not, use default naming convention
+        filename_suffix = "H" + str(n_latents) + "_E" + str(self.num_epochs) + "_S" + str(self.n_samples)
+        # Console.warn("Suffix:", filename_suffix)
+        if (args.output is None):
+            self.predictions_name = "bnn_predictions_" + filename_suffix +  ".csv"
+        else:
+            self.predictions_name = args.output
+        if os.path.isfile(self.predictions_name):
+            Console.warn("Output file [", self.predictions_name, "] already exists. It will be overwritten (default action)")
+        else:
+            Console.info("Output file:   \t", self.predictions_name)
+        if (args.logfile is None):
+            self.logfile_name = "bnn_logfile_" + filename_suffix +  ".csv"
+        else:
+            self.logfile_name = args.logfile
+        if os.path.isfile(self.logfile_name):
+            Console.warn("Log file [", self.logfile_name, "] already exists. It will be overwritten (default action)")
+        else:
+            Console.info("Log file:      \t", self.logfile_name)
+        if (args.network is None):
+            self.network_name = "bnn_" + filename_suffix +  ".pth"   # PyTorch compatible network definition file
+        else:
+            self.network_name = args.network
+        if os.path.isfile(self.network_name):
+            Console.warn("Trained output [", self.network_name, "] already exists. It will be overwritten (default action)")
+        else:
+            Console.info("Trained output:\t", self.network_name)
+
+
     def load_from_parser(self, args):
+
+        if (args.config):
+            Console.warn("Configuration file provided:\t", args.config, " will be ignored (usage not implemented yet)")
 
         # Start verifying mandatory arguments
         # [mandatory] Check if input file (latents) exists

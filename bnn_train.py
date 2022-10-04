@@ -56,51 +56,25 @@ def main(args=None):
         sys.exit(2)
     args = parser.parse_args(args)  # retrieve parsed arguments
 
-    config = BNNConfiguration()
+    config = BNNConfiguration()     # empty constructor, we could pass args at construction time...
     config.load_from_parser(args)
 
     dataset_filename = args.input   # dataset containing the input. e.g. the latent vector
     target_filename  = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
     Console.info("Loading dataset: " + dataset_filename)
-    X_df, y_df, index_df = CustomDataloader.load_dataset( input_filename  = dataset_filename, 
-                                                    target_filename = target_filename,
-                                                    matching_key    = config.UUID,
-                                                    target_key_prefix = config.output_key,
-                                                    input_key_prefix  = config.latent_key)    # relative_path is the common key in both tables
+    X_df, y_df, index_df = CustomDataloader.load_dataset(   input_filename  = dataset_filename, 
+                                                            target_filename = target_filename,
+                                                            matching_key    = config.UUID,
+                                                            target_key_prefix = config.output_key,
+                                                            input_key_prefix  = config.latent_key)    # relative_path is the common key in both tables
     
     X = X_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
     y = y_df.to_numpy(dtype='float')   # Apply to both target and latent data
-    
+    # We need to peek the number of latent variables to configure the network and set up the filenames    
     n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
     Console.info("Data loaded...")
 
-    # for each output file, we check if user defined name is provided. If not, use default naming convention
-    filename_suffix = "H" + str(n_latents) + "_E" + str(config.num_epochs) + "_S" + str(config.n_samples)
-    # Console.warn("Suffix:", filename_suffix)
-    if (args.output is None):
-        predictions_name = "bnn_predictions_" + filename_suffix +  ".csv"
-    else:
-        predictions_name = args.output
-    if os.path.isfile(predictions_name):
-        Console.warn("Output file [", predictions_name, "] already exists. It will be overwritten (default action)")
-    else:
-        Console.info("Output file:   \t", predictions_name)
-    if (args.logfile is None):
-        logfile_name = "bnn_logfile_" + filename_suffix +  ".csv"
-    else:
-        logfile_name = args.logfile
-    if os.path.isfile(logfile_name):
-        Console.warn("Log file [", logfile_name, "] already exists. It will be overwritten (default action)")
-    else:
-        Console.info("Log file:      \t", logfile_name)
-    if (args.network is None):
-        network_name = "bnn_" + filename_suffix +  ".pth"   # PyTorch compatible netwrok definition file
-    else:
-        network_name = args.network
-    if os.path.isfile(network_name):
-        Console.warn("Trained output [", network_name, "] already exists. It will be overwritten (default action)")
-    else:
-        Console.info("Trained output:\t", network_name)
+    config.set_filenames(args, n_latents) # set the filenames for the model and the training log
 
     # All the previous section requires the latent dimension (X.shape[1]) to be known.
 
@@ -306,12 +280,14 @@ def main(args=None):
                   'elbo_kld':           elbo_kld,
                   'optimizer':          optimizer.state_dict(),
                   'model_state_dict':   regressor.state_dict()}
-    torch.save(model_dict, network_name)
+    
+    print ("Network name:", config.network_name)
+    torch.save(model_dict, config.network_name)
 
     export_df = pd.DataFrame([train_loss_history, train_fit_loss_history, train_kld_loss_history, valid_loss_history, valid_fit_loss_history, valid_kld_loss_history]).transpose()
     export_df.columns = ['train_loss', 'train_fit_loss', 'train_kld_loss', 'valid_loss', 'valid_fit_loss', 'valid_kld_loss']
     export_df.index.names=['index']
-    export_df.to_csv(logfile_name, index = False)
+    export_df.to_csv(config.logfile_name, index = False)
 
     idx = 0 
     # for x in X_valid:
@@ -373,8 +349,8 @@ def main(args=None):
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
 
-    Console.warn("Exported [train dataset] predictions to: ", "train_" + predictions_name)
-    pred_df.to_csv("train_" + predictions_name, index = False)
+    Console.warn("Exported [train dataset] predictions to: ", "train_" + config.predictions_name)
+    pred_df.to_csv("train_" + config.predictions_name, index = False)
 
     ######################################################################################################################
     # We repeat the same procedure for the validation dataset
@@ -432,8 +408,8 @@ def main(args=None):
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
 
-    Console.warn("Exported [validation dataset] predictions to: ", "valid_" + predictions_name)
-    pred_df.to_csv("valid_" + predictions_name, index = False)
+    Console.warn("Exported [validation dataset] predictions to: ", "valid_" + config.predictions_name)
+    pred_df.to_csv("valid_" + config.predictions_name, index = False)
 
 if __name__ == '__main__':
     main()
