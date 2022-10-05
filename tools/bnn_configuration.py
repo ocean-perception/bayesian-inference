@@ -134,10 +134,10 @@ class BNNConfiguration:
 
         # Check if user specified a lambda for ELBO KL loss
         if (args.lambda_elbo):
-            lambda_elbo = args.lambda_elbo
-            Console.info("Using user-defined lambda for ELBO KL loss:\t[", lambda_elbo, "]")
+            self.lambda_elbo = args.lambda_elbo
+            Console.info("Using user-defined lambda for ELBO KL loss:\t[", self.lambda_elbo, "]")
         else:
-            lambda_elbo = 1.0
+            self.lambda_elbo = 1.0
 
         # Check if user specified a xratio for T:V ratio
         if (args.xratio):
@@ -154,4 +154,4 @@ class BNNConfiguration:
 
         if (args.gpu):
             Console.info("User-defined GPU index: \t", args.gpu)
-            device_index = args.gpu # to be used if CUDA is available
+            self.device_index = args.gpu # to be used if CUDA is available
