@@ -50,8 +50,8 @@ def main(args=None):
 
     Console.info("Bayesian Neural Network for predicting hi-res terrain observation from feature representation of low resolution terrain priors")
     if len(sys.argv) == 1 and args is None: # no argument passed? show help as some parameters were expected
-        parser.print_help(sys.stderr)
         sys.exit(2)
+        parser.print_help(sys.stderr)
     args = parser.parse_args(args)  # retrieve parsed arguments
 
     config = BNNConfiguration()     # empty constructor, we could pass args at construction time...
@@ -70,6 +70,18 @@ def main(args=None):
     y = y_df.to_numpy(dtype='float')   # Apply to both target and latent data
     # We need to peek the number of latent variables to configure the network and set up the filenames    
     n_latents = X.shape[1]      # this is the only way to retrieve the size of input latent vectors
+    n_pairs = X.shape[0]        # number of pairs in the dataset
+    # If the number of loaded pairs is zero, print error and exit
+    if n_pairs == 0:
+        Console.error("No data loaded. Check input and target files")
+        sys.exit(1)
+    # If the number of loaded pairs is less than the batch size, print warning and exit
+    data_batch_size = 18
+    if n_pairs < data_batch_size:
+        # print the error message with the number of pairs and the batch size
+        Console.error("The number of loaded pairs [",n_latents,"] is less than the batch size ",data_batch_size,"]. Check input and target files")
+        sys.exit(1)
+        
     Console.info("Data loaded...")
 
     config.set_filenames(args, n_latents) # set the filenames for the model and the training log
