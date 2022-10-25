@@ -12,8 +12,8 @@ import math
 import torch.nn as nn
 import torch.nn.functional as F
 # Import blitz (BNN) modules
-from submodules.blitz.blitz.modules import BayesianLinear
-from submodules.blitz.blitz.utils import variational_estimator
+from blitz.modules import BayesianLinear
+from blitz.utils import variational_estimator
 
 @variational_estimator
 class BayesianRegressor(nn.Module):
