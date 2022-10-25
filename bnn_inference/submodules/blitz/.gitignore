@@ -1,6 +1,4 @@
 # Byte-compiled / optimized / DLL files
-data/*
-
 __pycache__/
 *.py[cod]
 *$py.class
@@ -116,6 +114,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# Jetbrains project settings
+.idea/
+
 # Rope project settings
 .ropeproject
 
@@ -130,9 +131,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Data files
-*.csv
-*.xls
+#vscode
+.vscode/
 
-# Trained networks
-*.pth
+#example data
+example/data/
+utils/data/
+*data/
+/data/
