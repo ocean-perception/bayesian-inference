@@ -6,7 +6,7 @@ import os
 # import numpy as np
 # import pandas as pd
 # import argparse
-from tools.console import Console
+from bnn_inference.tools.console import Console
 
 class BNNConfiguration:
     def __init__(self):

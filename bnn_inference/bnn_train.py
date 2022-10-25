@@ -22,13 +22,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 # Helper libaries (viz)
 import matplotlib.pyplot as plt
-# Toolkit
-from tools.console import Console
-from tools.dataloader import CustomDataloader
-from tools.predictor import PredictiveEngine
-from tools.bnn_model import BayesianRegressor
-import tools.parser as par
-from tools.bnn_configuration import BNNConfiguration
+
 import math
 
 def custom_loss_function (y_pred, y_true):

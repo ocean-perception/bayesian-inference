@@ -30,14 +30,14 @@ def run_setup():
 
     setup(
         name='bayesian_predictor',
-        version='0.1.1',
+        version='0.1.3',
         description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
         author='Jose Cappelletto',
         author_email='j.cappelletto@soton.ac.uk',
         url='https://github.com/cappelletto/bayesian_inference',
         license='GPLv3',
 
-        packages='bnn_inference',
+        packages=['bnn_inference'],
 
         entry_points={
             'console_scripts': [

@@ -8,7 +8,7 @@ See LICENSE.md file in the project root for full license information.
 
 """Utility class to print messages to the console
 """
-from tools.console import Console
+from bnn_inference.tools.console import Console
 import pandas as pd
 import os
 
