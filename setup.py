@@ -37,8 +37,7 @@ def run_setup():
         url='https://github.com/cappelletto/bayesian_inference',
         license='GPLv3',
 
-        packages=find_packages(where="src"),
-        package_dir={"": "src"},
+        packages='bnn_inference',
 
         entry_points={
             'console_scripts': [
