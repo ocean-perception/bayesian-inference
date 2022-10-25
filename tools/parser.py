@@ -123,3 +123,12 @@ def add_arguments(obj):
         default=0,
         help="Index of CUDA device to be used. Default: 0"
     )
+
+
+    # Output distribution #########################
+    obj.add_argument(
+        "--distribution",
+        type=str,
+        default='normal',
+        help="Define the output distribution. Default: normal. Options: normal | lognormal | uniform | exponential"
+    )

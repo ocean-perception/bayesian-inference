@@ -56,9 +56,9 @@ class CustomDataloader:
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
         # where the filename is composed by [date_type_tilex_tiley_mod_type]. input and target tables differ only in 'type' field
-        print ("matching_key: ", matching_key)
-        print ("target_key_prefix: ", target_key_prefix)
-        print ("input_key_prefix: ", input_key_prefix)
+        # print ("matching_key: ", matching_key)
+        # print ("target_key_prefix: ", target_key_prefix)
+        # print ("input_key_prefix: ", input_key_prefix)
         ###############################################
         # Let's repeat the process with the target file
         # Check if target_filename exists
@@ -69,7 +69,7 @@ class CustomDataloader:
         tdf = tdf.dropna()
 
         n_targets = len(tdf.filter(regex=target_key_prefix).columns)
-        Console.info ("Target entries: ", n_targets)
+        Console.info ("Dimension of targets (y): ", n_targets)
         # If the number of target dimensions is zero, show error message and exit
         if n_targets == 0:
             Console.error("No columns matching the target_key_prefix [" + target_key_prefix + "] found in target file: ", target_filename)
@@ -81,13 +81,13 @@ class CustomDataloader:
         tdf['matching_key'] = tdf[matching_key] # create the dataframe containing the target values
         ###############################################
 
-        Console.info("Target (label) entries: ", len(tdf))
+        Console.info("Total loaded targets(y): ", len(tdf))
 
         merged_df = pd.merge(df, tdf, how='right', on='matching_key')   # join on right, so that we can use the target values
         merged_df = merged_df.dropna()  # drop any stray NaN values. There should be none
 
         latent_df = merged_df.filter(regex=input_key_prefix)  # remove all columns not starting with input_key_prefix ('latent_')
-        Console.info ("Filtered latent size: ", latent_df.shape)
+        Console.info ("Latent vector list (after filter): ", latent_df.shape)
 
         target_df = merged_df.filter(regex=target_key_prefix)  # remove all columns not starting with input_key_prefix ('latent_')
 #        target_df = merged_df[target_key_prefix]
