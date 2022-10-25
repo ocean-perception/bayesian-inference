@@ -29,11 +29,11 @@ from sklearn.model_selection import train_test_split
 # Helper libaries (viz)
 import matplotlib.pyplot as plt
 # Toolkit
-from tools.console import Console
-from tools.dataloader import CustomDataloader
-from tools.predictor import PredictiveEngine
-from tools.bnn_model import BayesianRegressor
-import tools.parser as par
+from bnn_inference.tools.console import Console
+from bnn_inference.tools.dataloader import CustomDataloader
+from bnn_inference.tools.predictor import PredictiveEngine
+from bnn_inference.tools.bnn_model import BayesianRegressor
+import bnn_inference.tools.parser as par
 import statistics
 import math
 

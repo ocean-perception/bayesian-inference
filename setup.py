@@ -30,7 +30,7 @@ def run_setup():
 
     setup(
         name='bayesian_predictor',
-        version='0.1.3',
+        version='0.1.4',
         description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
         author='Jose Cappelletto',
         author_email='j.cappelletto@soton.ac.uk',
@@ -41,8 +41,8 @@ def run_setup():
 
         entry_points={
             'console_scripts': [
-                'bnn_train = bnn_inference.bnn_train.__main__:main',
-                'bnn_predict = bnn_inference.bnn_predict.__main__:main',
+                'bnn_train = bnn_inference.bnn_train:main',
+                'bnn_predict = bnn_inference.bnn_predict:main',
             ],
         },
 
