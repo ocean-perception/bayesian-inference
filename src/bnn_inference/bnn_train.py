@@ -14,6 +14,7 @@ import torch.optim as optim
 import numpy as np
 import pandas as pd
 import argparse
+import statistics
 # Import sklearn dataset parsers and samples
 from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
@@ -28,7 +29,6 @@ from tools.predictor import PredictiveEngine
 from tools.bnn_model import BayesianRegressor
 import tools.parser as par
 from tools.bnn_configuration import BNNConfiguration
-import statistics
 import math
 
 def custom_loss_function (y_pred, y_true):

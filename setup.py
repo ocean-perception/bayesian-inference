@@ -7,6 +7,7 @@
 
 import os
 import sys
+from importlib_metadata import entry_points
 from setuptools import setup, find_packages
 
 # TODO: Complete git hook to retrieve version from git tags
@@ -29,14 +30,23 @@ def run_setup():
 
     setup(
         name='bayesian_predictor',
-        version='0.1.0',
+        version='0.1.1',
         description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
         author='Jose Cappelletto',
         author_email='j.cappelletto@soton.ac.uk',
         url='https://github.com/cappelletto/bayesian_inference',
         license='GPLv3',
-        packages=find_packages('src'),
-        package_dir={'': 'src'},
+
+        packages=find_packages(where="src"),
+        package_dir={"": "src"},
+
+        entry_points={
+            'console_scripts': [
+                'bnn_train = bnn_inference.bnn_train.__main__:main',
+                'bnn_predict = bnn_inference.bnn_predict.__main__:main',
+            ],
+        },
+
         install_requires = [
             "blitz-bayesian-pytorch==0.2.7",
             "numpy==1.19.0",
@@ -47,7 +57,6 @@ def run_setup():
             "scipy==1.5.0",
         ]
 )
-
 
 if __name__ == "__main__":
     run_setup()

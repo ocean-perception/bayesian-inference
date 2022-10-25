@@ -1,3 +1,3 @@
 [submodule "submodules/blitz"]
-	path = src/submodules/blitz
+	path = src/bnn_inference/submodules/blitz
 	url = git@github.com:cappelletto/blitz-bayesian-deep-learning.git
