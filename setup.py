@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Ocean Perception, University of Southampton
+# Author: Jose Cappelletto - j.cappelletto@soton.ac.uk - cappelletto@gmail.com
 
 # setup.py to manage installation of the package and its dependencies
 # package name: bayesian_predictor
@@ -30,12 +32,12 @@ def run_setup():
 
     setup(
         name='bayesian_predictor',
-        version='0.1.4',
+        version='0.1.5',
         description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
         author='Jose Cappelletto',
         author_email='j.cappelletto@soton.ac.uk',
         url='https://github.com/cappelletto/bayesian_inference',
-        license='GPLv3',
+        license='GPLv3', # check if oplab requires MIT for all packages
 
         packages=['bnn_inference'],
 
@@ -48,11 +50,11 @@ def run_setup():
 
         install_requires = [
             "blitz-bayesian-pytorch==0.2.7",
-            "numpy==1.19.0",
+            "numpy==1.19.0", # check for update of pandas
             "pandas==0.25.3",
-            "torch==1.7.0",
+            "torch==1.7.0",  # check for a newer version of torch, supporting multi-GPU and improved queries on allocated memory
             "torchvision==0.8.1",
-            "scikit-learn==0.23.1",
+            "scikit-learn==0.23.1", # scikit was bumped to 1.XX series. Maybe worth doing the update with the rest of the packages
             "scipy==1.5.0",
         ]
 )
