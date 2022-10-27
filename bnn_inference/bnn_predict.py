@@ -168,7 +168,7 @@ def main(args=None):
         for n in range(k_samples):
             y_ = regressor(x.to(device)).detach().cpu().numpy()
             # p = regressor(x.to(device)).item()
-            predictions.append(y_)  #1D output, retieve single item
+            predictions.append(y_)  # 1D output, retieve single item
 
         p_mean = np.mean(predictions, axis=0) * scaling_factor
         p_stdv = np.std(predictions, axis=0) * scaling_factor

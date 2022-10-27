@@ -7,8 +7,6 @@
 # package source folder: src/
 # dependencies: numpy, scipy, torch, pandas, scikit-learn, blitz
 
-import os
-import sys
 from importlib_metadata import entry_points
 from setuptools import setup, find_packages
 

@@ -11,10 +11,10 @@ def handler(signum, frame):
     Console.warn("CTRL + C pressed. Stopping...")
     sys.exit(1)
 
-# noqa: E731
+
 def main(args=None):
     description_str = "Bayesian Neural Network inference module"
-    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)  # noqa: E731
+    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
     parser = argparse.ArgumentParser(description=description_str,
                                      formatter_class=formatter)
     # argparse.HelpFormatter(parser,'width=120')

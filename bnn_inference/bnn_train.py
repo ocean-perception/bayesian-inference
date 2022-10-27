@@ -285,7 +285,7 @@ def main(args=None):
                     criterion=criterion,
                     sample_nbr=config.n_samples,
                     criterion_loss_weight=lambda_fit_loss,  # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
-                    complexity_cost_weight=elbo_kld/X_valid.shape[0])
+                    complexity_cost_weight=elbo_kld / X_valid.shape[0])
                 valid_loss.append(_loss.item())  # keep track of training loss
                 valid_fit_loss.append(_fit_loss.item())
                 # When the network is frozen the complexity cost is not computed and the kld_loss is 0
