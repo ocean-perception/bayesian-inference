@@ -46,6 +46,8 @@ def run_setup():
             ],
         },
 
+        # TODO: need to recreate dep matrix.
+        # Pytorch does not support CUDA 11.5, using older 10.2 for the conda env
         install_requires = [
             "blitz-bayesian-pytorch==0.2.7",
             "numpy==1.19.0", # check for update of pandas

@@ -49,13 +49,11 @@ def main(args=None):
     par.add_arguments(parser)
 
     Console.info(
-        "Bayesian Neural Network for predicting hi-res terrain observation from feature representation of low resolution terrain priors"
+        "Bayesian NN training module: learning hi-res terrain observations from feature representation of low resolution priors"
     )
-    if len(
-            sys.argv
-    ) == 1 and args is None:  # no argument passed? show help as some parameters were expected
-        sys.exit(2)
+    if len(sys.argv) == 1 and args is None:  # no argument passed? show help as some parameters were expected
         parser.print_help(sys.stderr)
+        sys.exit(2)
     args = parser.parse_args(args)  # retrieve parsed arguments
 
     config = BNNConfiguration(

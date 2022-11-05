@@ -40,15 +40,14 @@ def main(args=None):
     # argparse.HelpFormatter(parser,'width=120')
     par.add_arguments(parser)
 
-    if len(
-            sys.argv
-    ) == 1 and args is None:  # no argument passed? error, some parameters were expected
+    if len(sys.argv) == 1 and args is None:  # no argument passed? error, some parameters were expected
         # Show help if no args provided
         parser.print_help(sys.stderr)
         sys.exit(2)
+
     args = parser.parse_args(args)  # retrieve parsed arguments
     Console.info(
-        "Bayesian Neural Network for hi-res inference from low res acoustic priors (LGA-Bathymetry)"
+        "Bayesian NN inference module. Predicting hi-res terrain maps from lo-res features"
     )
 
     # we are in prediction (inference) mode
