@@ -471,17 +471,16 @@ def main(args=None):
             n_targets
     ):  # for each entry 'i' we create a column with the name 'y_i'
         column_names.append('std_' + y_df.columns[i])
-        # column_names.append('uncertainty_' + str(i))
-    # _udf = pd.DataFrame(uncertainty, columns=column_names)
-
-    # pred_df  = pd.DataFrame ([index_df]).transpose()
-    # pred_df.columns = ['uuid']
+        column_names.append('uncertainty_' + str(i))
+    _udf = pd.DataFrame(uncertainty, columns=column_names)
 
     # Finally, let's append _ydf dataframe to pred_df
     # pred_df = pd.concat([pred_df, _ydf], axis=1)
     pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
-    # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
+    # Check if --uncetainty flag is set
+    if config.uncertainty:
+        pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn("Exported [validation dataset] predictions to: ",
                  "valid_" + config.predictions_name)

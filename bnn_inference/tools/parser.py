@@ -132,3 +132,10 @@ def add_arguments(obj):
         default='normal',
         help="Define the output distribution. Default: normal. Options: normal | lognormal | uniform | exponential"
     )
+
+    # Add boolean flag for exporting uncertainty
+    obj.add_argument(
+        "--uncertainty",
+        action='store_true',
+        help="Add flag to export uncertainty in the output file"
+    )
