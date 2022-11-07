@@ -402,18 +402,16 @@ def main(args=None):
     for i in range(
             n_targets
     ):  # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('std_' + y_df.columns[i])
+        column_names.append('uncertainty_' + y_df.columns[i])
         # column_names.append('uncertainty_' + str(i))
-    # _udf = pd.DataFrame(uncertainty, columns=column_names)
+    _udf = pd.DataFrame(uncertainty, columns=column_names)
 
-    # pred_df  = pd.DataFrame ([index_df]).transpose()
-    # pred_df.columns = ['uuid']
-
-    # Finally, let's append _ydf dataframe to pred_df
-    # pred_df = pd.concat([pred_df, _ydf], axis=1)
+    # Append _ydf dataframe to pred_df
     pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
-    # pred_df = pd.concat([pred_df, _udf], axis=1) # temporarily disabled, we do not use uncertainty yet
+    # Check if --uncertainty flag is set
+    if args.uncertainty:
+        pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn("Exported [train dataset] predictions to: ",
                  "train_" + config.predictions_name)
@@ -470,16 +468,15 @@ def main(args=None):
     for i in range(
             n_targets
     ):  # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('std_' + y_df.columns[i])
-        column_names.append('uncertainty_' + str(i))
+        column_names.append('uncertainty_' + y_df.columns[i])
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
     # Finally, let's append _ydf dataframe to pred_df
     # pred_df = pd.concat([pred_df, _ydf], axis=1)
     pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
-    # Check if --uncetainty flag is set
-    if config.uncertainty:
+    # Check if --uncertainty flag is set
+    if args.uncertainty:
         pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn("Exported [validation dataset] predictions to: ",
