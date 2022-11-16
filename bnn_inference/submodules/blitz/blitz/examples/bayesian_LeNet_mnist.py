@@ -65,7 +65,7 @@ for epoch in range(100):
         #print(loss)
         loss.backward()
         optimizer.step()
-        
+
         iteration += 1
         if iteration%250==0:
             print(loss)

@@ -11,7 +11,7 @@ class BayesianLinear(BayesianModule):
     (Bayes by Backprop paper).
 
     Its objective is be interactable with torch nn.Module API, being able even to be chained in nn.Sequential models with other non-this-lib layers
-    
+
     parameters:
         in_fetaures: int -> incoming features for the layer
         out_features: int -> output features for the layer
@@ -22,7 +22,7 @@ class BayesianLinear(BayesianModule):
         posterior_mu_init float -> posterior mean for the weight mu init
         posterior_rho_init float -> posterior mean for the weight rho init
         freeze: bool -> wheter the model will start with frozen(deterministic) weights, or not
-    
+
     """
     def __init__(self,
                  in_features,
@@ -71,7 +71,7 @@ class BayesianLinear(BayesianModule):
 
     def forward(self, x):
         # Sample the weights and forward it
-        
+
         #if the model is frozen, return frozen
         if self.freeze:
             return self.forward_frozen(x)

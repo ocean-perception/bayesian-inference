@@ -17,7 +17,7 @@ for kk in $LIST; do
     for col in $TESTCOLS; do
         FILENAME=$(echo ${col} | sed "s/\*/_${kk}\./g")
         if [[ -f ${DIRPATH}${FILENAME} ]]; then
-            echo -n "YES " >> $OUTFILE   
+            echo -n "YES " >> $OUTFILE
         else
             echo -n "NOT " >> $OUTFILE
         fi

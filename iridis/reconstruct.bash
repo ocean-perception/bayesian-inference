@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# _JOB_ID 8 character to full path generator. 
+# _JOB_ID 8 character to full path generator.
 # Reconstructs the predicted map, including the required clip limit
 # direct prediction --> [0.0, +1.0]
 # residual --> [-1.0, +1.0]

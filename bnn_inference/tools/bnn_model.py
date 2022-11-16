@@ -5,7 +5,7 @@ All rights reserved.
 Licensed under GNU General Public License v3.0
 See LICENSE file in the project root for full license information.
 """
-# Author: Jose Cappelletto (j.cappelletto@soton.ac.uk) 
+# Author: Jose Cappelletto (j.cappelletto@soton.ac.uk)
 
 import statistics
 import math
@@ -53,7 +53,7 @@ class BayesianRegressor(nn.Module):
 
         self.last_layer = nn.Softmin(dim=0)
 
-    # Oceans2021 architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output 
+    # Oceans2021 architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output
 
 
     def forward(self, x):
@@ -66,7 +66,7 @@ class BayesianRegressor(nn.Module):
         # normalize output using L1 norm
         # x_ = F.normalize (x_, p=1, dim=-1)
         return x_
-        
+
 def evaluate_regression(regressor,
                         X,
                         y,

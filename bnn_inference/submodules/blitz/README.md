@@ -6,11 +6,11 @@ BLiTZ is a simple and extensible library to create Bayesian Neural Network Layer
 
 By using our core weight sampler classes, you can extend and improve this library to add uncertanity to a bigger scope of layers as you will in a well-integrated to PyTorch way. Also pull requests are welcome.
 
-Our objective is empower people to apply Bayesian Deep Learning by focusing rather on their idea, and not the hard-coding part. 
+Our objective is empower people to apply Bayesian Deep Learning by focusing rather on their idea, and not the hard-coding part.
 
 ## Roadmap:
  * Enable reparametrization for different posterior distributions than Normal.
- 
+
 # Index
  * [Install](#Install)
  * [Documentation](#Documentation)
@@ -31,8 +31,8 @@ Our objective is empower people to apply Bayesian Deep Learning by focusing rath
    * [Some notes and wrap up](#Some-notes-and-wrap-up)
  * [Citing](#Citing)
  * [References](#References)
-   
-   
+
+
 ## Install
 
 To install BLiTZ you can use pip command:
@@ -63,7 +63,7 @@ Documentation for our layers, weight (and prior distribution) sampler and utils:
 
 (You can see it for your self by running [this example](blitz/examples/bayesian_regression_boston.py) on your machine).
 
-We will now see how can Bayesian Deep Learning be used for regression in order to gather confidence interval over our datapoint rather than a pontual continuous value prediction. Gathering a confidence interval for your prediction may be even a more useful information than a low-error estimation. 
+We will now see how can Bayesian Deep Learning be used for regression in order to gather confidence interval over our datapoint rather than a pontual continuous value prediction. Gathering a confidence interval for your prediction may be even a more useful information than a low-error estimation.
 
 I sustain my argumentation on the fact that, with good/high prob a confidence interval, you can make a more reliable decision than with a very proximal estimation on some contexts: if you are trying to get profit from a trading operation, for example, having a good confidence interval may lead you to know if, at least, the value on which the operation wil procees will be lower (or higher) than some determinate X.
 
@@ -120,7 +120,7 @@ class BayesianRegressor(nn.Module):
         #self.linear = nn.Linear(input_dim, output_dim)
         self.blinear1 = BayesianLinear(input_dim, 512)
         self.blinear2 = BayesianLinear(512, output_dim)
-        
+
     def forward(self, x):
         x_ = self.blinear1(x)
         x_ = F.relu(x_)
@@ -176,14 +176,14 @@ iteration = 0
 for epoch in range(100):
     for i, (datapoints, labels) in enumerate(dataloader_train):
         optimizer.zero_grad()
-        
+
         loss = regressor.sample_elbo(inputs=datapoints,
                            labels=labels,
                            criterion=criterion,
                            sample_nbr=3)
         loss.backward()
         optimizer.step()
-        
+
         iteration += 1
         if iteration%100==0:
             ic_acc, under_ci_upper, over_ci_lower = evaluate_regression(regressor,
@@ -191,26 +191,26 @@ for epoch in range(100):
                                                                         y_test,
                                                                         samples=25,
                                                                         std_multiplier=3)
-            
+
             print("CI acc: {:.2f}, CI upper acc: {:.2f}, CI lower acc: {:.2f}".format(ic_acc, under_ci_upper, over_ci_lower))
             print("Loss: {:.4f}".format(loss))
 ```
 
 ## Bayesian Deep Learning in a Nutshell
-A very fast explanation of how is uncertainity introduced in Bayesian Neural Networks and how we model its loss in order to objectively improve the confidence over its prediction and reduce the variance without dropout. 
+A very fast explanation of how is uncertainity introduced in Bayesian Neural Networks and how we model its loss in order to objectively improve the confidence over its prediction and reduce the variance without dropout.
 
 ## First of all, a deterministic NN layer linear transformation
 
 As we know, on deterministic (non bayesian) neural network layers, the trainable parameters correspond directly to the weights used on its linear transformation of the previous one (or the input, if it is the case). It corresponds to the following equation:
 
 
-![equation](https://latex.codecogs.com/gif.latex?a^{(i&plus;1)}&space;=&space;W^{(i&plus;1)}\cdot&space;z^{(i)}&space;&plus;&space;b^{(i&plus;1)}) 
+![equation](https://latex.codecogs.com/gif.latex?a^{(i&plus;1)}&space;=&space;W^{(i&plus;1)}\cdot&space;z^{(i)}&space;&plus;&space;b^{(i&plus;1)})
 
 *(Z correspond to the activated-output of the layer i)*
 
 ## The purpose of Bayesian Layers
 
-Bayesian layers seek to introduce uncertainity on its weights by sampling them from a distribution parametrized by trainable variables on each feedforward operation. 
+Bayesian layers seek to introduce uncertainity on its weights by sampling them from a distribution parametrized by trainable variables on each feedforward operation.
 
 This allows we not just to optimize the performance metrics of the model, but also gather the uncertainity of the network predictions over a specific datapoint (by sampling it much times and measuring the dispersion) and aimingly reduce as much as possible the variance of the network over the prediction, making possible to know how much of incertainity we still have over the label if we try to model it in function of our specific datapoint.
 
@@ -285,7 +285,7 @@ As the expected (mean) of the Q distribution ends up by just scaling the values,
 
 6. ![equation](https://latex.codecogs.com/gif.latex?\mathcall{C^{(n)}&space;(w^{(n)},&space;\theta)&space;}&space;=&space;(\log{\mathcall{Q}(w^{(n)}&space;|&space;\theta)}&space;-&space;\log{\mathcall{P}(w^{(n)})}&space;))
 
-Which is differentiable relative to all of its parameters. 
+Which is differentiable relative to all of its parameters.
 
 ## To get the whole cost function at the nth sample:
 
@@ -299,16 +299,16 @@ Therefore the whole cost function on the nth sample of weights will be:
 We can estimate the true full Cost function by Monte Carlo sampling it (feedforwarding the netwok X times and taking the mean over full loss) and then backpropagate using our estimated value. It works for a low number of experiments per backprop and even for unitary experiments.
 
 ## Some notes and wrap up
-We came to the and of a Bayesian Deep Learning in a Nutshell tutorial. By knowing what is being done here, you can implement your bnn model as you wish. 
+We came to the and of a Bayesian Deep Learning in a Nutshell tutorial. By knowing what is being done here, you can implement your bnn model as you wish.
 
 Maybe you can optimize by doing one optimize step per sample, or by using this Monte-Carlo-ish method to gather the loss some times, take its mean and then optimizer. Your move.
 
 FYI: **Our Bayesian Layers and utils help to calculate the complexity cost along the layers on each feedforward operation, so don't mind it to much.**
- 
+
 ## References:
  * [Charles Blundell, Julien Cornebise, Koray Kavukcuoglu, and Daan Wierstra. Weight uncertainty in neural networks. arXiv preprint arXiv:1505.05424, 2015.](https://arxiv.org/abs/1505.05424)
- 
- 
+
+
 ## Citing
 
 If you use `BLiTZ` in your research, you can cite it as follows:
@@ -323,7 +323,7 @@ If you use `BLiTZ` in your research, you can cite it as follows:
     howpublished = {\url{https://github.com/piEsposito/blitz-bayesian-deep-learning/}},
 }
 ```
- 
+
 ###### Special thanks to Intel Student Ambassador program
 
 ###### Made by Pi Esposito

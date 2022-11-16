@@ -7,8 +7,8 @@
 # [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability
 # [r]  data spatial resolution: (u) ultrahigh res 10mm/px, (h) high res 20mm/px, (s) standard res 40mm/px, (l) low res 500mm/px
 # [hh] latent vector dimension: 16~64
-# [e]  number of training epochs x 100 (e.g. 3 -> 300 epochs) 
-# [k]  number of MonteCarlo samples x 5 (e.g. 2 -> 10 samples) 
+# [e]  number of training epochs x 100 (e.g. 3 -> 300 epochs)
+# [k]  number of MonteCarlo samples x 5 (e.g. 2 -> 10 samples)
 
 # Sample: dM4h6432 --> direct, measurability, 20mm/px, 64 latent, 300 epochs, 10 samples
 
@@ -35,7 +35,7 @@ if [[ _R -eq 0 ]]; then
             echo "If you want to create it, use the option '-c' as second argument"
             echo "    $ sort.bash ${DATA_PATH} -c"
             exit 1
-        fi     
+        fi
     fi
     echo -e "Moving files to: ["${DATA_PATH}"]"
     mv *${JOB_ID}* ${DATA_PATH}

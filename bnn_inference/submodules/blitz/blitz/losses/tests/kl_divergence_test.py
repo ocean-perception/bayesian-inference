@@ -18,7 +18,7 @@ class TestKLDivergence(unittest.TestCase):
 
         self.assertEqual((complexity_cost == kl_complexity_cost).all(), torch.tensor(True))
         pass
-    
+
     def test_kl_divergence_bayesian_conv2d_module(self):
         bconv = BayesianConv2d(in_channels=3,
                               out_channels=3,
@@ -26,7 +26,7 @@ class TestKLDivergence(unittest.TestCase):
 
         to_feed = torch.ones((1, 3, 25, 25))
         predicted = bconv(to_feed)
-        
+
         complexity_cost = bconv.log_variational_posterior - bconv.log_prior
         kl_complexity_cost = kl_divergence_from_nn(bconv)
 

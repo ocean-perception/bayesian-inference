@@ -79,7 +79,7 @@ class TestLinearBayesian(unittest.TestCase):
         #if this works, the test will pass
         result = model(to_feed)
         pass
-    
+
     def test_sequential_cuda(self):
         #check if we can create sequential models chaning our Bayesian Linear layers
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -92,6 +92,6 @@ class TestLinearBayesian(unittest.TestCase):
         #if this works, the test will pass
         result = model(to_feed)
         pass
-    
+
 if __name__ == "__main__":
     unittest.main()

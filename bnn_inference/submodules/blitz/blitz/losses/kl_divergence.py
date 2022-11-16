@@ -15,4 +15,3 @@ def kl_divergence_from_nn(model):
         if isinstance(module, (BayesianModule)):
             kl_divergence += module.log_variational_posterior - module.log_prior
     return kl_divergence
-

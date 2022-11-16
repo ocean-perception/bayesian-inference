@@ -19,7 +19,7 @@ class TestWeightSampler(unittest.TestCase):
         self.assertEqual(mu.shape, s1.shape)
         self.assertEqual(rho.shape, s1.shape)
         pass
-        
+
     def test_gaussian_log_posterior(self):
         #checks if it the log_posterior calculator is working
 

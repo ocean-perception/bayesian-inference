@@ -10,7 +10,7 @@ class BayesianEmbedding(BayesianModule):
     (Bayes by Backprop paper).
 
     Its objective is be interactable with torch nn.Module API, being able even to be chained in nn.Sequential models with other non-this-lib layers
-    
+
     parameters:
         num_embedding int -> Size of the vocabulary
         embedding_dim int -> Dimension of the embedding
@@ -26,7 +26,7 @@ class BayesianEmbedding(BayesianModule):
         posterior_mu_init float -> posterior mean for the weight mu init
         posterior_rho_init float -> posterior mean for the weight rho init
 
-    
+
     """
     def __init__(self,
                  num_embeddings,
@@ -76,7 +76,7 @@ class BayesianEmbedding(BayesianModule):
 
     def forward(self, x):
         # Sample the weights and forward it
-        
+
         #if the model is frozen, return frozen
         if self.freeze:
             return self.forward_frozen(x)

@@ -48,4 +48,3 @@ class PredictiveEngine:
     def __exit__(self, exc_type, exc_value, traceback):
         self.took = (timeit.default_timer() - self.start) * 1000.0
         print(BColors.OKBLUE + self.name + ' took ▸ ' + BColors.ENDC + str(self.took) + ' ms')
-

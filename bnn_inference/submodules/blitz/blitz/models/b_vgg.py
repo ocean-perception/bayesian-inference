@@ -14,7 +14,7 @@ __all__ = [
 @variational_estimator
 class VGG(nn.Module):
     '''
-    VGG model 
+    VGG model
     '''
     def __init__(self, features, out_nodes=10):
         super(VGG, self).__init__()
@@ -28,7 +28,7 @@ class VGG(nn.Module):
             nn.ReLU(True),
             BayesianLinear(512, out_nodes),
         )
-        
+
         for m in self.modules():
             if isinstance(m, BayesianConv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -63,7 +63,7 @@ cfg = {
     'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
-    'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 
+    'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M',
           512, 512, 512, 512, 'M'],
 }
 

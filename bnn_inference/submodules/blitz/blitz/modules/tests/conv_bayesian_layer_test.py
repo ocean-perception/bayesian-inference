@@ -27,7 +27,7 @@ class TestConv1DBayesian(unittest.TestCase):
 
        infer1 = bconv(to_feed)
        infer2 = conv(to_feed)
-       
+
        self.assertEqual(infer1.shape, infer2.shape)
        pass
 
@@ -46,7 +46,7 @@ class TestConv1DBayesian(unittest.TestCase):
 
        infer1 = bconv(to_feed)
        infer2 = conv(to_feed)
-       
+
        self.assertEqual(infer1.shape, infer2.shape)
        pass
 
@@ -83,7 +83,7 @@ class TestConv1DBayesian(unittest.TestCase):
         bconv.freeze = True
         self.assertEqual((bconv.forward(to_feed) == frozen_feedforward).all(), torch.tensor(True))
         pass
-    
+
     def test_inheritance(self):
 
         #check if bayesian linear has nn.Module and BayesianModule classes
@@ -104,7 +104,7 @@ class TestConv1DBayesian(unittest.TestCase):
 
         to_feed = torch.ones((1, 3, 25))
         predicted = bconv(to_feed)
-        
+
         complexity_cost = bconv.log_variational_posterior - bconv.log_prior
         self.assertEqual((complexity_cost == complexity_cost).all(), torch.tensor(True))
         pass
@@ -131,7 +131,7 @@ class TestConv2DBayesian(unittest.TestCase):
 
        infer1 = bconv(to_feed)
        infer2 = conv(to_feed)
-       
+
        self.assertEqual(infer1.shape, infer2.shape)
        pass
 
@@ -150,7 +150,7 @@ class TestConv2DBayesian(unittest.TestCase):
 
        infer1 = bconv(to_feed)
        infer2 = conv(to_feed)
-       
+
        self.assertEqual(infer1.shape, infer2.shape)
        pass
 
@@ -187,7 +187,7 @@ class TestConv2DBayesian(unittest.TestCase):
         bconv.freeze = True
         self.assertEqual((bconv.forward(to_feed) == frozen_feedforward).all(), torch.tensor(True))
         pass
-    
+
     def test_inheritance(self):
 
         #check if bayesian linear has nn.Module and BayesianModule classes
@@ -208,7 +208,7 @@ class TestConv2DBayesian(unittest.TestCase):
 
         to_feed = torch.ones((1, 3, 25, 25))
         predicted = bconv(to_feed)
-        
+
         complexity_cost = bconv.log_variational_posterior - bconv.log_prior
         self.assertEqual((complexity_cost == complexity_cost).all(), torch.tensor(True))
         pass
@@ -234,7 +234,7 @@ class TestConv3DBayesian(unittest.TestCase):
 
        infer1 = bconv(to_feed)
        infer2 = conv(to_feed)
-       
+
        self.assertEqual(infer1.shape, infer2.shape)
        pass
 
@@ -253,7 +253,7 @@ class TestConv3DBayesian(unittest.TestCase):
 
        infer1 = bconv(to_feed)
        infer2 = conv(to_feed)
-       
+
        self.assertEqual(infer1.shape, infer2.shape)
        pass
 
@@ -290,7 +290,7 @@ class TestConv3DBayesian(unittest.TestCase):
         bconv.freeze = True
         self.assertEqual((bconv.forward(to_feed) == frozen_feedforward).all(), torch.tensor(True))
         pass
-    
+
     def test_inheritance(self):
 
         #check if bayesian linear has nn.Module and BayesianModule classes
@@ -311,7 +311,7 @@ class TestConv3DBayesian(unittest.TestCase):
 
         to_feed = torch.ones((1, 3, 25, 25,25))
         predicted = bconv(to_feed)
-        
+
         complexity_cost = bconv.log_variational_posterior - bconv.log_prior
         self.assertEqual((complexity_cost == complexity_cost).all(), torch.tensor(True))
         pass

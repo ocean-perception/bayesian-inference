@@ -14,12 +14,12 @@ Creates a weight sampler in order to introduce uncertainity on the layers weight
 
 #### Methods:
   * sample():
-  
+
     Returns a torch.tensor corresponding to the sampled weights of the layer. Also stores the current distribution sigma and weights internally for further use.
   * log_posterior():
-  
+
     Returns the torch.tensor corresponding to the summed log-likelihood of the sampled weights given its mu and sigma parameters, considering it follows a Gaussian distribution.
-    
+
 ---
 
 ## class PriorWeightDistribution
@@ -34,7 +34,7 @@ Creates a log-likelihood calculator for any matrix w passed on the log_prior met
 
 #### Methods:
   * log_prior(w):
-  
+
     Returns the torch.tensor corresponding to the summed log-likelihood of the matrix of weights "w" given PriorWeightDistribution object scaled Gaussian Mixture model parameters.
     ##### Parameters:
       * w - torch.tensor

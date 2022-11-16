@@ -187,11 +187,11 @@ def get_nine_samples_pil_image(config, base_path, data_frame, samples_latents, p
             tmp_h = int(i_h * ((h - 1) / (num_samples_per_side - 1.0)))
             tmp_w = int(i_w * ((w - 1) / (num_samples_per_side - 1.0)))
             tmp_idx = alloc_mat[tmp_h, tmp_w]
-            
+
             print(tmp_idx, base_path)
 
             print(data_frame[header.relative_path])
-            
+
             tmp_filepath = Path(base_path) / data_frame[header.relative_path].iloc[tmp_idx]
 
 
@@ -224,7 +224,7 @@ def get_clustering_tile_pil_image(config, base_path, data_frame, samples_latents
 
     :param draw_label: True for drawing the class index on the image
     :param data_frame: pandas.Dataframe which contains 'clustering result' and 'image file name' in its key. 'clustering result' should be int value start from 0. 'image file name' should be file fullpath of original image.
-    :param samples_latents: (num_samples * num_features) 2D numpy array 
+    :param samples_latents: (num_samples * num_features) 2D numpy array
     :param patch_size_org: default 224
     :param max_num_patches: default 10000
     :param resize_rate: default 0.1.

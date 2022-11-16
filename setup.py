@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 #     exec(f.read())
 
 def run_setup():
-        
+
     # get the long description from the README file
     # TODO: Merge with short/specific decription provided during setup() call
     with open('README.md') as f:

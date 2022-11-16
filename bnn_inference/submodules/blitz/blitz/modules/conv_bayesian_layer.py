@@ -31,7 +31,7 @@ class BayesianConv1d(BayesianModule):
         posterior_mu_init float -> posterior mean for the weight mu init
         posterior_rho_init float -> posterior mean for the weight rho init
         freeze: bool -> wheter the model will start with frozen(deterministic) weights, or not
-    
+
     """
     def __init__(self,
                  in_channels,
@@ -50,7 +50,7 @@ class BayesianConv1d(BayesianModule):
                  freeze = False,
                  prior_dist = None):
         super().__init__()
-        
+
         #our main parameters
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -163,7 +163,7 @@ class BayesianConv2d(BayesianModule):
         posterior_mu_init float -> posterior mean for the weight mu init
         posterior_rho_init float -> posterior mean for the weight rho init
         freeze: bool -> wheter the model will start with frozen(deterministic) weights, or not
-    
+
     """
     def __init__(self,
                  in_channels,
@@ -182,7 +182,7 @@ class BayesianConv2d(BayesianModule):
                  freeze = False,
                  prior_dist = None):
         super().__init__()
-        
+
         #our main parameters
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -294,7 +294,7 @@ class BayesianConv3d(BayesianModule):
         posterior_mu_init float -> posterior mean for the weight mu init
         posterior_rho_init float -> posterior mean for the weight rho init
         freeze: bool -> wheter the model will start with frozen(deterministic) weights, or not
-    
+
     """
     def __init__(self,
                  in_channels,
@@ -313,7 +313,7 @@ class BayesianConv3d(BayesianModule):
                  freeze = False,
                  prior_dist = None):
         super().__init__()
-        
+
         #our main parameters
         self.in_channels = in_channels
         self.out_channels = out_channels

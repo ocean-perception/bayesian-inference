@@ -53,7 +53,7 @@ class TestVariationalInference(unittest.TestCase):
                 #self.linear = nn.Linear(input_dim, output_dim)
                 self.blinear1 = BayesianLinear(input_dim, 512)
                 self.blinear2 = BayesianLinear(512, output_dim)
-                
+
             def forward(self, x):
                 x_ = x.view(-1, 28 * 28)
                 x_ = self.blinear1(x_)
@@ -74,7 +74,7 @@ class TestVariationalInference(unittest.TestCase):
                                complexity_cost_weight=0)
 
         self.assertEqual((elbo==elbo).all(), torch.tensor(True))
-        
+
         pass
 
     def test_elbo_detailed_loss_sampler(self):
@@ -147,7 +147,7 @@ class TestVariationalInference(unittest.TestCase):
                 #self.linear = nn.Linear(input_dim, output_dim)
                 self.blinear1 = BayesianLinear(input_dim, 512)
                 self.blinear2 = BayesianLinear(512, output_dim)
-                
+
             def forward(self, x):
                 x_ = x.view(-1, 28 * 28)
                 x_ = self.blinear1(x_)
@@ -183,11 +183,11 @@ class TestVariationalInference(unittest.TestCase):
         class BayesianMLP(nn.Module):
             def __init__(self):
                 super().__init__()
-                self.nn = nn.Sequential(BayesianLinear(10, 7), 
+                self.nn = nn.Sequential(BayesianLinear(10, 7),
                                         BayesianLinear(7, 5))
             def forward(self, x):
                 return self.nn(x)
-        
+
         net = BayesianMLP()
         t = torch.ones(3, 10)
         out_ = net(t)
@@ -209,28 +209,28 @@ class TestVariationalInference(unittest.TestCase):
         self.assertEqual(out__.shape, std__.shape)
 
         self.assertEqual((std__==0).all(), torch.tensor(True))
-        
+
     def test_sharpen_forward(self):
-        
+
         @variational_estimator
         class BayesianMLP(nn.Module):
             def __init__(self):
                 super().__init__()
                 self.lstm1 = BayesianLSTM(3, 5, sharpen=True)
                 self.gru1 = BayesianGRU(5, 3, sharpen=True)
-                
+
             def forward(self, x):
                 a1, _ = self.lstm1(x)
                 a2, _ = self.gru1(a1)
                 return a2
-            
+
         net = BayesianMLP()
         criterion = nn.MSELoss()
         in_tensor = torch.ones(4, 5, 3)
         label = in_tensor.clone().detach().normal_()
-        
+
         y_hat = net.forward_with_sharpening(in_tensor, labels=label, criterion=criterion)
-        
+
         criterion(y_hat, label).backward()
         pass
 

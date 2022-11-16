@@ -6,8 +6,8 @@
 # [LL] type of target data by 2 character layer name: (M3) landability, (M4) measurability, (A1) hislope
 # [r]  data spatial resolution: (u) ultrahigh res 10mm/px, (h) high res 20mm/px, (s) standard res 40mm/px, (l) low res 500mm/px
 # [hh] latent vector dimension: 16~64
-# [e]  number of training epochs x 100 (e.g. 3 -> 300 epochs) 
-# [k]  number of MonteCarlo samples x 5 (e.g. 2 -> 10 samples) 
+# [e]  number of training epochs x 100 (e.g. 3 -> 300 epochs)
+# [k]  number of MonteCarlo samples x 5 (e.g. 2 -> 10 samples)
 
 # Sample: dM4h6432 --> direct, measurability, 20mm/px, 64 latent, 300 epochs, 10 samples
 
@@ -17,7 +17,7 @@ if [[ -z "$JOB_ID" ]]; then
     exit 1
 fi
 
-export IFS=$(echo -e "\n") 
+export IFS=$(echo -e "\n")
 
 {
     read -r OUT_TYPE

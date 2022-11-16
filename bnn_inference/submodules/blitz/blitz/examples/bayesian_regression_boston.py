@@ -32,7 +32,7 @@ class BayesianRegressor(nn.Module):
         #self.linear = nn.Linear(input_dim, output_dim)
         self.blinear1 = BayesianLinear(input_dim, 512)
         self.blinear2 = BayesianLinear(512, output_dim)
-        
+
     def forward(self, x):
         x_ = self.blinear1(x)
         x_ = F.relu(x_)
@@ -70,7 +70,7 @@ iteration = 0
 for epoch in range(1000):
     for i, (datapoints, labels) in enumerate(dataloader_train):
         optimizer.zero_grad()
-        
+
         loss = regressor.sample_elbo(inputs=datapoints.to(device),
                            labels=labels.to(device),
                            criterion=criterion,
@@ -78,7 +78,7 @@ for epoch in range(1000):
                            complexity_cost_weight=1/X_train.shape[0])
         loss.backward()
         optimizer.step()
-        
+
         iteration += 1
         if iteration%100==0:
             ic_acc, under_ci_upper, over_ci_lower = evaluate_regression(regressor,
@@ -86,6 +86,6 @@ for epoch in range(1000):
                                                                         y_test.to(device),
                                                                         samples=25,
                                                                         std_multiplier=3)
-            
+
             print("CI acc: {:.2f}, CI upper acc: {:.2f}, CI lower acc: {:.2f}".format(ic_acc, under_ci_upper, over_ci_lower))
             print("Loss: {:.4f}".format(loss))
