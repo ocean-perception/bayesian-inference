@@ -79,13 +79,26 @@ dependencies:
   - zlib=1.2.11=h516909a_1010
   - pip:
     - blitz-bayesian-pytorch==0.2.7
+    - build==0.8.0
+    - cfgv==3.3.1
+    - distlib==0.3.6
+    - filelock==3.4.1
     - future==0.18.2
+    - identify==2.4.4
+    - importlib-resources==5.2.3
+    - nodeenv==1.6.0
+    - pep517==0.13.0
     - pillow==8.0.1
+    - platformdirs==2.4.0
+    - pre-commit==2.17.0
     - ruamel-yaml==0.17.4
     - ruamel-yaml-clib==0.2.2
+    - toml==0.10.2
+    - tomli==1.2.3
     - torch==1.7.0
     - torchvision==0.8.1
     - typing-extensions==3.7.4.3
     - vext==0.7.6
     - vext-gi==0.7.4
+    - virtualenv==20.16.7
 prefix: /home/cappelletto/anaconda3/envs/blitz
