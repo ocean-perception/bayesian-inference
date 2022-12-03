@@ -27,3 +27,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f environment/requirements.txt ]; then pip install -r environment/requirements.txt; fi
+    - name: Install module
+      run: |
+        python setup.py install
+    - name: Call training module
+      run:
+        bnn_train --help
+    - name: Call prediction module
+      run:
+        bnn_predict --help
