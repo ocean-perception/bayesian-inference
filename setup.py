@@ -55,6 +55,7 @@ def run_setup():
             "torch>=1.7.0",  # check for a newer version of torch, supporting multi-GPU and improved queries on allocated memory
             "torchvision>=0.8.1",
             "scikit-learn>=0.23.1", # scikit was bumped to 1.XX series. Maybe worth doing the update with the rest of the packages
+            "Pillow>=9.1.1",
             "scipy>=1.5.0",
         ]
 )
