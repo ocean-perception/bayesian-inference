@@ -1,10 +1,4 @@
-# pre-commit config file, as it is system specific
-# .pre-commit-config.yaml
-
 # Byte-compiled / optimized / DLL files
-data/*
-
-.vscode*
 __pycache__/
 *.py[cod]
 *$py.class
@@ -120,6 +114,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# Jetbrains project settings
+.idea/
+
 # Rope project settings
 .ropeproject
 
@@ -134,12 +131,11 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Data files
-*.csv
-*.xls
+#vscode
+.vscode/
 
-# Trained networks
-*.pth
-
-# Partial/complete train logs
-.log
+#example data
+example/data/
+utils/data/
+*data/
+/data/
