@@ -37,7 +37,7 @@ def run_setup():
         url='https://github.com/cappelletto/bayesian_inference',
         license='GPLv3', # check if oplab requires MIT for all packages
 
-        packages=['bnn_inference'],
+        packages=['bnn_inference','bnn_inference.tools'],
 
         entry_points={
             'console_scripts': [
