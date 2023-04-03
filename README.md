@@ -22,3 +22,9 @@ TODO: Complete detailed description:
 # Usage
 bnn_train.py --help
 bnn_predict.py --help
+
+# Docker alias
+
+````bash
+alias bayesian-inference='docker run --rm -it --ipc=private -e USER=$(whoami) -h $HOSTNAME --user $(id -u):$(id -g) --volume $(pwd):/data -v /etc/passwd:/etc/passwd:ro --name=bnn_$(whoami)_$(date +%Y%m%d_%H%M%S) ghcr.io/ocean-perception/bayesian-inference:latest'
+````
