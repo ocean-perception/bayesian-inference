@@ -21,7 +21,8 @@ WORKDIR /opt/bayesian-inference
 RUN pip --no-cache-dir install -U . \
     && chmod o+rwx /root /opt/bayesian-inference \
     && mkdir -p /data \
-    && chmod o+rwx -R /opt/bayesian-inference
+    && chmod o+rwx -R /opt/bayesian-inference \
+    && python /opt/bayesian-inference/bnn_inference/submodules/blitz/setup.py install
 WORKDIR /data
 ENTRYPOINT ["/opt/bayesian-inference/docker_entrypoint.sh"]
 CMD ["/bin/bash"]
