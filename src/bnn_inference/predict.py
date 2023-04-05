@@ -16,7 +16,6 @@ import torch
 # import torch.optim as optim
 import numpy as np
 import pandas as pd
-import argparse
 # Import blitz (BNN) modules
 # from blitz.modules import BayesianLinear
 # from blitz.utils import variational_estimator
@@ -29,23 +28,9 @@ from bnn_inference.tools.console import Console
 # from bnn_inference.tools.dataloader import CustomDataloader
 from bnn_inference.tools.predictor import PredictiveEngine
 from bnn_inference.tools.bnn_model import BayesianRegressor
-import bnn_inference.tools.parser as par
 
 
-def main(args=None):
-    description_str = "Bayesian Neural Network inference module to predict terrain related derivatives from low-resolution priors"
-    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)  # noqa: E731
-    parser = argparse.ArgumentParser(description=description_str,
-                                     formatter_class=formatter)
-    # argparse.HelpFormatter(parser,'width=120')
-    par.add_arguments(parser)
-
-    if len(sys.argv) == 1 and args is None:  # no argument passed? error, some parameters were expected
-        # Show help if no args provided
-        parser.print_help(sys.stderr)
-        sys.exit(2)
-
-    args = parser.parse_args(args)  # retrieve parsed arguments
+def predict(args=None):
     Console.info(
         "Bayesian NN inference module. Predicting hi-res terrain maps from lo-res features"
     )

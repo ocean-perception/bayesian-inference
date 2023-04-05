@@ -13,7 +13,6 @@ import torch
 import torch.optim as optim
 import numpy as np
 import pandas as pd
-import argparse
 import statistics
 # Import sklearn dataset parsers and samples
 from sklearn.model_selection import train_test_split
@@ -29,32 +28,11 @@ from bnn_inference.tools.bnn_configuration import BNNConfiguration
 # import math
 
 
-def custom_loss_function(y_pred, y_true):
-    # y_pred = torch.tensor(y_pred, dtype=torch.float32)
-    # y_true = torch.tensor(y_true, dtype=torch.float32)
-    # return torch.mean(torch.abs(y_pred - y_true))
-    return torch.mean(torch.abs(y_pred - y_true))
 
-
-def handler(signum, frame):
-    Console.warn("CTRL + C pressed. Stopping...")
-    sys.exit(1)
-
-
-def main(args=None):
-    description_str = "Bayesian Neural Network training module"
-    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)  # noqa: E731
-    parser = argparse.ArgumentParser(description=description_str,
-                                     formatter_class=formatter)
-    par.add_arguments(parser)
-
+def train(args=None):
     Console.info(
         "Bayesian NN training module: learning hi-res terrain observations from feature representation of low resolution priors"
     )
-    if len(sys.argv) == 1 and args is None:  # no argument passed? show help as some parameters were expected
-        parser.print_help(sys.stderr)
-        sys.exit(2)
-    args = parser.parse_args(args)  # retrieve parsed arguments
 
     config = BNNConfiguration(
     )  # empty constructor, we could pass args at construction time...

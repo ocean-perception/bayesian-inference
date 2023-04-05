@@ -88,17 +88,17 @@ class Console:
     def banner():
         """Displays Ocean Perception banner and copyright"""
         print(" ")
-        print(BColors.OKBLUE + "     O O " + BColors.ENDC + " Ocean Perception")
+        print(BColors.OKBLUE + "     ● ● " + BColors.ENDC + " Ocean Perception")
         print(
             BColors.OKBLUE
-            + "     O "
+            + "     ● "
             + BColors.WARNING
-            + "A "
+            + "▲ "
             + BColors.ENDC
             + " University of Southampton"
         )
         print(" ")
-        print(" Copyright (C) 2020 University of Southampton   ")
+        print(" Copyright (C) 2022-2023 University of Southampton   ")
         print(" This program comes with ABSOLUTELY NO WARRANTY.")
         print(" This is free software, and you are welcome to  ")
         print(" redistribute it.                               ")

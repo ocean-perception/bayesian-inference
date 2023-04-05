@@ -1,3 +1,4 @@
+blitz-bayesian-pytorch==0.2.7
 importlib_metadata>=5.0.0
 numpy>=1.23.4
 pandas>=1.4.3

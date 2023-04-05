@@ -7,7 +7,6 @@
 # package source folder: src/
 # dependencies: numpy, scipy, torch, pandas, scikit-learn, blitz
 
-from importlib_metadata import entry_points
 from setuptools import setup, find_packages
 
 # TODO: Complete git hook to retrieve version from git tags
@@ -16,7 +15,6 @@ from setuptools import setup, find_packages
 #     exec(f.read())
 
 def run_setup():
-
     # get the long description from the README file
     # TODO: Merge with short/specific decription provided during setup() call
     with open('README.md') as f:
@@ -24,25 +22,19 @@ def run_setup():
     if long_description is None:
         long_description = 'No description available'
 
-    # the requirements can be retrieved from the conda environment file
-    # with open('environment.yml') as f:
-    #     requirements = f.read().splitlines()
-
     setup(
-        name='bayesian_predictor',
-        version='0.1.6',
+        name='bnn_inference',
+        version='0.2.0',
         description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
         author='Jose Cappelletto',
         author_email='j.cappelletto@soton.ac.uk',
         url='https://github.com/cappelletto/bayesian_inference',
         license='GPLv3', # check if oplab requires MIT for all packages
-
-        packages=['bnn_inference','bnn_inference.tools'],
-
+        packages=find_packages(where='src'),
+        package_dir={"": "src"},
         entry_points={
             'console_scripts': [
-                'bnn_train = bnn_inference.bnn_train:main',
-                'bnn_predict = bnn_inference.bnn_predict:main',
+                'bnn_inference = bnn_inference.cli:main',
             ],
         },
 

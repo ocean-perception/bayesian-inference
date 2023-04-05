@@ -9,11 +9,58 @@ See LICENSE file in the project root for full license information.
 
 import statistics
 import math
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 # Import blitz (BNN) modules
 from blitz.modules import BayesianLinear
 from blitz.utils import variational_estimator
+
+
+def sample_elbo_weighted(
+        self,
+        inputs,
+        labels,
+        criterion,
+        sample_nbr,
+        criterion_loss_weight = 1,
+        complexity_cost_weight= 1):
+    """ Samples the ELBO Loss for a batch of data, consisting of inputs and corresponding-by-index labels
+            The ELBO Loss consists of the sum of the KL Divergence of the model
+                (explained above, interpreted as a "complexity part" of the loss)
+                with the actual criterion - (loss function) of optimization of our model
+                (the performance part of the loss).
+            As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
+                samples of the weights in order to gather a better approximation for the loss.
+        Parameters:
+            inputs: torch.tensor -> the input data to the model
+            labels: torch.tensor -> label data for the performance-part of the loss calculation
+                    The shape of the labels must match the label-parameter shape of the criterion (one hot encoded or as index, if needed)
+            criterion: torch.nn.Module, custom criterion (loss) function, torch.nn.functional function -> criterion to gather
+                        the performance cost for the model
+            sample_nbr: int -> The number of times of the weight-sampling and predictions done in our Monte-Carlo approach to
+                        gather the loss to be .backwarded in the optimization of the model.
+    """
+
+    loss = 0
+    criterion_loss = 0
+    kldiverg_loss = 0
+    y_target = torch.ones(labels.shape[0], device=torch.device("cuda")) # for Cosine Similarity, uses 1 - cos(x1,x2)
+
+    for _ in range(sample_nbr):
+        outputs = self(inputs)
+        # criterion_loss += criterion(outputs, labels, y_target) # use this for cosine
+        criterion_loss += criterion(outputs, labels) # use this for MSE
+        kldiverg_loss  += self.nn_kl_divergence()
+        # loss += self.nn_kl_divergence() * complexity_cost_weight
+
+    criterion_loss = criterion_loss_weight  * criterion_loss / sample_nbr
+    kldiverg_loss  = complexity_cost_weight * kldiverg_loss  / sample_nbr
+    loss = criterion_loss + kldiverg_loss
+
+    return loss, criterion_loss, kldiverg_loss
+
+setattr(variational_estimator, "sample_elbo_weighted", sample_elbo_weighted)
 
 
 @variational_estimator

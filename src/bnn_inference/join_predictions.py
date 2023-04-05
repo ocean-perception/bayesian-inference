@@ -1,32 +1,10 @@
 import pandas as pd
-# import numpy as np
-import argparse
-import sys
 import os
-import tools.parser as par
-from tools.console import Console
+from bnn_inference.tools.console import Console
 
 
-def handler(signum, frame):
-    Console.warn("CTRL + C pressed. Stopping...")
-    sys.exit(1)
 
-
-def main(args=None):
-    description_str = "Bayesian Neural Network inference module"
-    formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
-    parser = argparse.ArgumentParser(description=description_str,
-                                     formatter_class=formatter)
-    # argparse.HelpFormatter(parser,'width=120')
-    par.add_arguments(parser)
-
-    if len(
-            sys.argv
-    ) == 1 and args is None:  # no arggument passed? error, some parameters were expected
-        # Show help if no args provided
-        parser.print_help(sys.stderr)
-        sys.exit(2)
-    args = parser.parse_args(args)  # retrieve parsed arguments
+def join_predictions(args=None):
     Console.info(
         "Postprocessing tool for predictions generated with BNN. Merges predicted entries with target values by key (uuid) and export as a single file"
     )
