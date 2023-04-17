@@ -1,6 +1,6 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-# bnn-geotech-predictor
+# bnn_inference
 A ML framework to infer high resolution terrain properties (e.g. slope, rugosity, vehicle landability) from remotely
 sensed low resolution maps. A Bayesian neural network [https://github.com/piEsposito/blitz-bayesian-deep-learning/] is used to model the relationship between a compact representation of the terrain and the target output. Unsupervised terrain feature extraction is done via  Location Guided Autoencoder [https://github.com/ocean-perception/location_guided_autoencoder] or by using contrastive learning (GeoCLR).
 
