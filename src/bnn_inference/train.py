@@ -16,37 +16,104 @@ import pandas as pd
 import statistics
 # Import sklearn dataset parsers and samples
 from sklearn.model_selection import train_test_split
-# Helper libaries (viz)
-# import matplotlib.pyplot as plt
 # Toolkit specific imports
-from bnn_inference.tools import parser as par
 from bnn_inference.tools.console import Console
 from bnn_inference.tools.dataloader import CustomDataloader
-# from bnn_inference.tools.predictor import PredictiveEngine
 from bnn_inference.tools.bnn_model import BayesianRegressor
-from bnn_inference.tools.bnn_configuration import BNNConfiguration
-# import math
+
+import os
+
+def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
+    # for each output file, we check if user defined name is provided. If not, use default naming convention
+    filename_suffix = "H" + str(n_latents) + "_E" + str(num_epochs) + "_S" + str(n_samples)
+    # Console.warn("Suffix:", filename_suffix)
+    if (output is None):
+        predictions_name = "bnn_predictions_" + filename_suffix +  ".csv"
+    else:
+        predictions_name = output
+    if os.path.isfile(predictions_name):
+        Console.warn("Output file [", predictions_name, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Output file:   \t", predictions_name)
+    if (logfile is None):
+        logfile_name = "bnn_logfile_" + filename_suffix +  ".csv"
+    else:
+        logfile_name = logfile
+    if os.path.isfile(logfile_name):
+        Console.warn("Log file [", logfile_name, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Log file:      \t", logfile_name)
+    if (network is None):
+        network_name = "bnn_" + filename_suffix +  ".pth"   # PyTorch compatible network definition file
+    else:
+        network_name = network
+    if os.path.isfile(network_name):
+        Console.warn("Trained output [", network_name, "] already exists. It will be overwritten (default action)")
+    else:
+        Console.info("Trained output:\t", network_name)
+
+    return predictions_name, logfile_name, network_name
 
 
+def get_torch_device(gpu_index, cpu_only=False):
+    # check if CUDA device is available
+    if torch.cuda.is_available() and not cpu_only:
+        Console.info("CUDA detected. Using GPU...")
+        if torch.cuda.device_count() > 1:
+            # Check which device has more free memory
+            Console.info(
+                "More than one GPU detected. Using the one with more free memory..."
+            )
+            # Pytorch 1.7 API. Newer version provide explicit methods to get the device with more free memory
+            # mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
+            # mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
+            if gpu_index is None or gpu_index == 0:
+                device = torch.device("cuda:0")
+                torch.cuda.set_device("cuda:0")
+                Console.info("Using device: ", device)
+            else:
+                device = torch.device("cuda:1")
+                torch.cuda.set_device("cuda:1")
+                Console.info("Using device: ", device)
+        else:
+            Console.info("Only 1 GPU is available")
+            # use the only available GPU
+            device = torch.device("cuda:0")
+    else:
+        Console.warn("Using CPU")
+        device = torch.device("cpu")
+    return device
 
-def train(args=None):
+
+def train_impl(
+        latent_csv,
+        latent_key,
+        target_csv,
+        target_key,
+        uuid_key,
+        output_csv,
+        output_network_filename,
+        logfile_name,
+        num_epochs,
+        num_samples,
+        xratio,
+        scale_factor,
+        learning_rate,
+        lambda_recon,
+        lambda_elbo,
+        gpu_index,
+        cpu_only):
     Console.info(
         "Bayesian NN training module: learning hi-res terrain observations from feature representation of low resolution priors"
     )
 
-    config = BNNConfiguration(
-    )  # empty constructor, we could pass args at construction time...
-    config.load_from_parser(args)
-
-    dataset_filename = args.input  # dataset containing the input. e.g. the latent vector
-    target_filename = args.target  # target dataset containing the key to be predicted, e.g. mean_slope
-    Console.info("Loading dataset: " + dataset_filename)
+    Console.info("Loading dataset: " + latent_csv)
     X_df, y_df, index_df = CustomDataloader.load_dataset(
-        input_filename=dataset_filename,
-        target_filename=target_filename,
-        matching_key=config.UUID,
-        target_key_prefix=config.output_key,
-        input_key_prefix=config.latent_key
+        input_filename=latent_csv, # dataset containing the input. e.g. the latent vector
+        target_filename=target_csv, # target dataset containing the key to be predicted, e.g. mean_slope
+        matching_key=uuid_key,
+        target_key_prefix=target_key,
+        input_key_prefix=latent_key
     )  # relative_path is the common key in both tables
 
     X = X_df.to_numpy(
@@ -71,9 +138,15 @@ def train(args=None):
 
     Console.info("Data loaded...")
 
-    config.set_filenames(
-        args,
-        n_latents)  # set the filenames for the model and the training log
+    # set the filenames for the model and the training log
+    predictions_name, logfile_name, network_name = set_filenames(
+        output_csv,
+        logfile_name,
+        output_network_filename,
+        n_latents,
+        num_epochs,
+        num_samples)
+
 
     # To maintain equivalent metrics for normal, log-normal data, we need to normalize the data
     # However the normalization must be reversible at prediction and interpretration time.
@@ -100,7 +173,7 @@ def train(args=None):
     # scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
     #    y = np.expand_dims(y, -1)
     # y_norm = scaler.transform(y)
-    y_norm = y / config.scale_factor
+    y_norm = y / scale_factor
 
     n_latents = X_norm.shape[1]  # retrieve the size of input latent vectors
     n_targets = y_norm.shape[1]  # retrieve the size of output targets
@@ -117,7 +190,7 @@ def train(args=None):
     X_train, X_valid, y_train, y_valid = train_test_split(
         X_norm,
         y_norm,
-        test_size=config.xratio,  # 8:2 ratio
+        test_size=xratio,  # 8:2 ratio
         shuffle=True)
     # Convert train and test vectors to tensors
     X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(
@@ -130,32 +203,7 @@ def train(args=None):
     y_valid = torch.unsqueeze(y_valid,
                               -1)  # we add an additional dummy dimension
 
-    # check if CUDA device is available
-    if torch.cuda.is_available():
-        Console.info("CUDA detected. Using GPU...")
-        if torch.cuda.device_count() > 1:
-            # Check which device has more free memory
-            Console.info(
-                "More than one GPU detected. Using the one with more free memory..."
-            )
-            # Pytorch 1.7 API. Newer version provide explicit methods to get the device with more free memory
-            # mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
-            # mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
-            if config.device_index is None or config.device_index == 0:
-                device = torch.device("cuda:0")
-                torch.cuda.set_device("cuda:0")
-                Console.info("Using device: ", device)
-            else:
-                device = torch.device("cuda:1")
-                torch.cuda.set_device("cuda:1")
-                Console.info("Using device: ", device)
-        else:
-            Console.info("Only 1 GPU is available")
-            # use the only available GPU
-            device = torch.device("cuda:0")
-    else:
-        Console.warn("Using CPU")
-        device = torch.device("cpu")
+    device = get_torch_device(gpu_index, get_torch_device)
 
     # set the device
     # torch.cuda.set_device(device)
@@ -163,7 +211,7 @@ def train(args=None):
     regressor = BayesianRegressor(n_latents, n_targets).to(device)
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(),
-                           lr=config.learning_rate)  # learning rate
+                           lr=learning_rate)  # learning rate
     criterion = torch.nn.MSELoss(
     )  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
     # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss
@@ -191,8 +239,8 @@ def train(args=None):
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = config.lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
-    elbo_kld = config.lambda_elbo  # regularization parameter for the KL divergence loss
+    lambda_fit_loss = lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    elbo_kld = lambda_elbo  # regularization parameter for the KL divergence loss
     print(
         regressor
     )  # show network architecture (this can be retrieved later, but we show it for debug purposes)
@@ -212,7 +260,7 @@ def train(args=None):
     # Improve constant torch.ones for CosineEmbeddingLoss, or juts use own cosine distance loss (torch compatible)
 
     try:
-        for epoch in range(config.num_epochs):
+        for epoch in range(num_epochs):
             # if (epoch == 2):          # we train in non-Bayesian way during a first phase of P-epochs (P:50) as 'warm-up'
             #     regressor.unfreeze_()
             #     Console.info("Unfreezing the network")
@@ -235,7 +283,7 @@ def train(args=None):
                     inputs=datapoints.to(device),
                     labels=labels.to(device),
                     criterion=criterion,  # MSELoss
-                    sample_nbr=config.n_samples,
+                    sample_nbr=num_samples,
                     criterion_loss_weight=lambda_fit_loss,
                     complexity_cost_weight=elbo_kld / X_train.shape[0]
                 )  # normalize the complexity cost by the number of input points
@@ -259,7 +307,7 @@ def train(args=None):
                     inputs=valid_datapoints.to(device),
                     labels=valid_labels.to(device),
                     criterion=criterion,
-                    sample_nbr=config.n_samples,
+                    sample_nbr=num_samples,
                     criterion_loss_weight=lambda_fit_loss,  # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
                     complexity_cost_weight=elbo_kld / X_valid.shape[0])
                 valid_loss.append(_loss.item())  # keep track of training loss
@@ -295,7 +343,7 @@ def train(args=None):
                 "    | Valid (MSE + KLD): {:.3f}".format(mean_valid_loss) +
                 " = {:.3f}".format(mean_valid_fit_loss) +
                 " + {:.3f}".format(mean_valid_kld_loss))
-            Console.progress(epoch, config.num_epochs)
+            Console.progress(epoch, num_epochs)
 
     except KeyboardInterrupt:
         Console.warn("Training interrupted...")
@@ -304,17 +352,17 @@ def train(args=None):
     Console.info("Training completed. Saving the model...")
     # create dictionary with the trained model and some training parameters
     model_dict = {
-        'epochs': config.num_epochs,
+        'epochs': num_epochs,
         'batch_size': data_batch_size,
-        'learning_rate': config.learning_rate,
+        'learning_rate': learning_rate,
         'lambda_fit_loss': lambda_fit_loss,
         'elbo_kld': elbo_kld,
         'optimizer': optimizer.state_dict(),
         'model_state_dict': regressor.state_dict()
     }
 
-    print("Network name:", config.network_name)
-    torch.save(model_dict, config.network_name)
+    print("Network name:", output_network_filename)
+    torch.save(model_dict, output_network_filename)
 
     export_df = pd.DataFrame([
         train_loss_history, train_fit_loss_history, train_kld_loss_history,
@@ -325,7 +373,7 @@ def train(args=None):
         'valid_fit_loss', 'valid_kld_loss'
     ]
     export_df.index.names = ['index']
-    export_df.to_csv(config.logfile_name, index=False)
+    export_df.to_csv(logfile_name, index=False)
 
     idx = 0
     # for x in X_valid:
@@ -345,7 +393,7 @@ def train(args=None):
     predicted = []  # == y
     for x in Xp_:
         predictions = []
-        for n in range(config.n_samples):
+        for n in range(num_samples):
             y_ = regressor(x.to(device)).detach().cpu().numpy()
             predictions.append(y_)  # N-dimensional output, stack/append as "single item"
 
@@ -388,12 +436,12 @@ def train(args=None):
     pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # Check if --uncertainty flag is set
-    if args.uncertainty:
-        pred_df = pd.concat([pred_df, _udf], axis=1)
+    #if args.uncertainty:
+    pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn("Exported [train dataset] predictions to: ",
-                 "train_" + config.predictions_name)
-    pred_df.to_csv("train_" + config.predictions_name, index=False)
+                 "train_" + predictions_name)
+    pred_df.to_csv("train_" + predictions_name, index=False)
 
     ######################################################################################################################
     # We repeat the same procedure for the validation dataset
@@ -411,7 +459,7 @@ def train(args=None):
     idx = 0
     for x in Xp_:
         predictions = []
-        for n in range(config.n_samples):
+        for n in range(num_samples):
             y_ = regressor(x.to(device)).detach().cpu().numpy()
             predictions.append(y_)  # N-dimensional output, stack/append as "single item"
 
@@ -454,13 +502,9 @@ def train(args=None):
     pred_df = _ydf
     pred_df = pd.concat([pred_df, _pdf], axis=1)
     # Check if --uncertainty flag is set
-    if args.uncertainty:
-        pred_df = pd.concat([pred_df, _udf], axis=1)
+    #if args.uncertainty:
+    pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn("Exported [validation dataset] predictions to: ",
-                 "valid_" + config.predictions_name)
-    pred_df.to_csv("valid_" + config.predictions_name, index=False)
-
-
-if __name__ == '__main__':
-    main()
+                 "valid_" + predictions_name)
+    pred_df.to_csv("valid_" + predictions_name, index=False)

@@ -29,8 +29,7 @@ class CustomDataloader:
 
         # check if input_filename exists
         if not os.path.isfile(input_filename):
-            Console.error("Input file does not exist: ", input_filename)
-            return
+            Console.quit("Input file does not exist: ", input_filename)
 
         df = pd.read_csv(
             input_filename

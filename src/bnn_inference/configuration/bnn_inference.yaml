@@ -1,0 +1,23 @@
+# Which GPU to use
+gpu_index: 0
+
+# Input files
+## Latent csv file
+latent_csv: /home/username/latent.csv
+latent_key: latent_
+
+## Target csv file
+target_csv: /home/username/target.csv
+target_key: prediction
+
+## Key to match the latent and target csv files
+uuid_key: relative_path
+
+# Training parameters
+num_epochs: 100
+num_samples: 10
+xratio: 0.9
+scale_factor: 1.0
+learning_rate: 1e-3
+lambda_recon: 10.0
+lambda_elbo: 1.0

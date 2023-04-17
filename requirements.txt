@@ -9,3 +9,4 @@ setuptools>=65.5.1
 squarify>=0.4.3
 torch>=1.12.1
 torchvision>=0.13.1
+typer>=0.7.0

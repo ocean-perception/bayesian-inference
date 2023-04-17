@@ -49,7 +49,7 @@ class Console:
     def warn(*args, **kwargs):
         """Print a warning message"""
         print(
-            BColors.WARNING + "WARN > " + BColors.ENDC + " ".join(map(str, args)),
+            BColors.WARNING + " WARN ▸ " + BColors.ENDC + " ".join(map(str, args)),
             **kwargs
         )
 
@@ -57,7 +57,7 @@ class Console:
     def error(*args, **kwargs):
         """Print and error message"""
         print(
-            BColors.FAIL + "ERROR > " + BColors.ENDC + " ".join(map(str, args)),
+            BColors.FAIL + " ERROR ▸ " + BColors.ENDC + " ".join(map(str, args)),
             **kwargs
         )
 
@@ -65,7 +65,7 @@ class Console:
     def info(*args, **kwargs):
         """Print and information message"""
         print(
-            BColors.OKBLUE + "INFO > " + BColors.ENDC + " ".join(map(str, args)),
+            BColors.OKBLUE + " INFO ▸ " + BColors.ENDC + " ".join(map(str, args)),
             **kwargs
         )
 
@@ -141,7 +141,7 @@ class Console:
         return str(datetime.datetime.now().timestamp())
 
     @staticmethod
-    def get_version(pkg_name="location_guided_autoencoder"):
+    def get_version(pkg_name="bnn_inference"):
         """Returns pkg_name version number
 
         Parameters

@@ -7,30 +7,26 @@ See LICENSE file in the project root for full license information.
 """
 # Author: Jose Cappelletto (j.cappelletto@soton.ac.uk)
 
-# Import general libraries
-import sys
 import os
 import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
-# import torch.optim as optim
 import numpy as np
 import pandas as pd
-# Import blitz (BNN) modules
-# from blitz.modules import BayesianLinear
-# from blitz.utils import variational_estimator
-# Import sklearn dataset parsers and samples
-# from sklearn.preprocessing import StandardScaler
-# from sklearn.preprocessing import MinMaxScaler
-# Helper libaries (viz)
-# Toolkit
 from bnn_inference.tools.console import Console
-# from bnn_inference.tools.dataloader import CustomDataloader
 from bnn_inference.tools.predictor import PredictiveEngine
 from bnn_inference.tools.bnn_model import BayesianRegressor
+from bnn_inference.train import get_torch_device
 
 
-def predict(args=None):
+def predict_impl(
+        latent_csv,
+        latent_key,
+        target_key,
+        output_csv,
+        output_network_filename,
+        num_samples,
+        scale_factor,
+        gpu_index,
+        cpu_only):
     Console.info(
         "Bayesian NN inference module. Predicting hi-res terrain maps from lo-res features"
     )
@@ -40,60 +36,58 @@ def predict(args=None):
         "Prediction mode enabled. Looking for pretained network and input latent vectors"
     )
     # Looking for CSV with latent vectors (input)
-    if os.path.isfile(args.input):
-        Console.info("Latent input file: ", args.input)
+    if os.path.isfile(latent_csv):
+        Console.info("Latent input file: ", latent_csv)
     else:
         Console.error(
-            "Latent input file [" + args.input +
+            "Latent input file [" + latent_csv +
             "] not found. Please check the provided input path (-l, --latent)")
 
     # check for pre-trained network
-    if os.path.isfile(args.network):
-        Console.info("Pre-trained network file [", args.network, "] found")
+    if os.path.isfile(output_network_filename):
+        Console.info("Pre-trained network file [", output_network_filename, "] found")
     else:
-        Console.error("No pre-trained network found at: ", args.network)
-        Console.info("Terminating...")
-        return -1
+        Console.quit("No pre-trained network found at: ", output_network_filename)
     # if output file exists, warn user
-    if os.path.isfile(args.output):
+    if os.path.isfile(output_csv):
         Console.warn(
-            "Output file [", args.output,
+            "Output file [", output_csv,
             "] already exists. It will be overwritten (default action)")
     else:
-        Console.info("Output file: ", args.output)
+        Console.info("Output file: ", output_csv)
     # ELBO k-sampling for posterior estimation. The larger the better the MLE, but slower. Good range: 5~25
     # WARNING: current MLE relies on the assumption that the predicted output follows a symmetric distribution, spec. Gaussian.
-    if (args.samples):
-        k_samples = args.samples
+    if (num_samples):
+        k_samples = num_samples
     else:
         k_samples = 20
     # this is the 'key' that is used to identity the target output (single) or the column name for the predictions
-    if (args.key):
-        output_key = args.key
+    if (target_key):
+        output_key = target_key
     else:
         output_key = 'predicted'
     # user defined keyword (affix) employed to detect the columns containing our input values (latent space representation of the bathymetry images)
-    if (args.latent):
-        input_key = args.latent
+    if (latent_key):
+        input_key = latent_key
     else:
         input_key = 'latent_'  # default expected from LGA based pipeline
     # if necessary, the user can provide a scaling factor for the input values
-    if (args.scale):
-        scaling_factor = args.scale
+    if (scale_factor):
+        scaling_factor = scale_factor
     else:
         scaling_factor = 1.0
 
-    Console.info("Loading latent input [", args.input, "]")
+    Console.info("Loading latent input [", latent_csv, "]")
     np_latent, n_latents, df = PredictiveEngine.loadData(
-        args.input, input_key_prefix='latent_')
+        latent_csv, input_key_prefix='latent_')
 
-    Console.info("Loading pretrained network [", args.network, "]")
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    Console.info("Loading pretrained network [", output_network_filename, "]")
+    device = get_torch_device(gpu_index, cpu_only)
 
     if torch.cuda.is_available():
         Console.info("Using CUDA")
         trained_network = torch.load(
-            args.network)  # load pretrained model (dictionary)
+            output_network_filename)  # load pretrained model (dictionary)
         # we need to determine the number of outputs by looking at the linear_output layer
         output_size = len(trained_network['model_state_dict']
                           ['linear_output.weight'].data.cpu().numpy())
@@ -102,7 +96,7 @@ def predict(args=None):
     else:
         Console.warn("Using CPU")
         trained_network = torch.load(
-            args.network, map_location=torch.device(
+            output_network_filename, map_location=torch.device(
                 'cpu'))  # load pretrained model (dictionary)
         output_size = len(trained_network['model_state_dict']
                           ['linear_output.weight'].data.cpu().numpy())
@@ -209,14 +203,10 @@ def predict(args=None):
     )  # replace the current df, no need to reassign to a new variable
 
     print(pred_df.head())
-    output_name = args.output
+    output_name = output_csv
     Console.info("Exporting predictions to:", output_name)
     pred_df.index.names = ['index']
     pred_df.to_csv(output_name)
     Console.warn("Done!")
     return 0
 
-
-if __name__ == '__main__':
-    main()
-# from sklearn.model_selection import train_test_split

@@ -49,6 +49,7 @@ def run_setup():
             "scikit-learn>=0.23.1", # scikit was bumped to 1.XX series. Maybe worth doing the update with the rest of the packages
             "Pillow>=9.1.1",
             "scipy>=1.5.0",
+            "typer>=0.7.0",
         ]
 )
 
