@@ -209,4 +209,3 @@ def predict_impl(
     pred_df.to_csv(output_name)
     Console.warn("Done!")
     return 0
-
