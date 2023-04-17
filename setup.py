@@ -9,6 +9,18 @@
 
 from setuptools import setup, find_packages
 
+import datetime
+import git
+repo = git.Repo(search_parent_directories=True)
+sha = repo.head.object.hexsha
+
+# Prepare version to be PEP 440 compliant with the following format:
+# <year>.<month>.<day>.<release>
+# using the current timestamp as release number and the tag as release
+__version__ = datetime.datetime.now().strftime("%Y.%m.%d.") + sha[:7]
+if repo.is_dirty():
+    __version__ += ".dirty"
+
 # TODO: Complete git hook to retrieve version from git tags
 # get the version number from the version file
 # with open(os.path.join('src', 'version.py')) as f:
@@ -24,7 +36,7 @@ def run_setup():
 
     setup(
         name='bnn_inference',
-        version='0.2.0',
+        version=__version__,
         description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
         author='Jose Cappelletto',
         author_email='j.cappelletto@soton.ac.uk',
@@ -50,6 +62,7 @@ def run_setup():
             "Pillow>=9.1.1",
             "scipy>=1.5.0",
             "typer>=0.7.0",
+            "gitpython>=3.1.14",
         ]
 )
 
