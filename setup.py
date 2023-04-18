@@ -16,7 +16,6 @@ ver_path = convert_path('src/bnn_inference/version.py')
 with open(ver_path) as ver_file:
     exec(ver_file.read(), main_ns)
 
-
 def run_setup():
     # get the long description from the README file
     # TODO: Merge with short/specific decription provided during setup() call

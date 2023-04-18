@@ -8,8 +8,7 @@ from bnn_inference.predict import predict_impl
 from bnn_inference.tools.console import Console
 from bnn_inference.train import train_impl
 
-app = typer.Typer()
-app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
+app = typer.Typer(add_completion=False, context_settings={"help_option_names": ["-h", "--help"]})
 
 
 def config_cb(ctx: typer.Context, param: typer.CallbackParam, value: str):
