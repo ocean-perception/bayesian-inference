@@ -8,7 +8,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install requirements
-COPY environment/requirements.txt .
+COPY requirements.txt .
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en #LC_ALL=en_US.UTF-8
 RUN pip --no-cache-dir install nvidia-pyindex \
     && pip --no-cache-dir install -r requirements.txt
