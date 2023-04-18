@@ -14,6 +14,9 @@ repo = git.Repo(search_parent_directories=True)
 sha = repo.head.object.hexsha
 
 tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+if len(tags) == 0:
+    # No tags, use 0.0.0
+    latest_tag = git.TagReference(repo, "0.0.0")
 latest_tag = tags[-1]
 
 # get number of commits since latest tag

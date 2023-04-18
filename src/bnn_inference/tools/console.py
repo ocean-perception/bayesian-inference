@@ -5,15 +5,12 @@ All rights reserved.
 Licensed under the BSD 3-Clause License.
 See LICENSE.md file in the project root for full license information.
 """
-import sys
-
-"""Utility class to print messages to the console
-"""
 
 import datetime
 import getpass
 import shutil
 import socket
+import sys
 import timeit
 from pathlib import Path
 

@@ -22,7 +22,6 @@ def get_treemap_grid(array_num_samples, list_label=None, aspect_ratio=1.33, sort
         list_label = range(len(array_num_samples))
 
     array_num_samples = np.array(array_num_samples)
-    idxs_sorted = np.argsort(-array_num_samples)  # descent order
 
     sum_samples = 1.0 * np.sum(array_num_samples)  # 1.1 is margin
     h = int(math.sqrt(sum_samples / aspect_ratio))
@@ -379,7 +378,6 @@ def get_clustering_tile_pil_image(
             )
             # text_label = 'class ' + str(tmp_label)
             text_label = str(tmp_label)
-            text_size = draw.textsize(text_label)
             draw.text(
                 (vertex_lu_x + frame_width, vertex_lu_y + frame_width),
                 text_label,

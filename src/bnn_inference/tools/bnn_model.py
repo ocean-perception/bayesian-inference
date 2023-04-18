@@ -99,7 +99,7 @@ def sample_elbo_weighted_mse(
     loss = 0
     criterion_loss = 0
     kldiverg_loss = 0
-    y_target = torch.ones(labels.shape[0], device=torch.device("cuda"))
+    # y_target = torch.ones(labels.shape[0], device=torch.device("cuda"))
 
     for _ in range(sample_nbr):
         outputs = self(inputs)

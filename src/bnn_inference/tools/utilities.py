@@ -42,7 +42,7 @@ def calc_soft_assignment(samples, centroids, alpha=1.0):
 
     num_samples = samples.size()[0]
     num_classes = centroids.size()[0]
-    num_features = samples.size()[1]
+    # num_features = samples.size()[1]
 
     power_value = -(alpha + 1.0) / 2.0
     soft_assignment = torch.zeros((num_samples, num_classes), dtype=torch.double)
@@ -91,9 +91,9 @@ def calc_dec_loss(samples, centroids, alpha=1.0):
         samples.size()[1] == centroids.size()[1]
     ), "num_features should be the same for samples and centroids"
 
-    num_samples = samples.size()[0]
-    num_classes = centroids.size()[0]
-    num_features = samples.size()[1]
+    # num_samples = samples.size()[0]
+    # num_classes = centroids.size()[0]
+    # num_features = samples.size()[1]
 
     q = calc_soft_assignment(samples, centroids, alpha=alpha)
     q = q.cuda()
@@ -203,55 +203,6 @@ def calc_t_dstr_from_dstn_mat(dstn_mat):
     return ret_vector
 
 
-#
-# def calc_t_dstr_from_dstn_mat(dstn_mat, dstn_max_value=np.inf):
-#     '''
-#     calculate t distribution.
-#     https://jp.mathworks.com/help/stats/t-sne.html#bvkwu5p
-#     :param dstn_max_value:
-#     :param dstn_mat: distance matrix. num_samples * num_samples
-#     :return: t distribution. num_samples * num_samples
-#     '''
-#
-#     mat_size = dstn_mat.shape[0]
-#     # num_samples = samples.shape[0]
-#     # num_features = samples.shape[1]
-#     coef_power = -1.0
-#
-#     # dstn_mat = torch.from_numpy(dstn_mat)
-#
-#     #     calculate numerater
-#     # numerater = torch.zeros((mat_size, mat_size)).cuda()
-#     # ret = torch.zeros((mat_size, mat_size)).cuda()
-#     # xx, yy = np.meshgrid(np.arange(mat_size), np.arange(mat_size))
-#     # numerater_vector = (1.0 + torch.sum(dstn_mat[xx, yy] ** 2,
-#     #                                     dim=1)) ** coef_power
-#
-#     numerater_vector = (1.0 + dstn_mat ** 2) ** coef_power
-#     min_value = (1.0 + dstn_max_value ** 2) ** coef_power
-#     numerater_vector = torch.clamp(numerater_vector, min_value, 1.0)
-#
-#     # distance matrix ver
-#     dstn_mat = dstn_mat
-#     numerater_vector_dstn_mat = (1.0 + dstn_mat ** 2.0) ** coef_power
-#
-#     # set diag elements to zero, based on the definition
-#     idx_diag = np.zeros(mat_size)
-#     for i_idx_diag in range(mat_size):
-#         idx_diag[i_idx_diag] = i_idx_diag + i_idx_diag * mat_size
-#     numerater_vector.view(-1)[idx_diag] = 0
-#
-#     # if not normalize:
-#     #     return numerater_vector
-#
-#     denominater_vector = torch.sum(numerater_vector)
-#     # denominater_vector = torch.sum(numerater_vector) - numerater_vector
-#     ret_vector = numerater_vector / denominater_vector
-#
-#     return ret_vector
-#
-
-
 def calc_t_dstr_from_samples(samples, dstn_max_value=np.inf):
     """
     calculate t distribution.
@@ -262,7 +213,7 @@ def calc_t_dstr_from_samples(samples, dstn_max_value=np.inf):
     """
 
     num_samples = samples.shape[0]
-    num_features = samples.shape[1]
+    # num_features = samples.shape[1]
     coef_power = -1.0
 
     #     calculate numerater
@@ -277,17 +228,14 @@ def calc_t_dstr_from_samples(samples, dstn_max_value=np.inf):
     numerater_vector = torch.clamp(numerater_vector, min_value, 1.0)
 
     # distance matrix ver
-    dstn_mat = calc_dstn_mat(samples, dstn_max_value=dstn_max_value)
-    numerater_vector_dstn_mat = (1.0 + dstn_mat**2.0) ** coef_power
+    # dstn_mat = calc_dstn_mat(samples, dstn_max_value=dstn_max_value)
+    # numerater_vector_dstn_mat = (1.0 + dstn_mat**2.0) ** coef_power
 
     # set diag elements to zero, based on the definition
     idx_diag = np.zeros(num_samples)
     for i_idx_diag in range(num_samples):
         idx_diag[i_idx_diag] = i_idx_diag + i_idx_diag * num_samples
     numerater_vector.view(-1)[idx_diag] = 0
-
-    # if not normalize:
-    #     return numerater_vector
 
     denominater_vector = torch.sum(numerater_vector)
     # denominater_vector = torch.sum(numerater_vector) - numerater_vector

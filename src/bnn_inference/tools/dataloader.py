@@ -5,13 +5,12 @@ All rights reserved.
 Licensed under the BSD 3-Clause License.
 See LICENSE.md file in the project root for full license information.
 """
-"""Utility class to print messages to the console
-"""
 import os
+import timeit
 
 import pandas as pd
 
-from bnn_inference.tools.console import Console
+from bnn_inference.tools.console import BColors, Console
 
 
 class CustomDataloader:
