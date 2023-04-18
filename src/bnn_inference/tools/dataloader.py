@@ -7,25 +7,29 @@ See LICENSE.md file in the project root for full license information.
 """
 """Utility class to print messages to the console
 """
-from bnn_inference.tools.console import Console
-import pandas as pd
 import os
+
+import pandas as pd
+
+from bnn_inference.tools.console import Console
 
 
 class CustomDataloader:
     def __init__(self, name=None):
-        self.name = " '" + name + "'" if name else ''
+        self.name = " '" + name + "'" if name else ""
 
     """
     Dataset loader for oplab pipeline compatible CSV files. The 'matching_key' is used to build the input-output paris (e.g. label for each input row)
     The name of the target label is defined using 'target_key_prefix'
     """
 
-    def load_dataset(input_filename,
-                     target_filename,
-                     matching_key='relative_path',
-                     target_key_prefix='mean_slope',
-                     input_key_prefix='latent_'):
+    def load_dataset(
+        input_filename,
+        target_filename,
+        matching_key="relative_path",
+        target_key_prefix="mean_slope",
+        input_key_prefix="latent_",
+    ):
 
         # check if input_filename exists
         if not os.path.isfile(input_filename):
@@ -51,18 +55,23 @@ class CustomDataloader:
         # If the number of latent dimensions is zero, show error message and exit
         if n_latents == 0:
             Console.error(
-                "No columns matching the input_key [" + input_key_prefix +
-                "] found in input file: ", input_filename)
+                "No columns matching the input_key ["
+                + input_key_prefix
+                + "] found in input file: ",
+                input_filename,
+            )
             return
 
         # Check if the matching_key column exists in the dataframe df
         if matching_key not in df.columns:
             Console.error(
-                "Matching key [" + matching_key +
-                "] not found in input file: ", input_filename)
+                "Matching key [" + matching_key + "] not found in input file: ",
+                input_filename,
+            )
             return
-        df['matching_key'] = df[
-            matching_key]  # create a new dataframe column with the matching key
+        df["matching_key"] = df[
+            matching_key
+        ]  # create a new dataframe column with the matching key
 
         # 3) Key matching
         # each 'relative_path' entry has the format  slo/20181121_depthmap_1050_0251_no_slo.tif
@@ -86,25 +95,28 @@ class CustomDataloader:
         # If the number of target dimensions is zero, show error message and exit
         if n_targets == 0:
             Console.error(
-                "No columns matching the target_key_prefix [" +
-                target_key_prefix + "] found in target file: ",
-                target_filename)
+                "No columns matching the target_key_prefix ["
+                + target_key_prefix
+                + "] found in target file: ",
+                target_filename,
+            )
             return
         # Check if the matching_key column exists in the target dataframe tdf
         if matching_key not in tdf.columns:
-            Console.error("Matching key not found in target file: ",
-                          matching_key)
+            Console.error("Matching key not found in target file: ", matching_key)
             return
-        tdf['matching_key'] = tdf[
-            matching_key]  # create the dataframe containing the target values
+        tdf["matching_key"] = tdf[
+            matching_key
+        ]  # create the dataframe containing the target values
         ###############################################
 
         Console.info("Total loaded targets(y): ", len(tdf))
 
         merged_df = pd.merge(
-            df, tdf, how='right', on='matching_key'
+            df, tdf, how="right", on="matching_key"
         )  # join on right, so that we can use the target values
-        merged_df = merged_df.dropna(
+        merged_df = (
+            merged_df.dropna()
         )  # drop any stray NaN values. There should be none
 
         latent_df = merged_df.filter(
@@ -119,12 +131,14 @@ class CustomDataloader:
         # latent_np = latent_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
         # target_np = target_df.to_numpy(dtype='float')   # Apply to both target and latent data
         # input-output datasets are linked using the key provided by matching_key
-        return latent_df, target_df, merged_df['matching_key']
+        return latent_df, target_df, merged_df["matching_key"]
 
-    def load_toydataset(input_filename,
-                        target_key_prefix='mean_slope',
-                        input_prefix='latent_',
-                        matching_key='relative_path'):
+    def load_toydataset(
+        input_filename,
+        target_key_prefix="mean_slope",
+        input_prefix="latent_",
+        matching_key="relative_path",
+    ):
         Console.info("load_toydataset called for: ", input_filename)
 
         df = pd.read_csv(
@@ -147,10 +161,11 @@ class CustomDataloader:
         target_df = df[target_key_prefix]
         Console.info("Latent size: ", latent_df.shape)
 
-        latent_np = latent_df.to_numpy(dtype='float')
-        target_np = target_df.to_numpy(dtype='float')
-        uuid_np = df[matching_key].to_numpy(
-        )  # UUIDs are retrieved from the matching_key column
+        latent_np = latent_df.to_numpy(dtype="float")
+        target_np = target_df.to_numpy(dtype="float")
+        uuid_np = df[
+            matching_key
+        ].to_numpy()  # UUIDs are retrieved from the matching_key column
         # input-output datasets are linked using the key provided by matching_key
         return latent_np, target_np, uuid_np
 
@@ -159,5 +174,11 @@ class CustomDataloader:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.took = (timeit.default_timer() - self.start) * 1000.0
-        print(BColors.OKBLUE + self.name + ' took > ' + BColors.ENDC +
-              str(self.took) + ' ms')
+        print(
+            BColors.OKBLUE
+            + self.name
+            + " took > "
+            + BColors.ENDC
+            + str(self.took)
+            + " ms"
+        )

@@ -3,11 +3,10 @@ import os
 import typer
 import yaml
 
-from bnn_inference.tools.console import Console
-from bnn_inference.predict import predict_impl
-from bnn_inference.train import train_impl
 from bnn_inference.join_predictions import join_predictions_impl
-
+from bnn_inference.predict import predict_impl
+from bnn_inference.tools.console import Console
+from bnn_inference.train import train_impl
 
 app = typer.Typer()
 app = typer.Typer(context_settings={"help_option_names": ["-h", "--help"]})
@@ -25,10 +24,10 @@ def config_cb(ctx: typer.Context, param: typer.CallbackParam, value: str):
     if value:
         Console.info(f"Loading config file: {value}")
         try:
-            with open(value, 'r') as f:    # Load config file
+            with open(value, "r") as f:  # Load config file
                 conf = yaml.safe_load(f)
-            ctx.default_map = ctx.default_map or {}   # Initialize the default map
-            ctx.default_map.update(conf)   # Merge the config dict into default_map
+            ctx.default_map = ctx.default_map or {}  # Initialize the default map
+            ctx.default_map.update(conf)  # Merge the config dict into default_map
         except Exception as ex:
             raise typer.BadParameter(str(ex))
     return value
@@ -36,24 +35,70 @@ def config_cb(ctx: typer.Context, param: typer.CallbackParam, value: str):
 
 @app.command()
 def train(
-    config: str = typer.Option("", help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.", callback=config_cb, is_eager=True),
-    latent_csv: str = typer.Option(..., help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries"),
-    latent_key: str = typer.Option('latent_', help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'"),
-    target_csv: str = typer.Option(..., help="Path to CSV containing the target entries to be used for training/validation. The 'UUID' is used to match against the input file entries"),
-    target_key: str = typer.Option(..., help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"),
-    uuid_key: str = typer.Option('relative_path', help="Unique identifier string used as key for input/target example matching. The UUID string must match for both the input (latent) file and the target file column identifier"),
-    output_csv: str = typer.Option("", help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction"),
-    output_network_filename: str = typer.Option("", help="Output path to write the trained Bayesian Neural Network in PyTorch compatible format."),
-    logfile_name: str = typer.Option("", help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance"),
+    config: str = typer.Option(
+        "",
+        help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
+        callback=config_cb,
+        is_eager=True,
+    ),
+    latent_csv: str = typer.Option(
+        ...,
+        help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries",
+    ),
+    latent_key: str = typer.Option(
+        "latent_",
+        help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'",
+    ),
+    target_csv: str = typer.Option(
+        ...,
+        help="Path to CSV containing the target entries to be used for training/validation. The 'UUID' is used to match against the input file entries",
+    ),
+    target_key: str = typer.Option(
+        ...,
+        help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file",
+    ),
+    uuid_key: str = typer.Option(
+        "relative_path",
+        help="Unique identifier string used as key for input/target example matching. The UUID string must match for both the input (latent) file and the target file column identifier",
+    ),
+    output_csv: str = typer.Option(
+        "",
+        help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction",
+    ),
+    output_network_filename: str = typer.Option(
+        "",
+        help="Output path to write the trained Bayesian Neural Network in PyTorch compatible format.",
+    ),
+    logfile_name: str = typer.Option(
+        "",
+        help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance",
+    ),
     num_epochs: int = typer.Option(100, help="Defines the number of training epochs"),
-    num_samples: int = typer.Option(10, help="Defines the number of samples for sample_elbo based posterior estimation"),
-    xratio: float = typer.Option(0.9, help="Defines the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0"),
-    scale_factor: float = typer.Option(1.0, help="Defines the output target scaling factor. Default: 1.0 (no scaling))"),
-    learning_rate: float = typer.Option(1e-3, help="Defines the learning rate for the optimizer"),
-    lambda_recon: float = typer.Option(10.0, help="Defines the lambda value for the reconstruction loss."),
-    lambda_elbo: float = typer.Option(1.0, help="Defines the lambda value for the ELBO KL divergence cost"),
+    num_samples: int = typer.Option(
+        10,
+        help="Defines the number of samples for sample_elbo based posterior estimation",
+    ),
+    xratio: float = typer.Option(
+        0.9,
+        help="Defines the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0",
+    ),
+    scale_factor: float = typer.Option(
+        1.0, help="Defines the output target scaling factor. Default: 1.0 (no scaling))"
+    ),
+    learning_rate: float = typer.Option(
+        1e-3, help="Defines the learning rate for the optimizer"
+    ),
+    lambda_recon: float = typer.Option(
+        10.0, help="Defines the lambda value for the reconstruction loss."
+    ),
+    lambda_elbo: float = typer.Option(
+        1.0, help="Defines the lambda value for the ELBO KL divergence cost"
+    ),
     gpu_index: int = typer.Option(0, help="Index of CUDA device to be used."),
-    cpu_only: bool = typer.Option(False, help="If set, the training will be performed on the CPU. This is useful for debugging purposes."),
+    cpu_only: bool = typer.Option(
+        False,
+        help="If set, the training will be performed on the CPU. This is useful for debugging purposes.",
+    ),
 ):
     Console.info("Training")
     if config == "":
@@ -75,21 +120,49 @@ def train(
         lambda_recon=lambda_recon,
         lambda_elbo=lambda_elbo,
         gpu_index=gpu_index,
-        cpu_only=cpu_only,)
+        cpu_only=cpu_only,
+    )
 
 
 @app.command()
 def predict(
-    config: str = typer.Option("", help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.", callback=config_cb, is_eager=True),
-    latent_csv: str = typer.Option(..., help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries"),
-    latent_key: str = typer.Option('latent_', help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'"),
-    target_key: str = typer.Option(..., help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"),
-    output_csv: str = typer.Option("", help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction"),
-    output_network_filename: str = typer.Option(..., help="Trained Bayesian Neural Network in PyTorch compatible format."),
-    num_samples: int = typer.Option(20, help="Defines the number of samples for sample_elbo based posterior estimation"),
-    scale_factor: float = typer.Option(1.0, help="Defines the output target scaling factor. Default: 1.0 (no scaling))"),
+    config: str = typer.Option(
+        "",
+        help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
+        callback=config_cb,
+        is_eager=True,
+    ),
+    latent_csv: str = typer.Option(
+        ...,
+        help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries",
+    ),
+    latent_key: str = typer.Option(
+        "latent_",
+        help="Name of the key used for the columns containing the latent vector. For example, a h=8 vector should be read as 'latent_0,latent_1,...,latent_7'",
+    ),
+    target_key: str = typer.Option(
+        ...,
+        help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file",
+    ),
+    output_csv: str = typer.Option(
+        "",
+        help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction",
+    ),
+    output_network_filename: str = typer.Option(
+        ..., help="Trained Bayesian Neural Network in PyTorch compatible format."
+    ),
+    num_samples: int = typer.Option(
+        20,
+        help="Defines the number of samples for sample_elbo based posterior estimation",
+    ),
+    scale_factor: float = typer.Option(
+        1.0, help="Defines the output target scaling factor. Default: 1.0 (no scaling))"
+    ),
     gpu_index: int = typer.Option(0, help="Index of CUDA device to be used."),
-    cpu_only: bool = typer.Option(False, help="If set, the training will be performed on the CPU. This is useful for debugging purposes."),
+    cpu_only: bool = typer.Option(
+        False,
+        help="If set, the training will be performed on the CPU. This is useful for debugging purposes.",
+    ),
 ):
     Console.info("Predicting")
     if config == "":
@@ -103,23 +176,37 @@ def predict(
         num_samples,
         scale_factor,
         gpu_index,
-        cpu_only)
+        cpu_only,
+    )
 
 
-@app.command()
+@app.command("join_predictions")
 def join_predictions(
-    config: str = typer.Option("", help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.", callback=config_cb, is_eager=True),
-    latent_csv: str = typer.Option(..., help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries"),
-    target_csv: str = typer.Option(..., help="Path to CSV containing the target entries to be used for training/validation. The 'UUID' is used to match against the input file entries"),
-    target_key: str = typer.Option(..., help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file"),
-    output_csv: str = typer.Option("", help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction"),
+    config: str = typer.Option(
+        "",
+        help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
+        callback=config_cb,
+        is_eager=True,
+    ),
+    latent_csv: str = typer.Option(
+        ...,
+        help="Path to CSV containing the latent representation vector for each input entry (image). The 'UUID' is used to match against the target file entries",
+    ),
+    target_csv: str = typer.Option(
+        ...,
+        help="Path to CSV containing the target entries to be used for training/validation. The 'UUID' is used to match against the input file entries",
+    ),
+    target_key: str = typer.Option(
+        ...,
+        help="Keyword that defines the field to be learnt/predicted. It must match the column name in the target file",
+    ),
+    output_csv: str = typer.Option(
+        "",
+        help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction",
+    ),
 ):
     Console.info("Joining predictions")
-    join_predictions_impl(
-        latent_csv,
-        target_csv,
-        target_key,
-        output_csv)
+    join_predictions_impl(latent_csv, target_csv, target_key, output_csv)
 
 
 def main(args=None):

@@ -7,84 +7,93 @@ See LICENSE file in the project root for full license information.
 """
 # Author: Jose Cappelletto (j.cappelletto@soton.ac.uk)
 
-import statistics
 import math
+import statistics
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 # Import blitz (BNN) modules
 from blitz.modules import BayesianLinear
 from blitz.utils import variational_estimator
 
 
 def sample_elbo_weighted_cos_sim(
-        self,
-        inputs,
-        labels,
-        criterion,
-        sample_nbr,
-        criterion_loss_weight = 1,
-        complexity_cost_weight= 1):
-    """ Samples the ELBO Loss for a batch of data, consisting of inputs and corresponding-by-index labels
-            The ELBO Loss consists of the sum of the KL Divergence of the model
-                (explained above, interpreted as a "complexity part" of the loss)
-                with the actual criterion - (loss function) of optimization of our model
-                (the performance part of the loss).
-            As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
-                samples of the weights in order to gather a better approximation for the loss.
-        Parameters:
-            inputs: torch.tensor -> the input data to the model
-            labels: torch.tensor -> label data for the performance-part of the loss calculation
-                    The shape of the labels must match the label-parameter shape of the criterion (one hot encoded or as index, if needed)
-            criterion: torch.nn.Module, custom criterion (loss) function, torch.nn.functional function -> criterion to gather
-                        the performance cost for the model
-            sample_nbr: int -> The number of times of the weight-sampling and predictions done in our Monte-Carlo approach to
-                        gather the loss to be .backwarded in the optimization of the model.
+    self,
+    inputs,
+    labels,
+    criterion,
+    sample_nbr,
+    criterion_loss_weight=1,
+    complexity_cost_weight=1,
+):
+    """Samples the ELBO Loss for a batch of data, consisting of inputs and corresponding-by-index labels
+        The ELBO Loss consists of the sum of the KL Divergence of the model
+            (explained above, interpreted as a "complexity part" of the loss)
+            with the actual criterion - (loss function) of optimization of our model
+            (the performance part of the loss).
+        As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
+            samples of the weights in order to gather a better approximation for the loss.
+    Parameters:
+        inputs: torch.tensor -> the input data to the model
+        labels: torch.tensor -> label data for the performance-part of the loss calculation
+                The shape of the labels must match the label-parameter shape of the criterion (one hot encoded or as index, if needed)
+        criterion: torch.nn.Module, custom criterion (loss) function, torch.nn.functional function -> criterion to gather
+                    the performance cost for the model
+        sample_nbr: int -> The number of times of the weight-sampling and predictions done in our Monte-Carlo approach to
+                    gather the loss to be .backwarded in the optimization of the model.
     """
 
     loss = 0
     criterion_loss = 0
     kldiverg_loss = 0
     # TODO (@cappelletto please verify) for Cosine Similarity, uses 1 - cos(x1,x2)
-    y_target = torch.ones(labels.shape[0], device=torch.device("cuda")) - torch.cosine_similarity(inputs, labels, dim=1)
+    y_target = torch.ones(
+        labels.shape[0], device=torch.device("cuda")
+    ) - torch.cosine_similarity(inputs, labels, dim=1)
 
     for _ in range(sample_nbr):
         outputs = self(inputs)
-        criterion_loss += criterion(outputs, labels, y_target) # use this for cosine
-        kldiverg_loss  += self.nn_kl_divergence()
+        criterion_loss += criterion(outputs, labels, y_target)  # use this for cosine
+        kldiverg_loss += self.nn_kl_divergence()
 
-    criterion_loss = criterion_loss_weight  * criterion_loss / sample_nbr
-    kldiverg_loss  = complexity_cost_weight * kldiverg_loss  / sample_nbr
+    criterion_loss = criterion_loss_weight * criterion_loss / sample_nbr
+    kldiverg_loss = complexity_cost_weight * kldiverg_loss / sample_nbr
     loss = criterion_loss + kldiverg_loss
 
     return loss, criterion_loss, kldiverg_loss
 
-setattr(variational_estimator, "sample_elbo_weighted_cos_sim", sample_elbo_weighted_cos_sim)
+
+setattr(
+    variational_estimator, "sample_elbo_weighted_cos_sim", sample_elbo_weighted_cos_sim
+)
 
 
 def sample_elbo_weighted_mse(
-        self,
-        inputs,
-        labels,
-        criterion,
-        sample_nbr,
-        criterion_loss_weight = 1,
-        complexity_cost_weight= 1):
-    """ Samples the ELBO Loss for a batch of data, consisting of inputs and corresponding-by-index labels
-            The ELBO Loss consists of the sum of the KL Divergence of the model
-                (explained above, interpreted as a "complexity part" of the loss)
-                with the actual criterion - (loss function) of optimization of our model
-                (the performance part of the loss).
-            As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
-                samples of the weights in order to gather a better approximation for the loss.
-        Parameters:
-            inputs: torch.tensor -> the input data to the model
-            labels: torch.tensor -> label data for the performance-part of the loss calculation
-                    The shape of the labels must match the label-parameter shape of the criterion (one hot encoded or as index, if needed)
-            criterion: torch.nn.Module, custom criterion (loss) function, torch.nn.functional function -> criterion to gather
-                        the performance cost for the model
-            sample_nbr: int -> The number of times of the weight-sampling and predictions done in our Monte-Carlo approach to
-                        gather the loss to be .backwarded in the optimization of the model.
+    self,
+    inputs,
+    labels,
+    criterion,
+    sample_nbr,
+    criterion_loss_weight=1,
+    complexity_cost_weight=1,
+):
+    """Samples the ELBO Loss for a batch of data, consisting of inputs and corresponding-by-index labels
+        The ELBO Loss consists of the sum of the KL Divergence of the model
+            (explained above, interpreted as a "complexity part" of the loss)
+            with the actual criterion - (loss function) of optimization of our model
+            (the performance part of the loss).
+        As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
+            samples of the weights in order to gather a better approximation for the loss.
+    Parameters:
+        inputs: torch.tensor -> the input data to the model
+        labels: torch.tensor -> label data for the performance-part of the loss calculation
+                The shape of the labels must match the label-parameter shape of the criterion (one hot encoded or as index, if needed)
+        criterion: torch.nn.Module, custom criterion (loss) function, torch.nn.functional function -> criterion to gather
+                    the performance cost for the model
+        sample_nbr: int -> The number of times of the weight-sampling and predictions done in our Monte-Carlo approach to
+                    gather the loss to be .backwarded in the optimization of the model.
     """
 
     loss = 0
@@ -95,15 +104,17 @@ def sample_elbo_weighted_mse(
     for _ in range(sample_nbr):
         outputs = self(inputs)
         criterion_loss += criterion(outputs, labels)
-        kldiverg_loss  += self.nn_kl_divergence()
+        kldiverg_loss += self.nn_kl_divergence()
 
-    criterion_loss = criterion_loss_weight  * criterion_loss / sample_nbr
-    kldiverg_loss  = complexity_cost_weight * kldiverg_loss  / sample_nbr
+    criterion_loss = criterion_loss_weight * criterion_loss / sample_nbr
+    kldiverg_loss = complexity_cost_weight * kldiverg_loss / sample_nbr
     loss = criterion_loss + kldiverg_loss
 
     return loss, criterion_loss, kldiverg_loss
 
+
 setattr(variational_estimator, "sample_elbo_weighted_mse", sample_elbo_weighted_mse)
+
 
 @variational_estimator
 class BayesianRegressor(nn.Module):
@@ -129,11 +140,9 @@ class BayesianRegressor(nn.Module):
 
         self.linear_input = nn.Linear(input_dim, DIM1, bias=True)
 
-        self.blinear1 = BayesianLinear(DIM1,
-                                       DIM1,
-                                       bias=True,
-                                       prior_sigma_1=0.5,
-                                       prior_sigma_2=0.5)
+        self.blinear1 = BayesianLinear(
+            DIM1, DIM1, bias=True, prior_sigma_1=0.5, prior_sigma_2=0.5
+        )
         self.silu1 = nn.SiLU()
 
         self.linear2 = nn.Linear(DIM1, DIM2, bias=True)
@@ -166,13 +175,14 @@ def evaluate_regression(regressor, X, y, samples=15):
     # we need to draw k-samples for each x-input entry. Posterior sampling is done to obtain the E[y] over a Gaussian distribution
     # The maximum likelihood estimates: meand & stdev of the sample vector (large enough for a good approximation)
     # If sample vector is large enough biased and unbiased estimators will converge (samples >> 1)
-    errors = [
-    ]  # list containing the error as e = y - E[f(x)] for all the x in X. y_pred = f(x)
+    errors = (
+        []
+    )  # list containing the error as e = y - E[f(x)] for all the x in X. y_pred = f(x)
     # E[f(x)] is the expected value, computed as the mean(x) as the MLE for a Gaussian distribution (expected)
     uncert = []
     y_list = y.tolist()
     for i in range(
-            len(X)
+        len(X)
     ):  # for each input x[i] (that should be the latent enconding of the image)
         y_samples = []
         for k in range(samples):  # draw k-samples.
@@ -186,7 +196,6 @@ def evaluate_regression(regressor, X, y, samples=15):
         errors.append(error * error)
         uncert.append(u_y)
 
-    errors_mean = math.sqrt(
-        statistics.mean(errors))  # single axis list, eq: (axis = 0)
+    errors_mean = math.sqrt(statistics.mean(errors))  # single axis list, eq: (axis = 0)
     uncert_mean = statistics.mean(uncert)
     return errors_mean, uncert_mean

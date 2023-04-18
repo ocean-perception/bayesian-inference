@@ -1,5 +1,5 @@
-import statistics
 import math
+import statistics
 
 # from bnn_configuration import *
 # from bnn_model import *
