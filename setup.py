@@ -9,26 +9,12 @@
 
 import git
 from setuptools import find_packages, setup
+from distutils.util import convert_path
 
-repo = git.Repo(search_parent_directories=True)
-sha = repo.head.object.hexsha
-
-tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-if len(tags) == 0:
-    # No tags, use 0.0.0
-    latest_tag = git.TagReference(repo, "0.0.0")
-latest_tag = tags[-1]
-
-# get number of commits since latest tag
-commits_since_tag = repo.iter_commits(latest_tag.commit.hexsha + "..HEAD")
-n_commits = sum(1 for c in commits_since_tag)
-
-# Build version string with the tag + dev + number of commits since tag and hash
-__version__ = latest_tag.name
-if n_commits > 0:
-    __version__ += ".dev" + str(n_commits) + "+" + sha[:7]
-if repo.is_dirty():
-    __version__ += ".dirty"
+main_ns = {}
+ver_path = convert_path('src/bnn_inference/version.py')
+with open(ver_path) as ver_file:
+    exec(ver_file.read(), main_ns)
 
 
 def run_setup():
@@ -41,7 +27,7 @@ def run_setup():
 
     setup(
         name="bnn_inference",
-        version=__version__,
+        version=main_ns["__version__"],
         description="Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps",
         author="Jose Cappelletto",
         author_email="j.cappelletto@soton.ac.uk",
