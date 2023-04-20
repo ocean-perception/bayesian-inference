@@ -9,6 +9,7 @@ See LICENSE.md file in the project root for full license information.
 import os
 import timeit
 
+import numpy as np
 import pandas as pd
 
 from bnn_inference.tools.console import BColors, Console
