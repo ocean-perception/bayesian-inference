@@ -331,7 +331,7 @@ def train_impl(
                 train_fit_loss.append(_fit_loss.item())
                 # When the network is frozen the complexity cost is not computed and the kld_loss is 0
                 # The problem is that the return type changes from a Tensor to a scalar
-                if type(_kld_loss) == torch.Tensor:
+                if type(_kld_loss) is torch.Tensor:
                     train_kld_loss.append(_kld_loss.item())
                 else:
                     train_kld_loss.append(0.0)
@@ -351,7 +351,7 @@ def train_impl(
                 valid_fit_loss.append(_fit_loss.item())
                 # When the network is frozen the complexity cost is not computed and the kld_loss is 0
                 # The problem is that the return type changes from a Tensor to a scalar
-                if type(_kld_loss) == torch.Tensor:
+                if type(_kld_loss) is torch.Tensor:
                     valid_kld_loss.append(_kld_loss.item())
                 else:
                     valid_kld_loss.append(0.0)
