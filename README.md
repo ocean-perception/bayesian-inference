@@ -20,7 +20,7 @@ Current implementation uses a small fully connected neural network (5 layers, 25
 Start by cloning the repository (it will include the blitz submodule):
 
 ```
-$ git clone https://github.com/cappelletto/bnn_inference.git
+$ git clone https://github.com/ocean-perception/bnn_inference.git
 ```
 
 ## Docker image
