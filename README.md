@@ -27,7 +27,7 @@ $ git clone https://github.com/ocean-perception/bnn_inference.git
 For improved stability and compatibility, using docker is recommended. You can pull the latest docker image with:
 
 ```bash
-docker pull ocean-perception/bnn_inference:latest
+docker pull ghcr.io/ocean-perception/bnn_inference:latest
 ```
 
 and run it using our alias:
