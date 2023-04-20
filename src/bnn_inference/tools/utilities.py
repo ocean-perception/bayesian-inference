@@ -264,7 +264,7 @@ def calc_kld_t_dstr(p, q, normalize=True):
 
     #     if i == j (i.e. dialog elements), the element would not be included in the summation
     # sum of triu element
-    triu = np.triu(np.ones(p.shape, dtype=np.int), k=1)
+    triu = np.triu(np.ones(p.shape, dtype=np.int64), k=1)
     idx_triu = np.where(triu.flatten() == 1)[0]
 
     kld = torch.sum(

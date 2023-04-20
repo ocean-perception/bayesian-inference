@@ -28,7 +28,7 @@ def get_treemap_grid(array_num_samples, list_label=None, aspect_ratio=1.33, sort
     w = int(math.sqrt(aspect_ratio * sum_samples))
     sum_samples = h * w
 
-    treemap_grid = -5 * np.ones((h, w), dtype=np.int)
+    treemap_grid = -5 * np.ones((h, w), dtype=np.int64)
 
     if sort:
         list_label = list_label[np.flip(np.argsort(array_num_samples))]
@@ -56,7 +56,7 @@ def get_treemap_grid(array_num_samples, list_label=None, aspect_ratio=1.33, sort
         treemap_grid[tmp_h_min:tmp_h_max, tmp_w_min:tmp_w_max] = tmp_label
 
     idxs_edge = -np.ones(
-        (len(array_num_samples), 2, 2), dtype=np.int
+        (len(array_num_samples), 2, 2), dtype=np.int64
     )  # [h_min, w_min], [h_max, w_max]
     # find left up index and right down index
     # the order of list idxs_edge is the saa as list_label
@@ -87,7 +87,7 @@ def patch_allocation_pca(w, h, samples):
         pca = PCA(n_components=2)
         embs = pca.fit_transform(samples)
     else:
-        embs = np.zeros((1, 2), dtype=np.int)
+        embs = np.zeros((1, 2), dtype=np.int64)
     # numsamples
 
     if h > w:
@@ -101,7 +101,7 @@ def patch_allocation_pca(w, h, samples):
         print()
 
     # longer axis should be the principal direction
-    ret_idx_matrix = -np.ones((secondary, principal), dtype=np.int)
+    ret_idx_matrix = -np.ones((secondary, principal), dtype=np.int64)
     idx_sort_principal = np.argsort(embs[:, 0])
     # for the case num_samples > w*h
 
@@ -185,7 +185,7 @@ def get_nine_samples_pil_image(
         # load PIL
         ret_np = np.zeros(
             (patch_size * num_samples_per_side, patch_size * num_samples_per_side, 3),
-            dtype=np.float,
+            dtype=np.float64,
         )
     else:
         ret_array_idx = -np.ones(
@@ -292,7 +292,7 @@ def get_clustering_tile_pil_image(
                 patch_size_resized * treemap_grid.shape[1],
                 3,
             ),
-            dtype="float16",
+            dtype=np.float16,
         )
         * 0.3
     )  # default colour is grey
@@ -325,7 +325,7 @@ def get_clustering_tile_pil_image(
                 sample_idx = ret[i_height, i_width]
                 if sample_idx < 0:
                     tmp_image = 0.3 * np.ones(
-                        (patch_size_resized, patch_size_resized, 3), dtype=np.float
+                        (patch_size_resized, patch_size_resized, 3), dtype=np.float64
                     )  # default colour is grey
                 else:
                     tmp_image = tf_crop_resize(

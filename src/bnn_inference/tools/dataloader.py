@@ -9,6 +9,7 @@ import os
 import timeit
 
 import pandas as pd
+import numpy as np
 
 from bnn_inference.tools.console import BColors, Console
 
@@ -127,8 +128,8 @@ class CustomDataloader:
             regex=target_key_prefix
         )  # remove all columns not starting with input_key_prefix ('latent_')
         #        target_df = merged_df[target_key_prefix]
-        # latent_np = latent_df.to_numpy(dtype='float')   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
-        # target_np = target_df.to_numpy(dtype='float')   # Apply to both target and latent data
+        # latent_np = latent_df.to_numpy(dtype=np.float64)   # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
+        # target_np = target_df.to_numpy(dtype=np.float64)   # Apply to both target and latent data
         # input-output datasets are linked using the key provided by matching_key
         return latent_df, target_df, merged_df["matching_key"]
 
@@ -160,8 +161,8 @@ class CustomDataloader:
         target_df = df[target_key_prefix]
         Console.info("Latent size: ", latent_df.shape)
 
-        latent_np = latent_df.to_numpy(dtype="float")
-        target_np = target_df.to_numpy(dtype="float")
+        latent_np = latent_df.to_numpy(dtype=np.float64)
+        target_np = target_df.to_numpy(dtype=np.float64)
         uuid_np = df[
             matching_key
         ].to_numpy()  # UUIDs are retrieved from the matching_key column

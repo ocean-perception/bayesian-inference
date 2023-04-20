@@ -42,7 +42,7 @@ class PredictiveEngine:
         latent_df = df.filter(regex=input_key_prefix)
         Console.info("Latent size: ", latent_df.shape)
 
-        np_latent = latent_df.to_numpy(dtype="float")
+        np_latent = latent_df.to_numpy(dtype=np.float64)
         return np_latent, n_latents, df
 
     def __enter__(self):

@@ -139,9 +139,9 @@ def train_impl(
     )  # relative_path is the common key in both tables
 
     X = X_df.to_numpy(
-        dtype="float"
+        dtype=np.float64
     )  # Explicit numeric data conversion to avoid silent bugs with implicit string conversion
-    y = y_df.to_numpy(dtype="float")  # Apply to both target and latent data
+    y = y_df.to_numpy(dtype=np.float64)  # Apply to both target and latent data
     # We need to peek the number of latent variables to configure the network and set up the filenames
     n_latents = X.shape[
         1
