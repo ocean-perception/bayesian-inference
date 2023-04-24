@@ -7,44 +7,41 @@
 # package source folder: src/
 # dependencies: numpy, scipy, torch, pandas, scikit-learn, blitz
 
-from importlib_metadata import entry_points
-from setuptools import setup, find_packages
+from distutils.util import convert_path
 
-# TODO: Complete git hook to retrieve version from git tags
-# get the version number from the version file
-# with open(os.path.join('src', 'version.py')) as f:
-#     exec(f.read())
+import git
+from setuptools import find_packages, setup
+
+main_ns = {}
+ver_path = convert_path("src/bnn_inference/version.py")
+with open(ver_path) as ver_file:
+    exec(ver_file.read(), main_ns)
+
 
 def run_setup():
-
     # get the long description from the README file
     # TODO: Merge with short/specific decription provided during setup() call
-    with open('README.md') as f:
+    with open("README.md") as f:
         long_description = f.read()
     if long_description is None:
-        long_description = 'No description available'
-
-    # the requirements can be retrieved from the conda environment file
-    # with open('environment.yml') as f:
-    #     requirements = f.read().splitlines()
+        long_description = "No description available"
 
     setup(
-        name='bayesian_predictor',
-        version='0.1.6',
-        description='Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps',
-        author='Jose Cappelletto',
-        author_email='j.cappelletto@soton.ac.uk',
-        url='https://github.com/cappelletto/bayesian_inference',
-        license='GPLv3', # check if oplab requires MIT for all packages
-
-        packages=['bnn_inference','bnn_inference.tools'],
-
+        name="bnn_inference",
+        version=main_ns["__version__"],
+        description="Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps",
+        author="Jose Cappelletto",
+        author_email="j.cappelletto@soton.ac.uk",
+        url="https://github.com/cappelletto/bayesian_inference",
+        license="GPLv3",  # check if oplab requires MIT for all packages
+        packages=find_packages(where="src"),
+        package_dir={"": "src"},
         entry_points={
-            'console_scripts': [
-                'bnn_train = bnn_inference.bnn_train:main',
-                'bnn_predict = bnn_inference.bnn_predict:main',
+            "console_scripts": [
+                "bnn_inference = bnn_inference.cli:main",
             ],
         },
+<<<<<<< .merge_file_z0PtMk
 
         # TODO: Update dependency matrix for pytorch=2.0
         # Pytorch now supports more 11.X series of CUDA
@@ -60,6 +57,24 @@ def run_setup():
             # The rest of the dependencies are installed by $ pip -r requirements.txt
         ]
 )
+=======
+        # TODO: need to recreate dep matrix.
+        # Pytorch does not support CUDA 11.5, using older 10.2 for the conda env
+        install_requires=[
+            "blitz-bayesian-pytorch==0.2.7",
+            "numpy>=1.19.0",  # check for update of pandas
+            "pandas>=0.25.3",
+            "torch>=1.7.0",  # check for a newer version of torch, supporting multi-GPU and improved queries on allocated memory
+            "torchvision>=0.8.1",
+            "scikit-learn>=0.23.1",  # scikit was bumped to 1.XX series. Maybe worth doing the update with the rest of the packages
+            "Pillow>=9.1.1",
+            "scipy>=1.5.0",
+            "typer>=0.7.0",
+            "gitpython>=3.1.14",
+        ],
+    )
+
+>>>>>>> .merge_file_wmxxaU
 
 if __name__ == "__main__":
     run_setup()
