@@ -12,6 +12,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+from datetime import datetime
 
 from bnn_inference.tools.bnn_model import BayesianRegressor
 from bnn_inference.tools.console import Console
@@ -53,6 +54,11 @@ def predict_impl(
         Console.info("Pre-trained network file [", output_network_filename, "] found")
     else:
         Console.quit("No pre-trained network found at: ", output_network_filename)
+
+    if output_csv == "":
+        date_str = datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
+        output_csv = date_str+ "_bnn_predictions.csv"
+
     # if output file exists, warn user
     if os.path.isfile(output_csv):
         Console.warn(
@@ -224,5 +230,5 @@ def predict_impl(
     Console.info("Exporting predictions to:", output_name)
     pred_df.index.names = ["index"]
     pred_df.to_csv(output_name)
-    Console.warn("Done!")
+    Console.info("Done!")
     return 0

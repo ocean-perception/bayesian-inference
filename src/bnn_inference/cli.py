@@ -95,6 +95,9 @@ def train(
     lambda_elbo: float = typer.Option(
         1.0, help="Defines the lambda value for the ELBO KL divergence cost"
     ),
+    loss_method: str = typer.Option(
+        "mse", help="Defines the loss method. Can be 'mse' or 'cosine_similarity'"
+    ),
     gpu_index: int = typer.Option(0, help="Index of CUDA device to be used."),
     cpu_only: bool = typer.Option(
         False,
@@ -120,6 +123,7 @@ def train(
         learning_rate=learning_rate,
         lambda_recon=lambda_recon,
         lambda_elbo=lambda_elbo,
+        loss_method=loss_method,
         gpu_index=gpu_index,
         cpu_only=cpu_only,
     )

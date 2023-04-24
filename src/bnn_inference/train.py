@@ -77,31 +77,19 @@ def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
 
 
 def get_torch_device(gpu_index, cpu_only=False):
-    # check if CUDA device is available
     if torch.cuda.is_available() and not cpu_only:
-        Console.info("CUDA detected. Using GPU...")
         if torch.cuda.device_count() > 1:
-            # Check which device has more free memory
-            Console.info(
-                "More than one GPU detected. Using the one with more free memory..."
-            )
-            # Pytorch 1.7 API. Newer version provide explicit methods to get the device with more free memory
-            # mem0 = torch.cuda.mem_get_info("cuda:0")[0] # free memory in bytes, device cuda:0
-            # mem1 = torch.cuda.mem_get_info("cuda:1")[0] # free memory in bytes, device cuda:0
             if gpu_index is None or gpu_index == 0:
                 device = torch.device("cuda:0")
                 torch.cuda.set_device("cuda:0")
-                Console.info("Using device: ", device)
             else:
                 device = torch.device("cuda:1")
                 torch.cuda.set_device("cuda:1")
-                Console.info("Using device: ", device)
         else:
-            Console.info("Only 1 GPU is available")
-            # use the only available GPU
             device = torch.device("cuda:0")
+        Console.info("CUDA detected, using device: ", device)
     else:
-        Console.warn("Using CPU")
+        Console.info("Using CPU")
         device = torch.device("cpu")
     return device
 
@@ -122,6 +110,7 @@ def train_impl(
     learning_rate,
     lambda_recon,
     lambda_elbo,
+    loss_method,
     gpu_index,
     cpu_only,
 ):
@@ -242,7 +231,7 @@ def train_impl(
     )  # PyTorch will complain if we feed the (N).Tensor rather than a (NX1).Tensor
     y_valid = torch.unsqueeze(y_valid, -1)  # we add an additional dummy dimension
 
-    device = get_torch_device(gpu_index, get_torch_device)
+    device = get_torch_device(gpu_index, cpu_only)
 
     # set the device
     # torch.cuda.set_device(device)
@@ -280,9 +269,6 @@ def train_impl(
 
     lambda_fit_loss = lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld = lambda_elbo  # regularization parameter for the KL divergence loss
-    print(
-        regressor
-    )  # show network architecture (this can be retrieved later, but we show it for debug purposes)
 
     print("MSE-Loss lambda: ", lambda_fit_loss)
     # Print the regularisation parameter for regression loss
@@ -296,6 +282,15 @@ def train_impl(
     # Add output layer normalization option: L1 or L2 norm
     # Add option to configure cosine or MSELoss
     # Improve constant torch.ones for CosineEmbeddingLoss, or juts use own cosine distance loss (torch compatible)
+
+    if loss_method == "mse":
+        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse
+    elif loss_method == "cosine_similarity":
+        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_cos_sim
+    else:
+        Console.error("Unknown loss_regularisation_method:", loss_regularisation_method)
+        Console.error("Valid options are: mse, cosine_similarity")
+        Console.quit("Loss regularisation method not supported")
 
     try:
         for epoch in range(num_epochs):
@@ -317,7 +312,7 @@ def train_impl(
                 # labels.shape = (h,1,1) is adding an extra dimension to the tensor, so we need to remove it
                 labels = labels.squeeze(2)
                 # print ("labels.shape", labels.shape)
-                _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted_mse(
+                _loss, _fit_loss, _kld_loss = regressor_sample_elbow_weighed(
                     inputs=datapoints.to(device),
                     labels=labels.to(device),
                     criterion=criterion,  # MSELoss
@@ -339,7 +334,7 @@ def train_impl(
             for k, (valid_datapoints, valid_labels) in enumerate(dataloader_valid):
                 # calculate the fit loss and the KL-divergence cost for the test points set
                 valid_labels = valid_labels.squeeze(2)
-                _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted_mse(
+                _loss, _fit_loss, _kld_loss = regressor_sample_elbow_weighed(
                     inputs=valid_datapoints.to(device),
                     labels=valid_labels.to(device),
                     criterion=criterion,
