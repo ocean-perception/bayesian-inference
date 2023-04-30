@@ -3,9 +3,26 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-# bnn_inference
-A ML framework to infer high resolution terrain properties (e.g. slope, rugosity, vehicle landability) from remotely
-sensed low resolution maps. A Bayesian neural network [https://github.com/piEsposito/blitz-bayesian-deep-learning/] is used to model the relationship between a compact representation of the terrain and the target output. Unsupervised terrain feature extraction is done via  Location Guided Autoencoder [https://github.com/ocean-perception/location_guided_autoencoder] or by using contrastive learning (GeoCLR).
+# Description
+A small ML framework capable of inferring high-resolution properties of the terrain from low-resolution priors. The framework is based on Bayesian Neural Networks (BNN) that learns the relation between latent representation of the priors and the target properties. The framework is designed to be used in conjunction with georef_semantics [https://github.com/ocean-perception/georef_semantics], but it can be used with any other latent representation.
+Some of the currently tested applications are:
+- Inferring high-resolution terrain slope, rugosity and roughness from low-resolution bathymetry
+- Predicting vehicle landability (e.g. underwater, aerial and planetary landers) from low-resolution bathymetry
+- Inferring seafloor habitat classes from low-resolution acoustics (MBES, SSS)
+- Predicting high-resolution optical classes distribution from acoustic priors
+
+In case you use this framework in your research, please cite the following paper [https://ieeexplore.ieee.org/document/9705711]:
+
+```bibtex
+@inproceedings{cappelletto_autonomous_2021,
+	title = {Autonomous {Identification} of {Suitable} {Geotechnical} {Measurement} {Locations} using {Underwater} {Vehicles}},
+	doi = {10.23919/OCEANS44145.2021.9705711},
+	booktitle = {{OCEANS} 2021: {San} {Diego} – {Porto}},
+	author = {Cappelletto, Jose and Thornton, Blair and Bodenmann, Adrian and Yamada, Takaki and Massot-Campos, Miquel and Sangekar, Mehul and White, David and Dix, Justin and Newborough, Darryl},
+	year = {2021},
+	note = {ISSN: 0197-7385},
+}
+```
 
 # Requirements
 Current implementation uses a small fully connected neural network (5 layers, 256 nodes per layer max). The GPU memory footprint is ~500MB so multiple train/predict instances can be dispatched. The minimum required system is
@@ -316,3 +333,9 @@ bnn_inference join_predictions -h
 [^1]: Verify you are back in the root folder of this repository
 
 [^1]: Verify you are back in the root folder of this repository
+
+
+
+# Credits
+- The Bayesian BNN uses as backbone the *blitz* library available at [https://github.com/piEsposito/blitz-bayesian-deep-learning/] 
+- Prior and target image features are using Location Guided Autoencoders and GeoCLR. The code is available at [https://github.com/ocean-perception/georef_semantics]
