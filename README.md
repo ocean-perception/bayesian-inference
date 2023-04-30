@@ -24,8 +24,10 @@ In case you use this framework in your research, please cite the following paper
 }
 ```
 
+Please see the [Credits](#Credits) section at the end of this document.
+
 # Requirements
-Current implementation uses a small fully connected neural network (5 layers, 256 nodes per layer max). The GPU memory footprint is ~500MB so multiple train/predict instances can be dispatched. The minimum required system is:
+Current implementation uses a small fully connected neural network (5 layers, 256 nodes per layer max). The GPU memory footprint is ~500MB so multiple train/predict instances can be dispatched at the same time. The minimum required system is:
 
 * GPU card with >1 GB
 * CUDA 10+
@@ -49,14 +51,16 @@ For improved stability and compatibility, using docker is recommended. You can p
 docker pull ghcr.io/ocean-perception/bnn_inference:latest
 ```
 
-and run it using our alias:
+and run it using this alias:
 
 ```bash
 alias bnn_inference='docker run --rm -it --ipc=private -e USER=$(whoami) -h $HOSTNAME --user $(id -u):$(id -g) --volume $(pwd):/data -v /etc/passwd:/etc/passwd:ro --name=bnn_$(whoami)_$(date +%Y%m%d_%H%M%S) ghcr.io/ocean-perception/bnn_inference:latest'
 ```
 
+You can append the alias to your `~/.bashrc` file to make it permanent.
+
 ## As a python package
-You can also install the package natively in your computer using python. You can install it bare bones or in a virtual environment running the following command from the root of bnn_inference.
+You can also install the package natively in your computer using python. It is recommended to install it within a virtual environment (e.g. conda, venv) running the following command from within the root folder of this repository:
 
 ```bash
 pip install -r requirements.txt
@@ -64,7 +68,7 @@ pip install -U -e .
 ```
 
 # Usage
-The current implementation is separated into tree commands: train, predict and join_predictions. They use the same syntax to define inputs, outputs, training/inference parameters, etc. For a complete list of all the available features and flags please run any of the modules with the ` --help ` flag
+(TODO: Improve this section) The current implementation is separated into three commands: train, predict and join_predictions. They use the same syntax to define inputs, outputs, training/inference parameters, etc. For a complete list of all the available features and flags please run any of the modules with the ` --help ` flag
 
 ## Configuration file
 To supply the program arguments, you can use a YAML configuration file like the one below. Alternatively, you can also provide some or all argument via command-line.
@@ -97,7 +101,7 @@ lambda_elbo: 1.0
 
 ## Main program:
 
-The main program is called `bnn_inference` and it is used to dispatch the other three commands. To see the list of available commands, run:
+The main program `bnn_inference` is used to dispatch the other three commands. To see the list of available commands, run:
 
 ```bash
 $ bnn_inference -h
@@ -187,7 +191,7 @@ $ bnn_inference train -h
 │    --output-network-filename                       TEXT     Output path to write the trained     │
 │                                                             Bayesian Neural Network in PyTorch   │
 │                                                             compatible format.                   │
-│    --logfile-name                                  TEXT     Output path to the logfile with the  │
+│    --log-filename                                  TEXT     Output path to the logfile with the  │
 │                                                             training / validation error for each │
 │                                                             epoch. Used to inspect the training  │
 │                                                             performance                          │
