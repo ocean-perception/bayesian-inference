@@ -35,17 +35,17 @@ def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
     )
     # Console.warn("Suffix:", filename_suffix)
     if output is None:
-        predictions_name = "bnn_predictions_" + filename_suffix + ".csv"
+        predictions_filename = "bnn_predictions_" + filename_suffix + ".csv"
     else:
-        predictions_name = output
-    if os.path.isfile(predictions_name):
+        predictions_filename = output
+    if os.path.isfile(predictions_filename):
         Console.warn(
             "Output file [",
-            predictions_name,
+            predictions_filename,
             "] already exists. It will be overwritten (default action)",
         )
     else:
-        Console.info("Output file:   \t", predictions_name)
+        Console.info("Output file:   \t", predictions_filename)
     if logfile is None:
         log_filename = "bnn_logfile_" + filename_suffix + ".csv"
     else:
@@ -59,21 +59,21 @@ def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
     else:
         Console.info("Log file:      \t", log_filename)
     if network is None:
-        network_name = (
+        network_filename = (
             "bnn_" + filename_suffix + ".pth"
         )  # PyTorch compatible network definition file
     else:
-        network_name = network
-    if os.path.isfile(network_name):
+        network_filename = network
+    if os.path.isfile(network_filename):
         Console.warn(
             "Trained output [",
-            network_name,
+            network_filename,
             "] already exists. It will be overwritten (default action)",
         )
     else:
-        Console.info("Trained output:\t", network_name)
+        Console.info("Trained output:\t", network_filename)
 
-    return predictions_name, log_filename, network_name
+    return predictions_filename, log_filename, network_filename
 
 
 def get_torch_device(gpu_index, cpu_only=False):
@@ -156,7 +156,7 @@ def train_impl(
     Console.info("Data loaded...")
 
     # set the filenames for the model and the training log
-    predictions_name, log_filename, network_name = set_filenames(
+    predictions_filename, log_filename, network_filename = set_filenames(
         output_csv,
         log_filename,
         output_network_filename,
@@ -480,9 +480,9 @@ def train_impl(
     pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn(
-        "Exported [train dataset] predictions to: ", "train_" + predictions_name
+        "Exported [train dataset] predictions to: ", "train_" + predictions_filename
     )
-    pred_df.to_csv("train_" + predictions_name, index=False)
+    pred_df.to_csv("train_" + predictions_filename, index=False)
 
     ######################################################################################################################
     # We repeat the same procedure for the validation dataset
@@ -550,6 +550,6 @@ def train_impl(
     pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn(
-        "Exported [validation dataset] predictions to: ", "valid_" + predictions_name
+        "Exported [validation dataset] predictions to: ", "valid_" + predictions_filename
     )
-    pred_df.to_csv("valid_" + predictions_name, index=False)
+    pred_df.to_csv("valid_" + predictions_filename, index=False)
