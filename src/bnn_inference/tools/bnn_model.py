@@ -26,6 +26,10 @@ class BayesianRegressor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
 
+        # We can define at construction time the type of last layer: linear, softmax or softmin
+        # Default is linear, which is unbounded and suitable for regression. We can convert this into
+        # a 'mode' option switching betwee 'regression' to 'classification'
+
         # Per-layer dimensions could be defined at construction time, store it as class attributes and save it in the state_dict
         # Layer transfer function type (relu, sigmoid, tanh, etc) are static (sames as the calculation DAG) for PyTorch definitions
         # ONNX definitions are dynamic (differentiable)
@@ -56,10 +60,12 @@ class BayesianRegressor(nn.Module):
         self.silu2 = nn.SiLU()  # consider using Softsign
 
         self.linear3 = nn.Linear(DIM2, DIM3, bias=True)
-        # self.linear2       = nn.Linear(128, 128, bias=True)
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
-        self.last_layer = nn.Softmin(dim=0)
+        self.last_layer = nn.Softmin(dim=0) 
+        # It can be Sotfmax, depending on boththe loss function and
+        # the underlying distribution of your clas probabilities. Please read about the differences between both
+        # and the use of each one in the context of your problem.
 
     # Oceans2021 architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output
 
