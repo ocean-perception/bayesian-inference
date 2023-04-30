@@ -47,17 +47,17 @@ def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
     else:
         Console.info("Output file:   \t", predictions_name)
     if logfile is None:
-        logfile_name = "bnn_logfile_" + filename_suffix + ".csv"
+        log_filename = "bnn_logfile_" + filename_suffix + ".csv"
     else:
-        logfile_name = logfile
-    if os.path.isfile(logfile_name):
+        log_filename = logfile
+    if os.path.isfile(log_filename):
         Console.warn(
             "Log file [",
-            logfile_name,
+            log_filename,
             "] already exists. It will be overwritten (default action)",
         )
     else:
-        Console.info("Log file:      \t", logfile_name)
+        Console.info("Log file:      \t", log_filename)
     if network is None:
         network_name = (
             "bnn_" + filename_suffix + ".pth"
@@ -73,7 +73,7 @@ def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
     else:
         Console.info("Trained output:\t", network_name)
 
-    return predictions_name, logfile_name, network_name
+    return predictions_name, log_filename, network_name
 
 
 def get_torch_device(gpu_index, cpu_only=False):
@@ -102,7 +102,7 @@ def train_impl(
     uuid_key,
     output_csv,
     output_network_filename,
-    logfile_name,
+    log_filename,
     num_epochs,
     num_samples,
     xratio,
@@ -156,9 +156,9 @@ def train_impl(
     Console.info("Data loaded...")
 
     # set the filenames for the model and the training log
-    predictions_name, logfile_name, network_name = set_filenames(
+    predictions_name, log_filename, network_name = set_filenames(
         output_csv,
-        logfile_name,
+        log_filename,
         output_network_filename,
         n_latents,
         num_epochs,
@@ -170,7 +170,6 @@ def train_impl(
     # We can used fixed normalization IF we know the data range (e.g. 0-90 degrees for slope)
 
     # Let's use existing MinMaxScaler, but we need to manually set the parameters
-    # (min, max) = (0, 90)
     # X = StandardScaler().fit_transform(X)
     # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
     # norm = MinMaxScaler().fit(y)
@@ -184,12 +183,6 @@ def train_impl(
 
     # We impose fixed normalization for the input data, as we know the expected data range.
     # Warning: we do not use the data to fit the scaler as there is no guarantee that the data sample covers all the expected range
-    # _d      = np.array([       0.0,         1.0])
-    # _log_d  = np.array([np.log(0.01), np.log(90.0)])   # this scaler can be used to transform the data from log-normal range
-    # scaler = MinMaxScaler(feature_range=(0, 1.0))
-    # scaler.fit_transform(_d.reshape(-1, 1)) # by using _d, we are constructing a scaler that maps slope from 0-90 degrees to 0-1
-    #    y = np.expand_dims(y, -1)
-    # y_norm = scaler.transform(y)
     y_norm = y / scale_factor
 
     n_latents = X_norm.shape[1]  # retrieve the size of input latent vectors
@@ -417,7 +410,7 @@ def train_impl(
         "valid_kld_loss",
     ]
     export_df.index.names = ["index"]
-    export_df.to_csv(logfile_name, index=False)
+    export_df.to_csv(log_filename, index=False)
 
     idx = 0
     # for x in X_valid:

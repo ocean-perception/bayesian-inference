@@ -70,7 +70,7 @@ def train(
         "",
         help="Output path for the trained Bayesian NN in PyTorch compatible format.",
     ),
-    logfile_name: str = typer.Option(
+    log_filename: str = typer.Option(
         "",
         help="Output path to the logfile with the training / validation error for each epoch. It can be used to monitor the training process",
     ),
@@ -118,7 +118,7 @@ def train(
         uuid_key=uuid_key,
         output_csv=output_csv,
         output_network_filename=output_network_filename,
-        logfile_name=logfile_name,
+        log_filename=log_filename,
         num_epochs=num_epochs,
         num_samples=num_samples,
         xratio=xratio,
