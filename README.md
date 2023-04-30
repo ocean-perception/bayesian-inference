@@ -25,12 +25,14 @@ In case you use this framework in your research, please cite the following paper
 ```
 
 # Requirements
-Current implementation uses a small fully connected neural network (5 layers, 256 nodes per layer max). The GPU memory footprint is ~500MB so multiple train/predict instances can be dispatched. The minimum required system is
+Current implementation uses a small fully connected neural network (5 layers, 256 nodes per layer max). The GPU memory footprint is ~500MB so multiple train/predict instances can be dispatched. The minimum required system is:
 
 * GPU card with >1 GB
 * CUDA 10+
 * 8 GB of RAM
 * 2C/4T CPU
+
+You can use CPU-only mode in case you do not have a GPU card. Additionally, by reducing the number of Monte Carlo samples, you can reduce the training and inference time. However, the quality of your predictions in terms of uncertainty will be affected.
 
 # Installation
 
