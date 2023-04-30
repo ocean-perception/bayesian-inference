@@ -38,7 +38,7 @@ def config_cb(ctx: typer.Context, param: typer.CallbackParam, value: str):
 def train(
     config: str = typer.Option(
         "",
-        help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
+        help="[future] Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
         callback=config_cb,
         is_eager=True,
     ),
@@ -64,36 +64,39 @@ def train(
     ),
     output_csv: str = typer.Option(
         "",
-        help="File containing the expected and inferred value for each input entry. It preserves the input file columns and appends the corresponding prediction",
+        help="Generated file containing the expected and predicted value for each input entry. It preserves the input file columns and appends the predicted columns",
     ),
     output_network_filename: str = typer.Option(
         "",
-        help="Output path to write the trained Bayesian Neural Network in PyTorch compatible format.",
+        help="Output path for the trained Bayesian NN in PyTorch compatible format.",
     ),
     logfile_name: str = typer.Option(
         "",
-        help="Output path to the logfile with the training / validation error for each epoch. Used to inspect the training performance",
+        help="Output path to the logfile with the training / validation error for each epoch. It can be used to monitor the training process",
     ),
-    num_epochs: int = typer.Option(100, help="Defines the number of training epochs"),
+    num_epochs: int = typer.Option(
+        100,
+        help="Number of training epochs"
+    ),
     num_samples: int = typer.Option(
         10,
-        help="Defines the number of samples for sample_elbo based posterior estimation",
+        help="Number of Monte Carlo samples for ELBO based posterior estimation",
     ),
     xratio: float = typer.Option(
         0.9,
-        help="Defines the training (T) ratio as the proportion of the complete dataset used for training. T + V = 1.0",
+        help="Ratio of dataset samples to be used for training (T). The validatio (V) is calculated as V = 1 - T",
     ),
     scale_factor: float = typer.Option(
-        1.0, help="Defines the output target scaling factor. Default: 1.0 (no scaling))"
+        1.0, help="Scaling factor to apply to the output target. Default: 1.0 (no scaling))"
     ),
     learning_rate: float = typer.Option(
-        1e-3, help="Defines the learning rate for the optimizer"
+        1e-3, help="Optimizer learning rate"
     ),
     lambda_recon: float = typer.Option(
-        10.0, help="Defines the lambda value for the reconstruction loss."
+        10.0, help="Reconstruction loss lambda value (hyperparameter)"
     ),
     lambda_elbo: float = typer.Option(
-        1.0, help="Defines the lambda value for the ELBO KL divergence cost"
+        1.0, help="ELBO KL divergence cost lamba value (hyperparameter)"
     ),
     loss_method: str = typer.Option(
         "mse", help="Defines the loss method. Can be 'mse' or 'cosine_similarity'"
@@ -101,7 +104,7 @@ def train(
     gpu_index: int = typer.Option(0, help="Index of CUDA device to be used."),
     cpu_only: bool = typer.Option(
         False,
-        help="If set, the training will be performed on the CPU. This is useful for debugging purposes.",
+        help="If set, the training will be performed on the CPU. This is useful for debugging purposes and low-spec computers.",
     ),
 ):
     Console.info("Training")
@@ -133,7 +136,7 @@ def train(
 def predict(
     config: str = typer.Option(
         "",
-        help="Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
+        help="[future] Path to a YAML configuration file. You can use the file exclusively or overwrite any arguments via CLI.",
         callback=config_cb,
         is_eager=True,
     ),
@@ -157,11 +160,11 @@ def predict(
         ..., help="Trained Bayesian Neural Network in PyTorch compatible format."
     ),
     num_samples: int = typer.Option(
-        20,
-        help="Defines the number of samples for sample_elbo based posterior estimation",
+        10,
+        help="Number of Monte Carlo samples for ELBO based posterior estimation",
     ),
     scale_factor: float = typer.Option(
-        1.0, help="Defines the output target scaling factor. Default: 1.0 (no scaling))"
+        1.0, help="Output scaling factor. Default: 1.0 (no scaling))"
     ),
     gpu_index: int = typer.Option(0, help="Index of CUDA device to be used."),
     cpu_only: bool = typer.Option(
