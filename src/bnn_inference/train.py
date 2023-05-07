@@ -27,6 +27,11 @@ from bnn_inference.tools.bnn_model import BayesianRegressor
 from bnn_inference.tools.console import Console
 from bnn_inference.tools.dataloader import CustomDataloader
 
+################################################################
+# TODO: Automate invocation of this script from the command line
+# bnn_inference train --latent-csv ${SS}/hf_sampled_all_10m_latents.csv --target-csv ${SS}/hf_sampled_closest_10m_labels.csv --target-key vector_class_ --uuid-key relative_path --num-epochs 200 --output-csv hf_CE_${EXP}.csv --output-network-filename net_CE_${EXP}.pth --log-filename log_CE_${EXP}.csv --latent-key input_latent_ --num-samples 7 --lambda-elbo 10 --lambda-recon 100 --num-epochs 300
+# export EXP="elbo10_ce100
+################################################################
 
 def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
     # for each output file, we check if user defined name is provided. If not, use default naming convention
@@ -227,15 +232,18 @@ def train_impl(
     device = get_torch_device(gpu_index, cpu_only)
 
     # set the device
-    # torch.cuda.set_device(device)
     Console.warn("Using device:", torch.cuda.current_device())
     regressor = BayesianRegressor(n_latents, n_targets).to(device)
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate)  # learning rate
-    criterion = (
-        torch.nn.MSELoss()
-    )  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
-    # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss
+    # criterion = (
+    #     torch.nn.MSELoss()
+    # )  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
+    # # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss
+
+    criterion = torch.nn.CrossEntropyLoss()
+        
+    # criterion = torch.nn.MSELoss()
 
     # print("Model's state_dict:")
     # for param.Tensor in regressor.state_dict():
@@ -284,6 +292,9 @@ def train_impl(
         Console.error("Unknown loss_regularisation_method:", loss_regularisation_method)
         Console.error("Valid options are: mse, cosine_similarity")
         Console.quit("Loss regularisation method not supported")
+
+    # print ("Forcing to use sample_elbo ========================")
+    # regressor_sample_elbow_weighed = regressor.sample_elbo
 
     try:
         for epoch in range(num_epochs):

@@ -75,7 +75,7 @@ class BayesianRegressor(nn.Module):
         x_ = self.silu2(self.linear2(x_))
         x_ = self.linear3(x_)
         x_ = self.linear_output(x_)
-        # x_ = self.last_layer(x_)    # last layer is Softmin to produce that output Tensor lie in the range [0, 1] and sum to 1
+        x_ = self.last_layer(x_)    # last layer is Softmin to produce that output Tensor lie in the range [0, 1] and sum to 1
         # normalize output using L1 norm
         # x_ = F.normalize (x_, p=1, dim=-1)
         return x_

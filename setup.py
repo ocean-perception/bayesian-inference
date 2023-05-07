@@ -22,7 +22,7 @@ def run_setup():
     # get the long description from the README file
     # TODO: Merge with short/specific decription provided during setup() call
     # print warning message about future deprecation of setup.py approach
-    print ("WARNING: setup.py will be deprecated in the future. Please refer to the most recent documentation for changes in installation instructions")"")
+    print ("WARNING: setup.py will be deprecated in the future. Please refer to the most recent documentation for changes in installation instructions")
     with open("README.md") as f:
         long_description = f.read()
     if long_description is None:
