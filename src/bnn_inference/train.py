@@ -146,7 +146,7 @@ def train_impl(
         Console.error("No data loaded. Check input and target files")
         sys.exit(1)
     # If the number of loaded pairs is less than the batch size, print warning and exit
-    data_batch_size = 18
+    data_batch_size = 1
     if n_pairs < data_batch_size:
         # print the error message with the number of pairs and the batch size
         Console.error(
@@ -271,10 +271,12 @@ def train_impl(
     lambda_fit_loss = lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld = lambda_elbo  # regularization parameter for the KL divergence loss
 
+    # Print the regularisation parameters (lambda)
     print("MSE-Loss lambda: ", lambda_fit_loss)
-    # Print the regularisation parameter for regression loss
     print("ELBO KLD lambda: ", elbo_kld)
-    # Print regularisation parameter for KL divergence loss
+    # Print the asked number of samples
+    print("Number of samples: ", num_samples)
+    # Configure the model for training    
     regressor.train()  # set to training mode, just in case
     # regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
     regressor.unfreeze_()  # we no longer start with "warming-up" phase of non-Bayesian training
@@ -315,7 +317,6 @@ def train_impl(
                 optimizer.zero_grad()
                 # labels.shape = (h,1,1) is adding an extra dimension to the tensor, so we need to remove it
                 labels = labels.squeeze(2)
-                # print ("labels.shape", labels.shape)
                 _loss, _fit_loss, _kld_loss = regressor_sample_elbow_weighed(
                     inputs=datapoints.to(device),
                     labels=labels.to(device),
@@ -443,10 +444,16 @@ def train_impl(
     for x in Xp_:
         predictions = []
         for n in range(num_samples):
-            y_ = regressor(x.to(device)).detach().cpu().numpy()
+            # TODO: verify mismatch when training using batch_size > 1
+            # Add a dimension to the input data to match the input shape of the network
+            x_ = x.unsqueeze(0)
+            y_ = regressor(x_.to(device)).detach().cpu().numpy()
             predictions.append(
                 y_
             )  # N-dimensional output, stack/append as "single item"
+            # print (x_)
+            # print (y_)
+            # print (str(n), " ------------------------------")
 
         p_mean = np.mean(predictions, axis=0)
         p_stdv = np.std(predictions, axis=0)
@@ -455,6 +462,9 @@ def train_impl(
 
         idx = idx + 1
         Console.progress(idx, len(Xp_))
+
+    # predicted might contain a dimension with size 1, we need to squeeze it
+    predicted = np.squeeze(predicted)
 
     # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
     column_names = []
@@ -481,6 +491,10 @@ def train_impl(
     ):  # for each entry 'i' we create a column with the name 'y_i'
         column_names.append("uncertainty_" + y_df.columns[i])
         # column_names.append('uncertainty_' + str(i))
+
+    # predicted might contain a dimension with size 1, we need to squeeze it
+    uncertainty = np.squeeze(uncertainty)
+
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
     # Append _ydf dataframe to pred_df
@@ -513,11 +527,11 @@ def train_impl(
     for x in Xp_:
         predictions = []
         for n in range(num_samples):
-            y_ = regressor(x.to(device)).detach().cpu().numpy()
+            x_ = x.unsqueeze(0)
+            y_ = regressor(x_.to(device)).detach().cpu().numpy()
             predictions.append(
                 y_
             )  # N-dimensional output, stack/append as "single item"
-
         p_mean = np.mean(predictions, axis=0)
         p_stdv = np.std(predictions, axis=0)
         predicted.append(p_mean)
@@ -543,6 +557,8 @@ def train_impl(
         # the column names is created by prepending 'p_' to the column names of the y_df
         column_names.append("pred_" + y_df.columns[i])
         # column_names.append('predicted_' + str(i))
+    # predicted might contain a dimension with size 1, we need to squeeze it
+    predicted = np.squeeze(predicted)
     _pdf = pd.DataFrame(predicted, columns=column_names)
 
     column_names = []
@@ -550,6 +566,8 @@ def train_impl(
         n_targets
     ):  # for each entry 'i' we create a column with the name 'y_i'
         column_names.append("uncertainty_" + y_df.columns[i])
+    # predicted might contain a dimension with size 1, we need to squeeze it
+    uncertainty = np.squeeze(uncertainty)
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
     # Finally, let's append _ydf dataframe to pred_df

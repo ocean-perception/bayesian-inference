@@ -62,10 +62,11 @@ class BayesianRegressor(nn.Module):
         self.linear3 = nn.Linear(DIM2, DIM3, bias=True)
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
-        self.last_layer = nn.Softmin(dim=0) 
-        # It can be Sotfmax, depending on boththe loss function and
-        # the underlying distribution of your clas probabilities. Please read about the differences between both
-        # and the use of each one in the context of your problem.
+        self.last_layer = nn.Softmin(dim=1)
+        # It can be Sotfmax, depending on both the loss function and
+        # the underlying distribution of your class probabilities.
+        # Please check the differences between both function
+        # and how to use them in the context of your problem.
 
     # Oceans2021 architecture: 256 x SiLU | 521 x SiLU | 128 x Lin | 64 x Lin | y: output
 
@@ -110,9 +111,17 @@ class BayesianRegressor(nn.Module):
         criterion_loss = 0
         kldiverg_loss = 0
         # y_target = torch.ones(labels.shape[0], device=torch.device("cuda"))
-
+        i = 0
         for _ in range(sample_nbr):
             outputs = self(inputs)
+            # # print the output of the model for each sample and its shape
+            # print ("Iteration: ", i)
+            # print (outputs)
+            # print (outputs.shape)
+            # print (labels)
+            # print (labels.shape)
+            # print ("--------------------------------------")
+
             criterion_loss += criterion(outputs, labels)
             kldiverg_loss += self.nn_kl_divergence()
 
