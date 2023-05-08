@@ -107,6 +107,7 @@ def train_impl(
     uuid_key,
     output_csv,
     output_network_filename,
+    output_layer_type,
     log_filename,
     num_epochs,
     num_samples,
@@ -159,7 +160,6 @@ def train_impl(
         sys.exit(1)
 
     Console.info("Data loaded...")
-
     # set the filenames for the model and the training log
     predictions_filename, log_filename, network_filename = set_filenames(
         output_csv,
@@ -231,10 +231,24 @@ def train_impl(
 
     device = get_torch_device(gpu_index, cpu_only)
 
+
+    # Check output_layer_type and set the output layer accordingly
+    if output_layer_type == "linear":
+        Console.warn("Using linear output layer")
+    elif output_layer_type == "softmax":
+        Console.warn("Using Softmax output layer (suitable for classification)")
+    elif output_layer_type == "softmin":
+        Console.warn("Using Softmin output layer (suitable for classification)")
+    else:
+        Console.error("Unknown output layer type: ", output_layer_type)
+        exit(1)
+
     # set the device
     Console.warn("Using device:", torch.cuda.current_device())
-    regressor = BayesianRegressor(n_latents, n_targets).to(device)
-    # regressor.init
+    regressor = BayesianRegressor(
+        input_dim=n_latents,
+        output_dim=n_targets,
+        output_type=output_layer_type).to(device)
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate)  # learning rate
 
     if loss_method == "mse":

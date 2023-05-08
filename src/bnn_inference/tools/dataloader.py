@@ -124,7 +124,7 @@ class CustomDataloader:
         )  # remove all columns not starting with input_key_prefix ('latent_')
         Console.info("Latent vector list (after filter): ", latent_df.shape)
 
-        print ("merged_df: ", latent_df.head())
+        # print ("merged_df: ", latent_df.head())
 
         target_df = merged_df.filter(
             regex=target_key_prefix

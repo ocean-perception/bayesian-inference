@@ -122,6 +122,7 @@ def train(
         uuid_key=uuid_key,
         output_csv=output_csv,
         output_network_filename=output_network_filename,
+        output_layer_type=output_layer_type,
         log_filename=log_filename,
         num_epochs=num_epochs,
         num_samples=num_samples,
