@@ -70,6 +70,10 @@ def train(
         "",
         help="Output path for the trained Bayesian NN in PyTorch compatible format.",
     ),
+    output_layer_type: str = typer.Option(
+        "linear",
+        help="Output layer type: 'linear', 'softmax', 'softmin'",
+    ),
     log_filename: str = typer.Option(
         "",
         help="Output path to the logfile with the training / validation error for each epoch. It can be used to monitor the training process",

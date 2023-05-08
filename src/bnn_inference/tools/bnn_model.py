@@ -23,7 +23,7 @@ from blitz.utils import variational_estimator
 
 @variational_estimator
 class BayesianRegressor(nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim, output_type="linear"):
         super().__init__()
 
         # We can define at construction time the type of last layer: linear, softmax or softmin
@@ -62,9 +62,16 @@ class BayesianRegressor(nn.Module):
         self.linear3 = nn.Linear(DIM2, DIM3, bias=True)
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
-        self.last_layer = nn.Softmax(dim=1)
-        # It can be Sotfmax, depending on both the loss function and
-        # the underlying distribution of your class probabilities.
+        # Define the last layer transfer function (output_layer) using output_type
+        if output_type == "linear": # default, no extra parameters
+            self.last_layer = nn.Identity()
+        elif output_type == "softmax":
+            self.last_layer = nn.Softmax(dim=1)
+        elif output_type == "softmin":
+            self.last_layer = nn.Softmin(dim=1) 
+
+        # It can be Sotfmax or Softmin, depending on the 
+        # underlying distribution of your class probabilities.
         # Please check the differences between both function
         # and how to use them in the context of your problem.
 
