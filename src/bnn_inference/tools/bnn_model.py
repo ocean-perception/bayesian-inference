@@ -62,7 +62,7 @@ class BayesianRegressor(nn.Module):
         self.linear3 = nn.Linear(DIM2, DIM3, bias=True)
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
-        self.last_layer = nn.Softmin(dim=1)
+        self.last_layer = nn.Softmax(dim=1)
         # It can be Sotfmax, depending on both the loss function and
         # the underlying distribution of your class probabilities.
         # Please check the differences between both function

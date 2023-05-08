@@ -95,7 +95,7 @@ num_samples: 10
 xratio: 0.9
 scale_factor: 1.0
 learning_rate: 1e-3
-lambda_recon: 10.0
+lambda_loss: 10.0
 lambda_elbo: 1.0
 ```
 

@@ -84,7 +84,7 @@ def train(
     ),
     xratio: float = typer.Option(
         0.9,
-        help="Ratio of dataset samples to be used for training (T). The validatio (V) is calculated as V = 1 - T",
+        help="Ratio of dataset samples to be used for training (T). The validation (V) is calculated as V = 1 - T",
     ),
     scale_factor: float = typer.Option(
         1.0, help="Scaling factor to apply to the output target. Default: 1.0 (no scaling))"
@@ -92,14 +92,14 @@ def train(
     learning_rate: float = typer.Option(
         1e-3, help="Optimizer learning rate"
     ),
-    lambda_recon: float = typer.Option(
-        10.0, help="Reconstruction loss lambda value (hyperparameter)"
+    lambda_loss: float = typer.Option(
+        1.0, help="Cross-entropy or MSE loss lambda value (hyperparameter)"
     ),
     lambda_elbo: float = typer.Option(
         1.0, help="ELBO KL divergence cost lamba value (hyperparameter)"
     ),
     loss_method: str = typer.Option(
-        "mse", help="Defines the loss method. Can be 'mse' or 'cosine_similarity'"
+        "mse", help="Defines the loss method: 'mse', 'celoss', 'bceloss*', 'cosine*'"
     ),
     gpu_index: int = typer.Option(0, help="Index of CUDA device to be used."),
     cpu_only: bool = typer.Option(
@@ -124,7 +124,7 @@ def train(
         xratio=xratio,
         scale_factor=scale_factor,
         learning_rate=learning_rate,
-        lambda_recon=lambda_recon,
+        lambda_loss=lambda_loss,
         lambda_elbo=lambda_elbo,
         loss_method=loss_method,
         gpu_index=gpu_index,

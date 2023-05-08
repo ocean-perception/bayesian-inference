@@ -113,7 +113,7 @@ def train_impl(
     xratio,
     scale_factor,
     learning_rate,
-    lambda_recon,
+    lambda_loss,
     lambda_elbo,
     loss_method,
     gpu_index,
@@ -236,19 +236,31 @@ def train_impl(
     regressor = BayesianRegressor(n_latents, n_targets).to(device)
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate)  # learning rate
-    # criterion = (
-    #     torch.nn.MSELoss()
-    # )  # mean squared error loss (squared L2 norm). Used to compute the regression fitting error
-    # # criterion = torch.nn.CosineEmbeddingLoss()  # cosine similarity loss
 
-    criterion = torch.nn.CrossEntropyLoss()
-        
-    # criterion = torch.nn.MSELoss()
+    if loss_method == "mse":
+        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse 
+        Console.info("Using MSE loss")       
+        criterion = torch.nn.MSELoss()
+    elif loss_method == "celoss":
+        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse
+        Console.info("Using CrossEntropy loss")
+        criterion = torch.nn.CrossEntropyLoss()
+    elif loss_method == "cosine": # catch future implementation cases
+        Console.error("Cosine similarity loss not implemented yet")
+        Console.error("Currently valid options are: mse, celoss")
+        Console.quit("Leaving...")
+    else:
+        Console.error("Unknown loss_regularisation_method:", loss_method)
+        Console.error("Currently valid options are: mse, celoss")
+        Console.quit("Leaving...")
 
     # print("Model's state_dict:")
     # for param.Tensor in regressor.state_dict():
     #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
-    data_batch_size = 18
+    # NOTE: Beware of that training a Bayesian model does not operate in the same way as a 
+    # standard NN model. SGD may not result in an improved convergence rate when combined 
+    # with variational inference
+    data_batch_size = 8
 
     ds_train = torch.utils.data.TensorDataset(X_train, y_train)
     dataloader_train = torch.utils.data.DataLoader(
@@ -268,7 +280,7 @@ def train_impl(
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    lambda_fit_loss = lambda_loss  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld = lambda_elbo  # regularization parameter for the KL divergence loss
 
     # Print the regularisation parameters (lambda)
@@ -285,18 +297,6 @@ def train_impl(
     # Add output layer normalization option: L1 or L2 norm
     # Add option to configure cosine or MSELoss
     # Improve constant torch.ones for CosineEmbeddingLoss, or juts use own cosine distance loss (torch compatible)
-
-    if loss_method == "mse":
-        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse
-    elif loss_method == "cosine_similarity":
-        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_cos_sim
-    else:
-        Console.error("Unknown loss_regularisation_method:", loss_regularisation_method)
-        Console.error("Valid options are: mse, cosine_similarity")
-        Console.quit("Loss regularisation method not supported")
-
-    # print ("Forcing to use sample_elbo ========================")
-    # regressor_sample_elbow_weighed = regressor.sample_elbo
 
     try:
         for epoch in range(num_epochs):
