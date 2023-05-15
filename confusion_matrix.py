@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import sys
 import argparse
 import os
+import yaml
 
 
 # Create main (entry point)
@@ -17,12 +18,14 @@ def main():
 
     # Add arguments to the parser
     parser.add_argument('--input', type=str, help='CSV file containing output for a multi-class classifier')
-    # Add argument for output filename
+    # Add argument for output filename. If detects and use he user-provided filename. If not, use the same as the input file
     parser.add_argument('--output', type=str, help='Output filename for the confusion matrix plot')
-    # We will export the output in both PNG and SVG format
-
+    # We will export the output in SVG format, unless --png is specified
+    parser.add_argument('--png', action='store_true', help='Export plots in PNG format instead of SVG')
     # Flag to show the plot
     parser.add_argument('--show', action='store_true', help='Show the confusion matrix plot')
+    # Output filename containing a summary of the confusion matrix, Brier score and accuracy table
+    parser.add_argument('--summary', action='store_true', help='Exports confusion matrix & scores summary')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -35,22 +38,30 @@ def main():
         # Exit with error
         sys.exit(1)
     
+    # Use bash colour when printing [info] and [warning] messages
+    info_str="\033[1;33m[info]\033[0m"
+    warning_str="\033[1;31m[warning]\033[0m"
+
     # Get the output filename from the command line argument
     output_filename = args.output
     # Check if the output filename is specified. If not, we use the same as the inut and append .svg
     if output_filename is None:
         # Strip the extension from the filename
+        # print message informing we are exporting the plot to the same filename
+        print(info_str, " Output filename not specified. Using the same as the input file")
         output_filename = filename.split('.')[0]
         # Append the extension
-        output_filename += '.svg'
+        if args.png:
+            output_filename += '.png'
+        else:
+            output_filename += '.svg'
 
     # Check if the file exists. If true, we print a warning message indicating we will overwrite it
     # use os to check if the file exists
     if os.path.isfile(output_filename):
-        print("[warning] File exists. Will overwrite", output_filename)
+        print(warning_str, " File exists. Will overwrite", output_filename)
 
     # Read CSV file
-    # filename = 'valid_ce_loss_test_elbo0001_recon100.csv'
     df = pd.read_csv(filename)
 
     # the target (ground truth) labels are the columns starting with "target_"
@@ -79,6 +90,7 @@ def main():
     brier_score_onehot = 0.0
     brier_score_raw = 0.0
 
+    print ("Processing samples...\n")
     # Iterate over the samples
     for i in range(num_samples):
         # Get the target label
@@ -114,7 +126,62 @@ def main():
     for i in range(num_classes):
         print("Accuracy for class {}: {:.2f}".format(i, accuracy[i]))
 
+    # Export the confusion matrix and scores summary to a TXT file
+    # We will use the same filename as the output file, but with the extension .summary.txt (we could use JSON or YAML for machine readability)
+    summary_filename = output_filename.split('.')[0] + '.summary.txt'
+    print("Exporting summary to: ", summary_filename)
+    # Information to be exported:
+    # Input filename
+    # Number of classes
+    # Number of samples
+    # Brier score (one-hot)
+    # Brier score (raw)
+    # Accuracy for each class
+    # Confusion matrix (one-hot)
+    # Confusion matrix (raw)
+
+    # Open the file for writing
+    with open(summary_filename, 'w') as f:
+        # Write the input filename
+        f.write("Input filename:\t{}\n".format(filename))
+        # Write the number of classes
+        f.write("Number of classes:\t{}\n".format(num_classes))
+        # Write the number of samples
+        f.write("Number of samples:\t{}\n".format(num_samples))
+        # Write the Brier score (one-hot)
+        f.write("Brier score (one-hot):\n{}\n".format(brier_score_onehot))
+        # Write the Brier score (raw)
+        f.write("Brier error (MSE):\n{}\n".format(brier_score_raw))
+        # Write the accuracy for each class
+        for i in range(num_classes):
+            f.write("Accuracy for class {}: {:.2f}\n".format(i, accuracy[i]))
+        # Write the confusion matrix (one-hot)
+        f.write("Confusion matrix (one-hot):\n")
+        f.write(str(confusion_matrix))
+        f.write("\n")
+        # Write the confusion matrix (raw)
+        f.write("Confusion matrix (raw):\n")
+        f.write(str(confusion_matrix_raw))
+        f.write("\n")
+
+    # Export summary as YAML too
+    summary_filename = output_filename.split('.')[0] + '.summary.yaml'
+    print("Exporting YAML summary to: ", summary_filename)
+    # Open the YAML file for writing (using 'yaml' package)
+    # Write the information to the YAML file
+    with open(summary_filename, 'w') as f:
+        # Write the information to the YAML file
+        yaml.dump({'input_filename': filename,
+                   'num_classes': num_classes,
+                   'num_samples': num_samples,
+                   'brier_score_onehot': brier_score_onehot,
+                   'brier_score_raw': brier_score_raw,
+                   'accuracy': accuracy,
+                   'confusion_matrix_onehot': confusion_matrix.tolist(),
+                   'confusion_matrix_raw': confusion_matrix_raw.tolist()}, f)
+
     # Generate a figure to plot the confusion matrix
+    print ("Plotting confusion matrix...\n")
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # Plot the confusion matrix
