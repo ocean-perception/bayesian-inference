@@ -26,6 +26,7 @@ def predict_impl(
     target_key,
     output_csv,
     output_network_filename,
+    output_layer_type,
     num_samples,
     scale_factor,
     gpu_index,
@@ -109,9 +110,10 @@ def predict_impl(
             .data.cpu()
             .numpy()
         )
-        regressor = BayesianRegressor(n_latents, output_size).to(
-            device
-        )  # Single output being predicted
+        regressor = BayesianRegressor(
+            input_dim=n_latents,
+            output_dim=output_size,
+            output_type=output_layer_type).to(device)
     else:
         Console.warn("Using CPU")
         trained_network = torch.load(
@@ -122,9 +124,10 @@ def predict_impl(
             .data.cpu()
             .numpy()
         )
-        regressor = BayesianRegressor(n_latents, output_size).to(
-            device
-        )  # Single output being predicted
+        regressor = BayesianRegressor(
+            input_dim=n_latents,
+            output_dim=output_size,
+            output_type=output_layer_type).to(device)
 
     regressor.load_state_dict(
         trained_network["model_state_dict"]
@@ -167,7 +170,8 @@ def predict_impl(
     for x in Xp_:
         predictions = []
         for n in range(k_samples):
-            y_ = regressor(x.to(device)).detach().cpu().numpy()
+            x_ = x.unsqueeze(0)
+            y_ = regressor(x_.to(device)).detach().cpu().numpy()
             # p = regressor(x.to(device)).item()
             predictions.append(y_)  # 1D output, retieve single item
 
@@ -182,6 +186,9 @@ def predict_impl(
     ########################################################################
     ########################################################################
     print("Total predicted rows: ", len(predicted))
+
+    # predicted might contain a dimension with size 1, we need to squeeze it
+    predicted = np.squeeze(predicted)
 
     # we repeat this for predicted and uncertainty
     column_names = []
@@ -205,6 +212,8 @@ def predict_impl(
             "std_" + output_key + "_" + str(i)
         )  # TODO: use the same naming convention as in the training dataframe (retrieved from NN model dictionary maybe?)
         # column_names.append('predicted_' + str(i))
+    # predicted might contain a dimension with size 1, we need to squeeze it
+    uncertainty = np.squeeze(uncertainty)
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
     pred_df = df.copy()  # make a copy, then we append the results
@@ -217,13 +226,13 @@ def predict_impl(
 
     # Let's clean the dataframe before exporting it
     # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
-    pred_df.drop(
-        list(
-            pred_df.filter(regex=input_key)
-        ),  # the regex string could be updated to match any user-defined latent vector name
-        axis=1,  # search in columns
-        inplace=True,
-    )  # replace the current df, no need to reassign to a new variable
+    # pred_df.drop(
+    #     list(
+    #         pred_df.filter(regex=input_key)
+    #     ),  # the regex string could be updated to match any user-defined latent vector name
+    #     axis=1,  # search in columns
+    #     inplace=True,
+    # )  # replace the current df, no need to reassign to a new variable
 
     print(pred_df.head())
     output_name = output_csv

@@ -39,8 +39,8 @@ def main():
         sys.exit(1)
     
     # Use bash colour when printing [info] and [warning] messages
-    info_str="\033[1;33m[info]\033[0m"
-    warning_str="\033[1;31m[warning]\033[0m"
+    info_str = "\033[1;33m[info]\033[0m"
+    warning_str = "\033[1;31m[warning]\033[0m"
 
     # Get the output filename from the command line argument
     output_filename = args.output
@@ -125,6 +125,9 @@ def main():
     # Print the accuracy for each class
     for i in range(num_classes):
         print("Accuracy for class {}: {:.2f}".format(i, accuracy[i]))
+
+    # Check if asked to export summary
+    # if args.summary:
 
     # Export the confusion matrix and scores summary to a TXT file
     # We will use the same filename as the output file, but with the extension .summary.txt (we could use JSON or YAML for machine readability)
