@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.functional as F
 
 class TrainableRandomDistribution(nn.Module):
-    #Samples weights for variational inference as in Weights Uncertainity on Neural Networks (Bayes by backprop paper)
+    #Samples weights for variational gp_inference as in Weights Uncertainity on Neural Networks (Bayes by backprop paper)
     #Calculates the variational posterior part of the complexity part of the loss
     def __init__(self, mu, rho):
         super().__init__()

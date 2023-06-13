@@ -25,15 +25,15 @@ import argparse
 # from sklearn.preprocessing import MinMaxScaler
 # Helper libaries (viz)
 # Toolkit
-from bnn_inference.tools.console import Console
+from .tools.console import Console
 # from bnn_inference.tools.dataloader import CustomDataloader
-from bnn_inference.tools.predictor import PredictiveEngine
-from bnn_inference.tools.bnn_model import BayesianRegressor
-import bnn_inference.tools.parser as par
+from .tools.predictor import PredictiveEngine
+from .tools.bnn_model import BayesianRegressor
+from .tools import parser as par
 from pathlib import Path
 
 def main(args=None):
-    description_str = "Bayesian Neural Network inference module to predict terrain related derivatives from low-resolution priors"
+    description_str = "Bayesian Neural Network gp_inference module to predict terrain related derivatives from low-resolution priors"
     formatter = lambda prog: argparse.HelpFormatter(prog, width=120)  # noqa: E731
     parser = argparse.ArgumentParser(description=description_str,
                                      formatter_class=formatter)
@@ -47,10 +47,10 @@ def main(args=None):
 
     args = parser.parse_args(args)  # retrieve parsed arguments
     Console.info(
-        "Bayesian NN inference module. Predicting hi-res terrain maps from lo-res features"
+        "Bayesian NN gp_inference module. Predicting hi-res terrain maps from lo-res features"
     )
 
-    # we are in prediction (inference) mode
+    # we are in prediction (gp_inference) mode
     Console.info(
         "Prediction mode enabled. Looking for pretained network and input latent vectors"
     )
@@ -126,7 +126,7 @@ def main(args=None):
 
     regressor.load_state_dict(trained_network['model_state_dict']
                               )  # load state from deserialized object
-    regressor.eval()  # switch to inference mode (set dropout layers)
+    regressor.eval()  # switch to gp_inference mode (set dropout layers)
 
     # Show information about the model dictionary
     # Model dictionary contains:

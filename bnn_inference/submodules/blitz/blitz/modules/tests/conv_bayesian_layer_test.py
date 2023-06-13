@@ -51,7 +51,7 @@ class TestConv1DBayesian(unittest.TestCase):
        pass
 
     def test_variational_inference(self):
-        #create module, check if inference is variating
+        #create module, check if gp_inference is variating
         bconv = BayesianConv1d(in_channels=3,
                               out_channels=3,
                               kernel_size=1)
@@ -155,7 +155,7 @@ class TestConv2DBayesian(unittest.TestCase):
        pass
 
     def test_variational_inference(self):
-        #create module, check if inference is variating
+        #create module, check if gp_inference is variating
         bconv = BayesianConv2d(in_channels=3,
                               out_channels=3,
                               kernel_size=(3,3))
@@ -258,7 +258,7 @@ class TestConv3DBayesian(unittest.TestCase):
        pass
 
     def test_variational_inference(self):
-        #create module, check if inference is variating
+        #create module, check if gp_inference is variating
         bconv = BayesianConv3d(in_channels=3,
                               out_channels=3,
                               kernel_size=(3,3,3))

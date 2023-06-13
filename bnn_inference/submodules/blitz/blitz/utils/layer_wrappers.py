@@ -85,7 +85,7 @@ def Radial(nn_module):
         """
         Samples weights by sampling form a Normal distribution, multiplying by a sigma, which is
         a function from a trainable parameter, and adding a mean sets those weights as the current ones
-        We divide the random parameter per its norm to perform radial bnn inference
+        We divide the random parameter per its norm to perform radial bnn gp_inference
         returns:
             torch.tensor with same shape as self.mu and self.rho
         """

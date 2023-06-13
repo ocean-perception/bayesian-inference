@@ -24,7 +24,7 @@ class TestLinearBayesian(unittest.TestCase):
         pass
 
     def test_variational_inference(self):
-        #create module, check if inference is variating
+        #create module, check if gp_inference is variating
         blinear = BayesianLinear(10, 10)
         linear = nn.Linear(10, 10)
 

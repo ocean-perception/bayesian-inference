@@ -13,7 +13,7 @@ def handler(signum, frame):
 
 
 def main(args=None):
-    description_str = "Bayesian Neural Network inference module"
+    description_str = "Bayesian Neural Network gp_inference module"
     formatter = lambda prog: argparse.HelpFormatter(prog, width=120)
     parser = argparse.ArgumentParser(description=description_str,
                                      formatter_class=formatter)

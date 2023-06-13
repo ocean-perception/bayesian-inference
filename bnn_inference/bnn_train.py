@@ -20,12 +20,12 @@ from sklearn.model_selection import train_test_split
 # Helper libaries (viz)
 # import matplotlib.pyplot as plt
 # Toolkit specific imports
-from bnn_inference.tools import parser as par
-from bnn_inference.tools.console import Console
-from bnn_inference.tools.dataloader import CustomDataloader
+from .tools import parser as par
+from .tools.console import Console
+from .tools.dataloader import CustomDataloader
 # from bnn_inference.tools.predictor import PredictiveEngine
-from bnn_inference.tools.bnn_model import BayesianRegressor
-from bnn_inference.tools.bnn_configuration import BNNConfiguration
+from .tools.bnn_model import BayesianRegressor
+from .tools.bnn_configuration import BNNConfiguration
 # import math
 from pathlib import Path
 
@@ -357,7 +357,7 @@ def main(args=None):
 
     idx = 0
     # for x in X_valid:
-    regressor.eval()  # we need to set eval mode before running inference
+    regressor.eval()  # we need to set eval mode before running gp_inference
     # this will set dropout and batch normalization (if any) to evaluation mode
 
     Console.info("Testing predictions [train dataset]...")

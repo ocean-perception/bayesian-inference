@@ -45,7 +45,7 @@ def variational_estimator(nn_class):
                  (explained above, interpreted as a "complexity part" of the loss)
                  with the actual criterion - (loss function) of optimization of our model
                  (the performance part of the loss).
-                As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
+                As we are using variational gp_inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
                  samples of the weights in order to gather a better approximation for the loss.
             Parameters:
                 inputs: torch.tensor -> the input data to the model
@@ -83,7 +83,7 @@ def variational_estimator(nn_class):
                  with the actual criterion - (loss function) of optimization of our model
                  (the performance part of the loss).
 
-                As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
+                As we are using variational gp_inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
                  samples of the weights in order to gather a better approximation for the loss.
 
             Parameters:
@@ -133,7 +133,7 @@ def variational_estimator(nn_class):
                  with the actual criterion - (loss function) of optimization of our model
                  (the performance part of the loss).
 
-                As we are using variational inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
+                As we are using variational gp_inference, it takes several (quantified by the parameter sample_nbr) Monte-Carlo
                  samples of the weights in order to gather a better approximation for the loss.
 
             Parameters:
@@ -216,7 +216,7 @@ def variational_estimator(nn_class):
 
     def mfvi_forward(self, inputs, sample_nbr=10):
         """
-        Performs mean-field variational inference for the variational estimator model:
+        Performs mean-field variational gp_inference for the variational estimator model:
             Performs sample_nbr forward passes with uncertainty on the weights, returning its mean and standard deviation
 
         Parameters:

@@ -11,8 +11,8 @@ import statistics
 import math
 import torch.nn as nn
 # Import blitz (BNN) modules
-from bnn_inference.submodules.blitz.blitz.modules import BayesianLinear
-from bnn_inference.submodules.blitz.blitz.utils import variational_estimator
+from ..submodules.blitz.blitz.modules import BayesianLinear
+from ..submodules.blitz.blitz.utils import variational_estimator
 
 
 @variational_estimator

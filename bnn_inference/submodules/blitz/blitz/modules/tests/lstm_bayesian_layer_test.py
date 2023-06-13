@@ -24,7 +24,7 @@ class TestLinearBayesian(unittest.TestCase):
         pass
 
     def test_variational_inference(self):
-        #create module, check if inference is variating
+        #create module, check if gp_inference is variating
         deterministic_lstm = nn.LSTM(1, 10, 1, batch_first=True)
         in_data = torch.ones((10, 10, 1))
         det_inference = deterministic_lstm(in_data)
