@@ -1,10 +1,10 @@
 import torch
 import types
 
-from blitz.modules.weight_sampler import TrainableRandomDistribution
-from blitz.losses import kl_divergence_from_nn
-from blitz.modules.base_bayesian_module import BayesianModule
-from blitz.modules import BayesianLSTM
+from ..modules.weight_sampler import TrainableRandomDistribution
+from ..losses import kl_divergence_from_nn
+from ..modules.base_bayesian_module import BayesianModule
+from ..modules import BayesianLSTM
 
 
 def copy_func(f, name=None):

@@ -3,8 +3,8 @@ import math
 
 import torch.nn as nn
 import torch.nn.init as init
-from blitz.modules import BayesianLinear, BayesianConv2d
-from blitz.utils import variational_estimator
+from ..modules import BayesianLinear, BayesianConv2d
+from ..utils import variational_estimator
 
 __all__ = [
     'VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn',

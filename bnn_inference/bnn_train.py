@@ -27,7 +27,7 @@ from bnn_inference.tools.dataloader import CustomDataloader
 from bnn_inference.tools.bnn_model import BayesianRegressor
 from bnn_inference.tools.bnn_configuration import BNNConfiguration
 # import math
-
+from pathlib import Path
 
 def custom_loss_function(y_pred, y_true):
     # y_pred = torch.tensor(y_pred, dtype=torch.float32)
@@ -136,21 +136,27 @@ def main(args=None):
     print("Y_norm [min,max]: ", '{:.4}'.format(np.amin(y_norm)), "/",
           '{:.4}'.format(np.amax(y_norm)))
 
+    '''
     X_train, X_valid, y_train, y_valid = train_test_split(
         X_norm,
         y_norm,
         test_size=config.xratio,  # 8:2 ratio
         shuffle=True)
+    '''
+
+    # the x_norm and y_norm are training data, which has been split from the ground truth a
+    X_train, y_train = X_norm, y_norm
+
     # Convert train and test vectors to tensors
     X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(
         y_train).float()
-    X_valid, y_valid = torch.Tensor(X_valid).float(), torch.Tensor(
-        y_valid).float()
+    # X_valid, y_valid = torch.Tensor(X_valid).float(), torch.Tensor(
+    #     y_valid).float()
     y_train = torch.unsqueeze(
         y_train, -1
     )  # PyTorch will complain if we feed the (N).Tensor rather than a (NX1).Tensor
-    y_valid = torch.unsqueeze(y_valid,
-                              -1)  # we add an additional dummy dimension
+    # y_valid = torch.unsqueeze(y_valid,
+    #                           -1)  # we add an additional dummy dimension
 
     # check if CUDA device is available
     if torch.cuda.is_available():
@@ -181,7 +187,7 @@ def main(args=None):
 
     # set the device
     # torch.cuda.set_device(device)
-    Console.warn("Using device:", torch.cuda.current_device())
+    # Console.warn("Using device:", torch.cuda.current_device())
     regressor = BayesianRegressor(n_latents, n_targets).to(device)
     # regressor.init
     optimizer = optim.Adam(regressor.parameters(),
@@ -200,18 +206,18 @@ def main(args=None):
                                                    batch_size=data_batch_size,
                                                    shuffle=True)
 
-    ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
-    dataloader_valid = torch.utils.data.DataLoader(ds_valid,
-                                                   batch_size=data_batch_size,
-                                                   shuffle=True)
+    # ds_valid = torch.utils.data.TensorDataset(X_valid, y_valid)
+    # dataloader_valid = torch.utils.data.DataLoader(ds_valid,
+    #                                                batch_size=data_batch_size,
+    #                                                shuffle=True)
 
     # Log of training and validation losses
     train_loss_history = []
     train_fit_loss_history = []
     train_kld_loss_history = []
-    valid_loss_history = []
-    valid_fit_loss_history = []
-    valid_kld_loss_history = []
+    # valid_loss_history = []
+    # valid_fit_loss_history = []
+    # valid_kld_loss_history = []
 
     lambda_fit_loss = config.lambda_recon  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld = config.lambda_elbo  # regularization parameter for the KL divergence loss
@@ -245,8 +251,8 @@ def main(args=None):
             # Loss (cost) values are separated into fit_loss and kld_loss
             train_fit_loss = []
             train_kld_loss = []
-            valid_fit_loss = []
-            valid_kld_loss = []
+            # valid_fit_loss = []
+            # valid_kld_loss = []
 
             for i, (datapoints, labels) in enumerate(dataloader_train):
                 optimizer.zero_grad()
@@ -273,50 +279,52 @@ def main(args=None):
                 else:
                     train_kld_loss.append(0.0)
 
-            for k, (valid_datapoints,
-                    valid_labels) in enumerate(dataloader_valid):
-                # calculate the fit loss and the KL-divergence cost for the test points set
-                valid_labels = valid_labels.squeeze(2)
-                _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted(
-                    inputs=valid_datapoints.to(device),
-                    labels=valid_labels.to(device),
-                    criterion=criterion,
-                    sample_nbr=config.n_samples,
-                    criterion_loss_weight=lambda_fit_loss,  # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
-                    complexity_cost_weight=elbo_kld / X_valid.shape[0])
-                valid_loss.append(_loss.item())  # keep track of training loss
-                valid_fit_loss.append(_fit_loss.item())
-                # When the network is frozen the complexity cost is not computed and the kld_loss is 0
-                # The problem is that the return type changes from a Tensor to a scalar
-                if (type(_kld_loss) == torch.Tensor):
-                    valid_kld_loss.append(_kld_loss.item())
-                else:
-                    valid_kld_loss.append(0.0)
+            # for k, (valid_datapoints,
+            #         valid_labels) in enumerate(dataloader_valid):
+            #     # calculate the fit loss and the KL-divergence cost for the test points set
+            #     valid_labels = valid_labels.squeeze(2)
+            #     _loss, _fit_loss, _kld_loss = regressor.sample_elbo_weighted(
+            #         inputs=valid_datapoints.to(device),
+            #         labels=valid_labels.to(device),
+            #         criterion=criterion,
+            #         sample_nbr=config.n_samples,
+            #         criterion_loss_weight=lambda_fit_loss,  # regularization parameter to balance multiobjective cost function (fit loss vs KL div)
+            #         complexity_cost_weight=elbo_kld / X_valid.shape[0])
+            #     valid_loss.append(_loss.item())  # keep track of training loss
+            #     valid_fit_loss.append(_fit_loss.item())
+            #     # When the network is frozen the complexity cost is not computed and the kld_loss is 0
+            #     # The problem is that the return type changes from a Tensor to a scalar
+            #     if (type(_kld_loss) == torch.Tensor):
+            #         valid_kld_loss.append(_kld_loss.item())
+            #     else:
+            #         valid_kld_loss.append(0.0)
 
             mean_train_loss = statistics.mean(train_loss)
-            mean_valid_loss = statistics.mean(valid_loss)
+            # mean_valid_loss = statistics.mean(valid_loss)
             mean_train_fit_loss = statistics.mean(train_fit_loss)
-            mean_valid_fit_loss = statistics.mean(valid_fit_loss)
+            # mean_valid_fit_loss = statistics.mean(valid_fit_loss)
             mean_train_kld_loss = statistics.mean(train_kld_loss)
-            mean_valid_kld_loss = statistics.mean(valid_kld_loss)
+            # mean_valid_kld_loss = statistics.mean(valid_kld_loss)
 
             # Log of training and validation losses
             train_loss_history.append(mean_train_loss)
             train_fit_loss_history.append(mean_train_fit_loss)
             train_kld_loss_history.append(mean_train_kld_loss)
 
-            valid_loss_history.append(mean_valid_loss)
-            valid_fit_loss_history.append(mean_valid_fit_loss)
-            valid_kld_loss_history.append(mean_valid_kld_loss)
+            # valid_loss_history.append(mean_valid_loss)
+            # valid_fit_loss_history.append(mean_valid_fit_loss)
+            # valid_kld_loss_history.append(mean_valid_kld_loss)
 
             Console.info(
                 "Epoch [" + str(epoch) +
                 "] Train (MSE + KLD): {:.3f}".format(mean_train_loss) +
                 " = {:.3f}".format(mean_train_fit_loss) +
-                " + {:.3f}".format(mean_train_kld_loss) +
-                "    | Valid (MSE + KLD): {:.3f}".format(mean_valid_loss) +
-                " = {:.3f}".format(mean_valid_fit_loss) +
-                " + {:.3f}".format(mean_valid_kld_loss))
+                " + {:.3f}".format(mean_train_kld_loss))
+            # +
+            #     "    | Valid (MSE + KLD): {:.3f}".format(mean_valid_loss))
+            # +
+            #     " = {:.3f}".format(mean_valid_fit_loss) +
+            #     " + {:.3f}".format(mean_valid_kld_loss))
             Console.progress(epoch, config.num_epochs)
 
     except KeyboardInterrupt:
@@ -339,13 +347,11 @@ def main(args=None):
     torch.save(model_dict, config.network_name)
 
     export_df = pd.DataFrame([
-        train_loss_history, train_fit_loss_history, train_kld_loss_history,
-        valid_loss_history, valid_fit_loss_history, valid_kld_loss_history
-    ]).transpose()
+        train_loss_history, train_fit_loss_history, train_kld_loss_history]).transpose()
+    #     valid_loss_history, valid_fit_loss_history, valid_kld_loss_history
+    # ]).transpose()
     export_df.columns = [
-        'train_loss', 'train_fit_loss', 'train_kld_loss', 'valid_loss',
-        'valid_fit_loss', 'valid_kld_loss'
-    ]
+        'train_loss', 'train_fit_loss', 'train_kld_loss']
     export_df.index.names = ['index']
     export_df.to_csv(config.logfile_name, index=False)
 
@@ -357,7 +363,7 @@ def main(args=None):
     Console.info("Testing predictions [train dataset]...")
     # Xp_ = torch.Tensor(X_norm).float()
     Xt_ = torch.Tensor(X_train).float().to(device)
-    Xv_ = torch.Tensor(X_valid).float().to(device)
+    # Xv_ = torch.Tensor(X_valid).float().to(device)
 
     Xp_ = Xt_
     y_list = y_train.squeeze().tolist(
@@ -414,75 +420,85 @@ def main(args=None):
         pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn("Exported [train dataset] predictions to: ",
-                 "train_" + config.predictions_name)
-    pred_df.to_csv("train_" + config.predictions_name, index=False)
+                 str(Path(args.output).joinpath('bnn_predict_train.csv')))
+    pred_df.to_csv(Path(args.output).joinpath('bnn_predict_train.csv'), index=False)
 
     ######################################################################################################################
     # We repeat the same procedure for the validation dataset
     ######################################################################################################################
 
-    Console.info("Testing predictions [validation dataset]...")
-    Xp_ = Xv_
-    y_list = y_valid.squeeze().tolist(
-    )  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
-
-    # Once trained, we start inferring
-    # expected = []
-    uncertainty = []
-    predicted = []  # == y
-    idx = 0
-    for x in Xp_:
-        predictions = []
-        for n in range(config.n_samples):
-            y_ = regressor(x.to(device)).detach().cpu().numpy()
-            predictions.append(y_)  # N-dimensional output, stack/append as "single item"
-
-        p_mean = np.mean(predictions, axis=0)
-        p_stdv = np.std(predictions, axis=0)
-        predicted.append(p_mean)
-        uncertainty.append(p_stdv)
-
-        idx = idx + 1
-        Console.progress(idx, len(Xp_))
-
-    # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
-    column_names = []
-    for i in range(
-            n_targets
-    ):  # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('target_' + y_df.columns[i])
-
-    _ydf = pd.DataFrame(y_list, columns=column_names)
-
-    # we repeat this for predicted and uncertainty
-    column_names = []
-    for i in range(
-            n_targets
-    ):  # for each entry 'i' we create a column with the name 'y_i'
-        # the column names is created by prepending 'p_' to the column names of the y_df
-        column_names.append('pred_' + y_df.columns[i])
-        # column_names.append('predicted_' + str(i))
-    _pdf = pd.DataFrame(predicted, columns=column_names)
-
-    column_names = []
-    for i in range(
-            n_targets
-    ):  # for each entry 'i' we create a column with the name 'y_i'
-        column_names.append('uncertainty_' + y_df.columns[i])
-    _udf = pd.DataFrame(uncertainty, columns=column_names)
-
-    # Finally, let's append _ydf dataframe to pred_df
-    # pred_df = pd.concat([pred_df, _ydf], axis=1)
-    pred_df = _ydf
-    pred_df = pd.concat([pred_df, _pdf], axis=1)
-    # Check if --uncertainty flag is set
-    if args.uncertainty:
-        pred_df = pd.concat([pred_df, _udf], axis=1)
-
-    Console.warn("Exported [validation dataset] predictions to: ",
-                 "valid_" + config.predictions_name)
-    pred_df.to_csv("valid_" + config.predictions_name, index=False)
+    # Console.info("Testing predictions [validation dataset]...")
+    # # Xp_ = Xv_
+    # # y_list = y_valid.squeeze().tolist(
+    # # )  # when converted to list, the shape is (N,) and will be stored in the same "cell" of the dataframe
+    #
+    # # Once trained, we start inferring
+    # # expected = []
+    # uncertainty = []
+    # predicted = []  # == y
+    # idx = 0
+    # for x in Xp_:
+    #     predictions = []
+    #     for n in range(config.n_samples):
+    #         y_ = regressor(x.to(device)).detach().cpu().numpy()
+    #         predictions.append(y_)  # N-dimensional output, stack/append as "single item"
+    #
+    #     p_mean = np.mean(predictions, axis=0)
+    #     p_stdv = np.std(predictions, axis=0)
+    #     predicted.append(p_mean)
+    #     uncertainty.append(p_stdv)
+    #     idx = idx + 1
+    #     Console.progress(idx, len(Xp_))
+    #
+    # # y_list, predicted and uncertainty lists need to be converted into sub-dataframes with as many columns as n_targets
+    # column_names = []
+    # for i in range(
+    #         n_targets
+    # ):  # for each entry 'i' we create a column with the name 'y_i'
+    #     column_names.append('target_' + y_df.columns[i])
+    #
+    # _ydf = pd.DataFrame(y_list, columns=column_names)
+    #
+    # # we repeat this for predicted and uncertainty
+    # column_names = []
+    # for i in range(
+    #         n_targets
+    # ):  # for each entry 'i' we create a column with the name 'y_i'
+    #     # the column names is created by prepending 'p_' to the column names of the y_df
+    #     column_names.append('pred_' + y_df.columns[i])
+    #     # column_names.append('predicted_' + str(i))
+    # _pdf = pd.DataFrame(predicted, columns=column_names)
+    #
+    # column_names = []
+    # for i in range(
+    #         n_targets
+    # ):  # for each entry 'i' we create a column with the name 'y_i'
+    #     column_names.append('uncertainty_' + y_df.columns[i])
+    # _udf = pd.DataFrame(uncertainty, columns=column_names)
+    #
+    # # Finally, let's append _ydf dataframe to pred_df
+    # # pred_df = pd.concat([pred_df, _ydf], axis=1)
+    # pred_df = _ydf
+    # pred_df = pd.concat([pred_df, _pdf], axis=1)
+    # # Check if --uncertainty flag is set
+    # if args.uncertainty:
+    #     pred_df = pd.concat([pred_df, _udf], axis=1)
+    #
+    # Console.warn("Exported [validation dataset] predictions to: ",
+    #              "valid_" + config.predictions_name)
+    # pred_df.to_csv("valid_" + config.predictions_name, index=False)
 
 
 if __name__ == '__main__':
+    from pathlib import Path
+    dataset_path = Path('C:\\Users\\cl24n22\\OneDrive - University of Southampton\\Desktop\\dataset\\auto_experiments\\sss_1_overlap\\inference_20230609092938_geoclr')
+    bnn_inference_folder =dataset_path.joinpath('bnn_inference')
+    args = ['-i', str(dataset_path.joinpath('resampled_latents.csv')),
+            '-t', str(dataset_path.joinpath('resampled_targets.csv')),
+            '-u', 'uuid',
+            '-k', 'label_',
+            '-l', 'latent_',
+            '-o', str(bnn_inference_folder),
+            '-n', str(bnn_inference_folder.joinpath('bnn_trained.pth')),
+            '-g', str(bnn_inference_folder.joinpath('training_log.csv'))]
     main()

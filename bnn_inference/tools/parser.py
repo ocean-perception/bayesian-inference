@@ -43,7 +43,7 @@ def add_arguments(obj):
     obj.add_argument(
         "-u",
         "--uuid",
-        default='UUID',
+        default='uuid',
         type=str,
         help="Unique identifier string used as key for input/target example matching. The UUID string must match for both the input (latent) file and the target file column identifier"
     )
@@ -143,3 +143,9 @@ def add_arguments(obj):
         "--uncertainty",
         action='store_true',
         help="Add flag to export uncertainty in the output file")
+
+    obj.add_argument(
+        "--shuffle",
+        action='store_true',
+        help = "Determine whether to shuffle when choosing test"
+    )

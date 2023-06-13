@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from blitz.modules.base_bayesian_module import BayesianModule, BayesianRNN
-from blitz.modules.weight_sampler import TrainableRandomDistribution, PriorWeightDistribution
+from ..modules.base_bayesian_module import BayesianModule, BayesianRNN
+from ..modules.weight_sampler import TrainableRandomDistribution, PriorWeightDistribution
 
 
 class BayesianGRU(BayesianRNN):

@@ -1,6 +1,3 @@
-import statistics
-import math
-
 # from bnn_configuration import *
 # from bnn_model import *
 # from console import *

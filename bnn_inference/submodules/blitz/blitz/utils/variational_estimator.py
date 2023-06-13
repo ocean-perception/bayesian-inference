@@ -1,9 +1,9 @@
 import torch
 import numpy as np
 
-from blitz.modules.weight_sampler import TrainableRandomDistribution
-from blitz.losses import kl_divergence_from_nn
-from blitz.modules.base_bayesian_module import BayesianModule, BayesianRNN
+from ..modules.weight_sampler import TrainableRandomDistribution
+from ..losses import kl_divergence_from_nn
+from ..modules.base_bayesian_module import BayesianModule, BayesianRNN
 
 def variational_estimator(nn_class):
     """
@@ -150,7 +150,7 @@ def variational_estimator(nn_class):
         loss = 0
         criterion_loss = 0
         kldiverg_loss = 0
-        y_target = torch.ones(labels.shape[0], device=torch.device("cuda")) # for Cosine Similarity, uses 1 - cos(x1,x2)
+        # y_target = torch.ones(labels.shape[0], device=torch.device("cuda")) # for Cosine Similarity, uses 1 - cos(x1,x2)
 
         for _ in range(sample_nbr):
             outputs = self(inputs)

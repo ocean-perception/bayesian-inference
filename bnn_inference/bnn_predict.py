@@ -30,7 +30,7 @@ from bnn_inference.tools.console import Console
 from bnn_inference.tools.predictor import PredictiveEngine
 from bnn_inference.tools.bnn_model import BayesianRegressor
 import bnn_inference.tools.parser as par
-
+from pathlib import Path
 
 def main(args=None):
     description_str = "Bayesian Neural Network inference module to predict terrain related derivatives from low-resolution priors"
@@ -233,5 +233,16 @@ def main(args=None):
 
 
 if __name__ == '__main__':
+    dataset_path = Path(
+        'C:\\Users\\cl24n22\\OneDrive - University of Southampton\\Desktop\\dataset\\auto_experiments\\sss_1_overlap\\inference_20230609092938_geoclr')
+    bnn_inference_folder = dataset_path.joinpath('bnn_inference')
+    pred_args = ['-i', str(dataset_path.joinpath('sampled_images_latents.csv')),
+                 '-t', str(dataset_path.joinpath('bnn_target.csv')),
+                 '-u', 'uuid',
+                 '-k', 'label_',
+                 '-l', 'latent_',
+                 '-o', str(bnn_inference_folder.joinpath('bnn_sampled_images_predict_labels.csv')),
+                 '-n', str(bnn_inference_folder.joinpath('bnn_trained.pth')),
+                 '-g', str(bnn_inference_folder.joinpath('training_log.csv'))]
     main()
 # from sklearn.model_selection import train_test_split
