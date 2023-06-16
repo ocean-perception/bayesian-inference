@@ -1,4 +1,5 @@
 import git
+from pathlib import Path
 
 """
 Get version from git tags and commits.
@@ -14,7 +15,9 @@ Example:
     1.0.0                     - tag 1.0.0, no commits, repo is clean
 """
 
-repo = git.Repo(search_parent_directories=True)
+file_path = Path(__file__).absolute()
+
+repo = git.Repo(file_path, search_parent_directories=True)
 sha = repo.head.object.hexsha
 tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
 
