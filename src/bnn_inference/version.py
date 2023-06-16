@@ -1,5 +1,6 @@
-import git
 from pathlib import Path
+
+import git
 
 """
 Get version from git tags and commits.

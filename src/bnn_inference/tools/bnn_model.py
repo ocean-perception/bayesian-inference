@@ -12,13 +12,10 @@ import statistics
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 # Import blitz (BNN) modules
 from blitz.modules import BayesianLinear
 from blitz.utils import variational_estimator
-
-
 
 
 @variational_estimator
@@ -63,14 +60,14 @@ class BayesianRegressor(nn.Module):
         self.linear_output = nn.Linear(DIM3, output_dim, bias=True)
 
         # Define the last layer transfer function (output_layer) using output_type
-        if output_type == "linear": # default, no extra parameters
+        if output_type == "linear":  # default, no extra parameters
             self.last_layer = nn.Identity()
         elif output_type == "softmax":
             self.last_layer = nn.Softmax(dim=1)
         elif output_type == "softmin":
-            self.last_layer = nn.Softmin(dim=1) 
+            self.last_layer = nn.Softmin(dim=1)
 
-        # It can be Sotfmax or Softmin, depending on the 
+        # It can be Sotfmax or Softmin, depending on the
         # underlying distribution of your class probabilities.
         # Please check the differences between both function
         # and how to use them in the context of your problem.
@@ -83,7 +80,9 @@ class BayesianRegressor(nn.Module):
         x_ = self.silu2(self.linear2(x_))
         x_ = self.linear3(x_)
         x_ = self.linear_output(x_)
-        x_ = self.last_layer(x_)    # last layer is Softmin to produce that output Tensor lie in the range [0, 1] and sum to 1
+        x_ = self.last_layer(
+            x_
+        )  # last layer is Softmin to produce that output Tensor lie in the range [0, 1] and sum to 1
         # normalize output using L1 norm
         # x_ = F.normalize (x_, p=1, dim=-1)
         return x_
@@ -118,7 +117,6 @@ class BayesianRegressor(nn.Module):
         criterion_loss = 0
         kldiverg_loss = 0
         # y_target = torch.ones(labels.shape[0], device=torch.device("cuda"))
-        i = 0
         for _ in range(sample_nbr):
             outputs = self(inputs)
             # # print the output of the model for each sample and its shape
@@ -137,7 +135,6 @@ class BayesianRegressor(nn.Module):
         loss = criterion_loss + kldiverg_loss
 
         return loss, criterion_loss, kldiverg_loss
-
 
     setattr(variational_estimator, "sample_elbo_weighted_mse", sample_elbo_weighted_mse)
 
@@ -177,7 +174,9 @@ class BayesianRegressor(nn.Module):
 
         for _ in range(sample_nbr):
             outputs = self(inputs)
-            criterion_loss += criterion(outputs, labels, y_target)  # use this for cosine
+            criterion_loss += criterion(
+                outputs, labels, y_target
+            )  # use this for cosine
             kldiverg_loss += self.nn_kl_divergence()
 
         criterion_loss = criterion_loss_weight * criterion_loss / sample_nbr
@@ -186,9 +185,10 @@ class BayesianRegressor(nn.Module):
 
         return loss, criterion_loss, kldiverg_loss
 
-
     setattr(
-        variational_estimator, "sample_elbo_weighted_cos_sim", sample_elbo_weighted_cos_sim
+        variational_estimator,
+        "sample_elbo_weighted_cos_sim",
+        sample_elbo_weighted_cos_sim,
     )
 
 

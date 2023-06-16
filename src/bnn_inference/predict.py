@@ -8,11 +8,11 @@ See LICENSE file in the project root for full license information.
 # Author: Jose Cappelletto (j.cappelletto@soton.ac.uk)
 
 import os
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import torch
-from datetime import datetime
 
 from bnn_inference.tools.bnn_model import BayesianRegressor
 from bnn_inference.tools.console import Console
@@ -57,7 +57,7 @@ def predict_impl(
 
     if output_csv == "":
         date_str = datetime.strftime(datetime.now(), "%Y%m%d_%H%M%S")
-        output_csv = date_str+ "_bnn_predictions.csv"
+        output_csv = date_str + "_bnn_predictions.csv"
 
     # if output file exists, warn user
     if os.path.isfile(output_csv):

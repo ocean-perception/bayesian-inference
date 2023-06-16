@@ -1,27 +1,17 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-# repos:
-# -   repo: https://github.com/pre-commit/pre-commit-hooks
-#     rev: v3.2.0
-#     hooks:
-#     -   id: trailing-whitespace
-#     -   id: end-of-file-fixer
-#     -   id: check-yaml
-#     -   id: check-added-large-files
-# -   repo: https://github.com/pycqa/isort
-#     rev: 5.3.2
-#     hooks:
-#     - id: isort
-#       args: ["--profile", "black", "--filter-files"]
-# -   repo: https://github.com/python/black
-#     rev: 22.3.0
-#     hooks:
-#     - id: black
-#       pass_filenames: true
-# -   repo: https://github.com/pycqa/flake8
-#     rev: 3.8.3
-#     hooks:
-#     - id: flake8
-#       pass_filenames: true
-#       # this seems to need to be here in addition to setup.cfg
-#       exclude: __init__.py
+repos:
+- repo: https://github.com/pycqa/isort
+  rev: 5.10.0
+  hooks:
+  - id: isort
+    args: ["--profile", "black"]
+- repo: https://github.com/python/black
+  rev: 22.3.0
+  hooks:
+  - id: black
+    pass_filenames: true
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.0.270
+  hooks:
+    - id: ruff
+      args: [--fix, --exit-non-zero-on-fix]
