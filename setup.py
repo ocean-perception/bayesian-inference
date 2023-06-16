@@ -7,14 +7,7 @@
 # package source folder: src/
 # dependencies: numpy, scipy, torch, pandas, scikit-learn, blitz
 
-from distutils.util import convert_path
-
 from setuptools import find_packages, setup
-
-main_ns = {}
-ver_path = convert_path("src/bnn_inference/version.py")
-with open(ver_path) as ver_file:
-    exec(ver_file.read(), main_ns)
 
 
 def run_setup():
@@ -33,7 +26,7 @@ def run_setup():
 
     setup(
         name="bnn_inference",
-        version=main_ns["__version__"],
+        version="0.0.9",
         description="Bayesian NN training/inference engine to learn mappings between "
         "latent representations of low resolution maps and high resolution maps",
         author="Jose Cappelletto",
@@ -59,7 +52,7 @@ def run_setup():
             "Pillow>=9.1.1",
             "scipy>=1.5.0",
             "typer>=0.7.0",
-            "gitpython>=3.1.14",
+            "pyyaml",
         ],
     )
 
