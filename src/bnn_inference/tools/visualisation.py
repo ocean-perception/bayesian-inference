@@ -15,7 +15,8 @@ def get_treemap_grid(array_num_samples, list_label=None, aspect_ratio=1.33, sort
     """
     :param array_num_samples:
     :param aspect_ratio:
-    :param sort: If True, the array_num_samples is sorted and large rectangles are allocated from left upper.
+    :param sort: If True, the array_num_samples is sorted and large rectangles are
+                 allocated from left upper.
     :return:
     """
     if list_label is None:
@@ -245,7 +246,10 @@ def get_clustering_tile_pil_image(
     """
 
     :param draw_label: True for drawing the class index on the image
-    :param data_frame: pandas.Dataframe which contains 'clustering result' and 'image file name' in its key. 'clustering result' should be int value start from 0. 'image file name' should be file fullpath of original image.
+    :param data_frame: pandas.Dataframe which contains 'clustering result' and
+                       'image file name' in its key. 'clustering result' should be int
+                       value start from 0. 'image file name' should be file fullpath of
+                       original image.
     :param samples_latents: (num_samples * num_features) 2D numpy array
     :param patch_size_org: default 224
     :param max_num_patches: default 10000
