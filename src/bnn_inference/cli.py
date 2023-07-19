@@ -177,6 +177,10 @@ def predict(
     output_network_filename: str = typer.Option(
         ..., help="Trained Bayesian Neural Network in PyTorch compatible format."
     ),
+    output_layer_type: str = typer.Option(
+        "linear",
+        help="Output layer type: 'linear', 'softmax', 'softmin'",
+    ),
     num_samples: int = typer.Option(
         10,
         help="Number of Monte Carlo samples for ELBO based posterior estimation",
@@ -195,15 +199,16 @@ def predict(
     if config == "":
         Console.info("Using command line arguments only.")
     predict_impl(
-        latent_csv,
-        latent_key,
-        target_key,
-        output_csv,
-        output_network_filename,
-        num_samples,
-        scale_factor,
-        gpu_index,
-        cpu_only,
+        latent_csv=latent_csv,
+        latent_key=latent_key,
+        target_key=target_key,
+        output_csv=output_csv,
+        output_network_filename=output_network_filename,
+        output_layer_type=output_layer_type,
+        num_samples=num_samples,
+        scale_factor=scale_factor,
+        gpu_index=gpu_index,
+        cpu_only=cpu_only,
     )
 
 
