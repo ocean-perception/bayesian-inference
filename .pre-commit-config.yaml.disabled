@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 repos:
 - repo: https://github.com/pycqa/isort
   rev: 5.12.0
@@ -15,3 +16,24 @@ repos:
   hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]
+=======
+#repos:
+# Pre-commit issue with Python 3.10/3.11 found when using venv/conda in Ubuntu 22.04.X
+
+#- repo: https://github.com/pycqa/isort
+#  rev: 5.12.0
+#  hooks:
+#  - id: isort
+#    args: ["--profile", "black"]
+#- repo: https://github.com/python/black
+#  rev: 22.3.0
+#  hooks:
+#  - id: black
+#    pass_filenames: true
+#- repo: https://github.com/astral-sh/ruff-pre-commit
+#  # Ruff version.
+#  rev: v0.0.270
+#  hooks:
+#    - id: ruff
+#      args: [--fix, --exit-non-zero-on-fix]
+>>>>>>> development
