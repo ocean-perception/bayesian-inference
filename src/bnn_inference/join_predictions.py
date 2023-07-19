@@ -7,7 +7,8 @@ from bnn_inference.tools.console import Console
 
 def join_predictions_impl(latent_csv, target_csv, target_key, output_csv):
     Console.info(
-        "Postprocessing tool for predictions generated with BNN. Merges predicted entries with target values by key (uuid) and export as a single file"
+        "Postprocessing tool for predictions generated with BNN. Merges predicted "
+        "entries with target values by key (uuid) and export as a single file"
     )
 
     if os.path.isfile(target_csv):
@@ -69,17 +70,22 @@ def join_predictions_impl(latent_csv, target_csv, target_key, output_csv):
     # Typical name/header for target (ground truth file)
     # Name: M3_direct_r020_TR_ALL.csv
     # Header:[empty] | uuid | northing [m] | easting [m] | landability
-    # Data format is pretty clean, northing/easting is expected to be uuid-format compatible (no trailing decimals)
+    # Data format is pretty clean, northing/easting is expected to be uuid-format
+    # compatible (no trailing decimals)
 
     # Typical header format for predicted values (exhaustive list format)
     # Name: all_dM3h1631.csv
     # Header:
-    # uuid  valid_ratio northing [m]    easting [m] depth [m]   latitude [deg]  longitude [deg] altitude [m]    roll [deg]  pitch [deg] heading [deg]   timestamp [s]   recon_loss  landability   uncertainty
+    # uuid  valid_ratio northing [m]    easting [m] depth [m]   latitude [deg]
+    # longitude [deg] altitude [m]    roll [deg]  pitch [deg] heading [deg]
+    # timestamp [s]   recon_loss  landability   uncertainty
 
     # Columns we need for the output join
-    # [index/empty] | uuid | northing [m] from target | easting [m] from target | [score: measurability/landability] | [predicted score]
+    # [index/empty] | uuid | northing [m] from target | easting [m] from target
+    # | [score: measurability/landability] | [predicted score]
 
-    # We trim the prediction dataframe, we only need 'uuid' and the prediction + uncertainty columns
+    # We trim the prediction dataframe, we only need 'uuid' and the prediction
+    # + uncertainty columns
     dfx = df2[["uuid", index_key, "uncertainty"]]
     merged_df = pd.merge(df1, dfx, on="uuid", how="inner")
     Console.info("Exporting merged dataframes to ", output_csv)

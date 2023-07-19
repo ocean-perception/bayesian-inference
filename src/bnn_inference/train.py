@@ -29,9 +29,15 @@ from bnn_inference.tools.dataloader import CustomDataloader
 
 ################################################################
 # TODO: Automate invocation of this script from the command line
-# bnn_inference train --latent-csv ${SS}/hf_sampled_all_10m_latents.csv --target-csv ${SS}/hf_sampled_closest_10m_labels.csv --target-key vector_class_ --uuid-key relative_path --num-epochs 200 --output-csv hf_CE_${EXP}.csv --output-network-filename net_CE_${EXP}.pth --log-filename log_CE_${EXP}.csv --latent-key input_latent_ --num-samples 7 --lambda-elbo 10 --lambda-recon 100 --num-epochs 300
+# bnn_inference train --latent-csv ${SS}/hf_sampled_all_10m_latents.csv --target-csv
+# ${SS}/hf_sampled_closest_10m_labels.csv --target-key vector_class_
+# --uuid-key relative_path --num-epochs 200 --output-csv hf_CE_${EXP}.csv
+# --output-network-filename net_CE_${EXP}.pth --log-filename log_CE_${EXP}.csv
+# --latent-key input_latent_ --num-samples 7 --lambda-elbo 10 --lambda-recon 100
+# --num-epochs 300
 # export EXP="elbo10_ce100
 ################################################################
+
 
 def set_filenames(output, logfile, network, n_latents, num_epochs, n_samples):
     # for each output file, we check if user defined name is provided. If not, use default naming convention
@@ -176,7 +182,8 @@ def train_impl(
 
     # Let's use existing MinMaxScaler, but we need to manually set the parameters
     # X = StandardScaler().fit_transform(X)
-    # y = StandardScaler().fit_transform(np.expand_dims(y, -1)) # this is resizing the array so it can match Size (D,1) expected by pytorch
+    # y = StandardScaler().fit_transform(np.expand_dims(y, -1))
+    # # this is resizing the array so it can match Size (D,1) expected by pytorch
     # norm = MinMaxScaler().fit(y)
     # y_norm = norm.transform(y)      # min max normalization of our output data
     # y_norm = y
@@ -187,7 +194,8 @@ def train_impl(
     Console.warn("y_shape", y.shape)
 
     # We impose fixed normalization for the input data, as we know the expected data range.
-    # Warning: we do not use the data to fit the scaler as there is no guarantee that the data sample covers all the expected range
+    # Warning: we do not use the data to fit the scaler as there is no guarantee that
+    # the data sample covers all the expected range
     y_norm = y / scale_factor
 
     n_latents = X_norm.shape[1]  # retrieve the size of input latent vectors
@@ -231,7 +239,6 @@ def train_impl(
 
     device = get_torch_device(gpu_index, cpu_only)
 
-
     # Check output_layer_type and set the output layer accordingly
     if output_layer_type == "linear":
         Console.warn("Using linear output layer")
@@ -246,20 +253,19 @@ def train_impl(
     # set the device
     Console.warn("Using device:", torch.cuda.current_device())
     regressor = BayesianRegressor(
-        input_dim=n_latents,
-        output_dim=n_targets,
-        output_type=output_layer_type).to(device)
+        input_dim=n_latents, output_dim=n_targets, output_type=output_layer_type
+    ).to(device)
     optimizer = optim.Adam(regressor.parameters(), lr=learning_rate)  # learning rate
 
     if loss_method == "mse":
-        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse 
-        Console.info("Using MSE loss")       
+        regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse
+        Console.info("Using MSE loss")
         criterion = torch.nn.MSELoss()
     elif loss_method == "celoss":
         regressor_sample_elbow_weighed = regressor.sample_elbo_weighted_mse
         Console.info("Using CrossEntropy loss")
         criterion = torch.nn.CrossEntropyLoss()
-    elif loss_method == "cosine": # catch future implementation cases
+    elif loss_method == "cosine":  # catch future implementation cases
         Console.error("Cosine similarity loss not implemented yet")
         Console.error("Currently valid options are: mse, celoss")
         Console.quit("Leaving...")
@@ -271,8 +277,8 @@ def train_impl(
     # print("Model's state_dict:")
     # for param.Tensor in regressor.state_dict():
     #     print(param.Tensor, "\t", regressor .state_dict()[param.Tensor].size())
-    # NOTE: Beware of that training a Bayesian model does not operate in the same way as a 
-    # standard NN model. SGD may not result in an improved convergence rate when combined 
+    # NOTE: Beware of that training a Bayesian model does not operate in the same way as a
+    # standard NN model. SGD may not result in an improved convergence rate when combined
     # with variational inference
     data_batch_size = 8
 
@@ -294,7 +300,8 @@ def train_impl(
     valid_fit_loss_history = []
     valid_kld_loss_history = []
 
-    lambda_fit_loss = lambda_loss  # regularization parameter for the fit loss (cost function is the sum of the scaled fit loss and the KL divergence loss)
+    lambda_fit_loss = lambda_loss  # regularization parameter for the fit loss
+    # (cost function is the sum of the scaled fit loss and the KL divergence loss)
     elbo_kld = lambda_elbo  # regularization parameter for the KL divergence loss
 
     # Print the regularisation parameters (lambda)
@@ -302,7 +309,7 @@ def train_impl(
     print("ELBO KLD lambda: ", elbo_kld)
     # Print the asked number of samples
     print("Number of samples: ", num_samples)
-    # Configure the model for training    
+    # Configure the model for training
     regressor.train()  # set to training mode, just in case
     # regressor.freeze_() # while frozen, the network will behave as a normal network (non-Bayesian)
     regressor.unfreeze_()  # we no longer start with "warming-up" phase of non-Bayesian training
@@ -339,7 +346,9 @@ def train_impl(
                     criterion_loss_weight=lambda_fit_loss,
                     complexity_cost_weight=elbo_kld / X_train.shape[0],
                 )  # normalize the complexity cost by the number of input points
-                _loss.backward()  # the returned loss is the combination of fit loss (MSELoss) and complexity cost (KL_div against a nominal Normal distribution )
+                # the returned loss is the combination of fit loss (MSELoss) and
+                # complexity cost (KL_div against a nominal Normal distribution )
+                _loss.backward()
                 optimizer.step()
                 train_loss.append(_loss.item())  # keep track of training loss
                 train_fit_loss.append(_fit_loss.item())
@@ -593,6 +602,7 @@ def train_impl(
     pred_df = pd.concat([pred_df, _udf], axis=1)
 
     Console.warn(
-        "Exported [validation dataset] predictions to: ", "valid_" + predictions_filename
+        "Exported [validation dataset] predictions to: ",
+        "valid_" + predictions_filename,
     )
     pred_df.to_csv("valid_" + predictions_filename, index=False)

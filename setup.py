@@ -7,31 +7,28 @@
 # package source folder: src/
 # dependencies: numpy, scipy, torch, pandas, scikit-learn, blitz
 
-from distutils.util import convert_path
-
-import git
 from setuptools import find_packages, setup
-
-main_ns = {}
-ver_path = convert_path("src/bnn_inference/version.py")
-with open(ver_path) as ver_file:
-    exec(ver_file.read(), main_ns)
 
 
 def run_setup():
     # get the long description from the README file
     # TODO: Merge with short/specific decription provided during setup() call
     # print warning message about future deprecation of setup.py approach
-    print ("WARNING: setup.py will be deprecated in the future. Please refer to the most recent documentation for changes in installation instructions")
+    print(
+        "WARNING: setup.py will be deprecated in the future. Please refer to the most "
+        "recent documentation for changes in installation instructions"
+    )
     with open("README.md") as f:
         long_description = f.read()
     if long_description is None:
-        long_description = "Small ML pipeline to infer image classes from latent representations of low resolution priors usin Bayesian NN"
+        long_description = "Small ML pipeline to infer image classes from latent "
+        "representations of low resolution priors usin Bayesian NN"
 
     setup(
         name="bnn_inference",
-        version=main_ns["__version__"],
-        description="Bayesian NN training/inference engine to learn mappings between latent representations of low resolution maps and high resolution maps",
+        version="0.0.9",
+        description="Bayesian NN training/inference engine to learn mappings between "
+        "latent representations of low resolution maps and high resolution maps",
         author="Jose Cappelletto",
         author_email="j.cappelletto@soton.ac.uk",
         url="https://github.com/cappelletto/bayesian_inference",
@@ -55,7 +52,7 @@ def run_setup():
             "Pillow>=9.1.1",
             "scipy>=1.5.0",
             "typer>=0.7.0",
-            "gitpython>=3.1.14",
+            "pyyaml",
         ],
     )
 
