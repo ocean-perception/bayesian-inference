@@ -1,14 +1,18 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "bnn_inference"
-version = "0.0.9"
-description = "Bayesian NN training/inference engine to learn mappings between latent representations of low-resolution maps and high-resolution maps"
-authors = ["Jose Cappelletto <j.cappelletto@soton.ac.uk>"]
-license = "GPLv3"
-homepage = "https://github.com/cappelletto/bayesian_inference"
+version = "0.1.0"
+description = "Bayesian NN training/inference engine to learn mappings between latent representations of low-resolution maps and high-resolution observations"
+license = { file = "LICENSE" }
+readme = "README.md"
+authors = [{ name = "Jose Cappelleto", email = "j.cappelletto@soton.ac.uk" }]
+maintainers = [
+    { name = "Jose Cappelleto", email = "j.cappelletto@soton.ac.uk" },
+    { name = "Miquel Massot-Campos", email = "miquel.massot-campos@soton.ac.uk" },
+]
 
 [tool.black]
 line-length = 88
@@ -17,17 +21,22 @@ line-length = 88
 profile = "black"
 
 [tool.dependencies]
-python = ">=3.6"
+python = ">=3.10"
 blitz-bayesian-pytorch = "0.2.7"
 numpy = ">=1.19.0"
+jinja = ">=3.1.2"
 pandas = ">=0.25.3"
-torch = ">=1.7.0"
-torchvision = ">=0.8.1"
+torch = ">=2.0.0"
+torchvision = ">=0.15.1"
 scikit-learn = ">=0.23.1"
 Pillow = ">=9.1.1"
+requests = "2.31.0"
 scipy = ">=1.5.0"
 typer = ">=0.7.0"
 pyyaml = "*"
+pyproj = "3.6.0"
+seaborn = "0.12.2"
 
-[tool.console_scripts]
+
+[project.scripts]
 bnn_inference = "bnn_inference.cli:main"
