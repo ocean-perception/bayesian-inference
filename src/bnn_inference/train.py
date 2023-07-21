@@ -227,7 +227,7 @@ def train_impl(
     )
 
     X_train, X_valid, y_train, y_valid = train_test_split(
-        X_norm, y_norm, test_size=xratio, shuffle=True  # 8:2 ratio
+        X_norm, y_norm, train_size=xratio, shuffle=True  # 8:2 ratio
     )
     # Convert train and test vectors to tensors
     X_train, y_train = torch.Tensor(X_train).float(), torch.Tensor(y_train).float()
