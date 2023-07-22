@@ -14,30 +14,30 @@ maintainers = [
     { name = "Miquel Massot-Campos", email = "miquel.massot-campos@soton.ac.uk" },
 ]
 
+dependencies = [
+    "numpy>=1.19.0",
+    "jinja2>=3.1.2",
+    "pandas>=1.4.3",
+    "torch>=2.0.0",
+    "torchvision>=0.15.1",
+    "networkx>=3.1.0",
+    "scikit-learn>= 1.2.2",
+    "Pillow>=9.1.1",
+    "requests==2.31.0",
+    "scipy>=1.5.0",
+    "typer>=0.7.0",
+    "pyyaml>=6.0.1",
+    "pyproj==3.6.0",
+    "seaborn==0.12.2",
+    "sympy==1.12",
+    "blitz-bayesian-pytorch==0.2.7",
+]
+
 [tool.black]
 line-length = 88
 
 [tool.isort]
 profile = "black"
-
-[tool.dependencies]
-python = ">=3.10"
-blitz-bayesian-pytorch = "0.2.7"
-numpy = ">=1.19.0"
-jinja = ">=3.1.2"
-pandas = ">=1.4.3"
-torch = ">=2.0.0"
-torchvision = ">=0.15.1"
-networkx = ">=3.1.0"
-scikit-learn = ">=1.2.2"
-Pillow = ">=9.1.1"
-requests = "2.31.0"
-scipy = ">=1.5.0"
-typer = ">=0.7.0"
-pyyaml = ">=6.0.1"
-pyproj = "3.6.0"
-seaborn = "0.12.2"
-sympy = "1.12"
 
 
 [project.scripts]
