@@ -44,6 +44,23 @@ Start by cloning the repository (it will include the blitz submodule):
 $ git clone https://github.com/ocean-perception/bnn_inference.git
 ```
 
+There are several installation options available:
+## Conda environment
+The easiest way to install the framework is by using conda. You can create a new base environment with:
+
+```bash
+conda create -n bnn python==3.10
+conda activate bnn
+```
+
+Since version 0.0.4, the package uses `pyproject.toml` to manage dependencies. You can install the package with:
+
+```bash
+pip install -U .
+```
+
+This will install all the exact versions of the dependencies listed in the `pyproject.toml` file. From now and on, to utilize the package, you will need to activate the conda environment and run the `bnn_inference` command.
+
 ## Docker image
 For improved stability and compatibility, using docker is recommended. You can pull the latest docker image with:
 
