@@ -214,28 +214,36 @@ def predict_impl(
     uncertainty = np.squeeze(uncertainty)
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
-    pred_df = df.copy()  # make a copy, then we append the results
-    index_names = pred_df.index.names
+    output_df = df.copy()  # make a copy, then we append the results
+
+    # # we need to preserve the index names for the output dataframe
+    # index_names = output_df.index.names
+    # remove the index names for the dataframe
+    output_df.reset_index(drop=False, inplace=True)
+
+    pred_df = pd.concat(
+        [_pdf.reset_index(drop=True), _udf.reset_index(drop=True)], axis=1
+    )
 
     # We merge based on row order, need to reset the index for prediction (_pdf) and uncertainty (_udf) dataframes
-    pred_df = pd.concat(
-        [pred_df, _pdf.reset_index(drop=True), _udf.reset_index(drop=True)], axis=1
+    output_df = pd.concat(
+        [output_df.reset_index(drop=True), pred_df.reset_index(drop=True)], axis=1
     )
 
     # Let's clean the dataframe before exporting it
     # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
-    # pred_df.drop(
-    #     list(
-    #         pred_df.filter(regex=input_key)
-    #     ),  # the regex string could be updated to match any user-defined latent vector name
-    #     axis=1,  # search in columns
-    #     inplace=True,
-    # )  # replace the current df, no need to reassign to a new variable
+    output_df.drop(
+        list(
+            output_df.filter(regex=input_key)
+        ),  # the regex string could be updated to match any user-defined latent vector name
+        axis=1,  # search in columns
+        inplace=True,
+    )  # replace the current df, no need to reassign to a new variable
 
-    print("Output dataframe columns: ", pred_df.head())
+    print("Output dataframe columns: ", output_df.head())
     output_name = output_csv
     Console.info("Exporting predictions to:", output_name)
-    pred_df.index.names = index_names
-    pred_df.to_csv(output_name)
+    output_df.index.names = ["index"]
+    output_df.to_csv(output_name)
     Console.info("Done!")
     return 0

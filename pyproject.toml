@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bnn_inference"
-version = "0.1.3"
+version = "0.1.4"
 description = "Bayesian NN training/inference engine to learn mappings between latent representations of low-resolution maps and high-resolution observations"
 license = { file = "LICENSE" }
 readme = "README.md"
