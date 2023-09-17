@@ -111,9 +111,8 @@ def predict_impl(
             .numpy()
         )
         regressor = BayesianRegressor(
-            input_dim=n_latents,
-            output_dim=output_size,
-            output_type=output_layer_type).to(device)
+            input_dim=n_latents, output_dim=output_size, output_type=output_layer_type
+        ).to(device)
     else:
         Console.warn("Using CPU")
         trained_network = torch.load(
@@ -125,9 +124,8 @@ def predict_impl(
             .numpy()
         )
         regressor = BayesianRegressor(
-            input_dim=n_latents,
-            output_dim=output_size,
-            output_type=output_layer_type).to(device)
+            input_dim=n_latents, output_dim=output_size, output_type=output_layer_type
+        ).to(device)
 
     regressor.load_state_dict(
         trained_network["model_state_dict"]
@@ -190,7 +188,7 @@ def predict_impl(
     # predicted might contain a dimension with size 1, we need to squeeze it
     predicted = np.squeeze(predicted)
 
-    # we repeat this for predicted and uncertainty
+    # we repeat this for the estimated predictions
     column_names = []
     for i in range(
         output_size
@@ -202,7 +200,7 @@ def predict_impl(
         # column_names.append('predicted_' + str(i))
     _pdf = pd.DataFrame(predicted, columns=column_names)
 
-    # we repeat this for predicted and uncertainty
+    # we repeat this for the estimated uncertainty
     column_names = []
     for i in range(
         output_size
@@ -217,12 +215,12 @@ def predict_impl(
     _udf = pd.DataFrame(uncertainty, columns=column_names)
 
     pred_df = df.copy()  # make a copy, then we append the results
-    pred_df = pd.concat([pred_df, _pdf], axis=1)
-    pred_df = pd.concat([pred_df, _udf], axis=1)
-    new_cols = pred_df.columns.values
-    new_cols[
-        0
-    ] = "uuid"  # this should be the first non-index column, expected to be the uuid
+    index_names = pred_df.index.names
+
+    # We merge based on row order, need to reset the index for prediction (_pdf) and uncertainty (_udf) dataframes
+    pred_df = pd.concat(
+        [pred_df, _pdf.reset_index(drop=True), _udf.reset_index(drop=True)], axis=1
+    )
 
     # Let's clean the dataframe before exporting it
     # 1- Drop the latent vector (as it can be massive and the is no need for most of our maps and pred calculations)
@@ -234,10 +232,10 @@ def predict_impl(
     #     inplace=True,
     # )  # replace the current df, no need to reassign to a new variable
 
-    print(pred_df.head())
+    print("Output dataframe columns: ", pred_df.head())
     output_name = output_csv
     Console.info("Exporting predictions to:", output_name)
-    pred_df.index.names = ["index"]
+    pred_df.index.names = index_names
     pred_df.to_csv(output_name)
     Console.info("Done!")
     return 0
